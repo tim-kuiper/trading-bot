@@ -1,22 +1,17 @@
 import requests
 import json
 
-usdt = 11
+rsi45_balance = 11
 asset_pair = 'XBTUSDT'
 
 # Get asset pair XBT/USDT (XBT is BTC)
 payload = {'pair': asset_pair}
 # asset_pair = requests.get('https://api.kraken.com/0/public/Ticker?pair=XBTUSDT')
-asset_pair_req = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-print(asset_pair_req.json())
-#asset_pair_json = asset_pair.json()
-#print(asset_pair.json()['result']['XBTUSDT']['a'][0])
-#
-#current_btc_value = float(asset_pair.json()['result']['XBTUSDT']['a'][0])
-#btc_value = int(current_btc_value)
-#print(btc_value)
-#
-#calc = str(usdt / btc_value)
-#print(calc)
-#
-#print(type(calc))
+request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
+print(request.json())
+ask_value = request.json()['result'][asset_pair]['a'][0]
+print(ask_value)
+current_btc_value = int(float(ask_value))
+print(current_btc_value)
+calc = str(rsi45_balance / current_btc_value)
+print(calc)

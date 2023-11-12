@@ -99,13 +99,22 @@ while True:
     
     # set variable for hourly rsi
     rsi = rsi_tradingview()
-    hourly_rsi = rsi[-1]
+    hourly_rsi = float(rsi[-1])
     
     print("1H RSI:", hourly_rsi)
     
-    # calculate how much btc we can buy according to the strategy, for this we need to convert an X amount of USDT to BTC value
-    payload = {'pair': asset_pair}
-    ticker_info = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
+    if 30 <= hourly_rsi <= 45:
+      print("30 <= hourly_rsi <= 45 block")
+      # calculate how much btc we can buy according to the strategy, for this we need to convert an X amount of USDT to BTC value
+      payload = {'pair': asset_pair}
+      request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
+      ask_value = request.json()['result'][asset_pair]['a'][0]
+      current_btc_value = int(float(ask_value))
+      
+    elif hourly_rsi < 30:
+      print("rsi<30 block")
+    
+    
     
     # place market order if rsi <45 or <35
     
