@@ -15,3 +15,8 @@ current_btc_value = int(float(ask_value))
 print(current_btc_value)
 calc = str(rsi45_balance / current_btc_value)
 print(calc)
+
+print("Amount of BTC we need to buy:", calc)
+
+if request.json()['error'] != []:
+  print("No errors found!")

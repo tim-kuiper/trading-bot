@@ -29,16 +29,14 @@ pd.options.display.max_columns = 8
 api_sec = os.environ['api_sec_env']
 api_key = os.environ['api_key_env']
 api_url = "https://api.kraken.com"
-avg_btc_value = []
-total_btc_assets = []
+btc_bought_value = []
+btc_assets = []
 
 while True:
     def get_kraken_signature(urlpath, data, secret):
-    
         postdata = urllib.parse.urlencode(data)
         encoded = (str(data['nonce']) + postdata).encode()
         message = urlpath.encode() + hashlib.sha256(encoded).digest()
-    
         mac = hmac.new(base64.b64decode(secret), message, hashlib.sha512)
         sigdigest = base64.b64encode(mac.digest())
         return sigdigest.decode()
@@ -46,7 +44,6 @@ while True:
     def kraken_request(uri_path, data, api_key, api_sec):
         headers = {}
         headers['API-Key'] = api_key
-        # get_kraken_signature() as defined in the 'Authentication' section
         headers['API-Sign'] = get_kraken_signature(uri_path, data, api_sec)             
         req = requests.post((api_url + uri_path), headers=headers, data=data)
         return req
@@ -92,9 +89,7 @@ while True:
         down[down > 0] = 0
         down *= -1
         down = pd.Series.ewm(down, alpha=1/period).mean()
-    
         rsi = np.where(up == 0, 0, np.where(down == 0, 100, 100 - (100 / (1 + up / down))))
-    
         return np.round(rsi, 2) if round_rsi else rsi
     
     # set variable for hourly rsi
@@ -103,21 +98,40 @@ while True:
     
     print("1H RSI:", hourly_rsi)
     
-    if 30 <= hourly_rsi <= 45:
+    if 30 <= hourly_rsi <= 60:
       print("30 <= hourly_rsi <= 45 block")
       # calculate how much btc we can buy according to the strategy, for this we need to convert an X amount of USDT to BTC value
       payload = {'pair': asset_pair}
       request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
       ask_value = request.json()['result'][asset_pair]['a'][0]
       current_btc_value = int(float(ask_value))
+      btc_to_buy = str(rsi45_balance / current_btc_value)
+      print("Buying amount of btc:", btc_to_buy)
+
+      # construct  request to place buy order
+      resp = kraken_request('/0/private/AddOrder', {
+          "nonce": str(int(1000*time.time())),
+          "ordertype": "market",
+          "type": "buy",
+          "volume": btc_to_buy,
+          "pair": asset_pair
+      }, api_key, api_sec)
+
+      print(resp.json())
       
-    elif hourly_rsi < 30:
-      print("rsi<30 block")
-    
-    
-    
-    # place market order if rsi <45 or <35
-    
-    
+      # append bought btc value to list
+      if resp.json()['error'] != []:
+        btc_assets.append(float(btc_to_buy))
+        
+   # elif hourly_rsi < 30:
+   #   print("rsi<30 block")
+   #   payload = {'pair': asset_pair}
+   #   request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
+   #   ask_value = request.json()['result'][asset_pair]['a'][0]
+   #   current_btc_value = int(float(ask_value))
+   # # place market order if rsi <45 or <35
+   # else:
+   #   print("RSI above 45, checking back in an hour")
+
     # sleep for 1 hour
     time.sleep(3600)
