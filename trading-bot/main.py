@@ -26,9 +26,11 @@ Notes:
 # set vars
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
-api_sec = os.environ['api_sec']
-api_key = os.environ['api_key']
+api_sec = os.environ['api_sec_env']
+api_key = os.environ['api_key_env']
 api_url = "https://api.kraken.com"
+avg_btc_value = []
+total_btc_assets = []
 
 while True:
     def get_kraken_signature(urlpath, data, secret):
@@ -101,7 +103,12 @@ while True:
     
     print("1H RSI:", hourly_rsi)
     
+    # calculate how much btc we can buy according to the strategy, for this we need to convert an X amount of USDT to BTC value
+    payload = {'pair': asset_pair}
+    ticker_info = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
+    
     # place market order if rsi <45 or <35
+    
     
     # sleep for 1 hour
     time.sleep(3600)
