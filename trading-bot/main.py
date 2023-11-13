@@ -120,6 +120,7 @@ while True:
       }, api_key, api_sec)
       if not resp.json()['error']:
         btc_assets.append(float(btc_to_buy))
+        btc_bought_value.append(current_btc_value)
       else:
         print('The following error occured when trying to place a buy order:', resp.json()['error'])
     elif hourly_rsi < 30:
@@ -141,10 +142,14 @@ while True:
       }, api_key, api_sec)
       if not resp.json()['error']:
         btc_assets.append(float(btc_to_buy))
+        btc_bought_value.append(current_btc_value)
       else:
         print('The following error occured when trying to place a buy order:', resp.json()['error'])
-  
-    print("Average price of BTC bought:", statistics.fmean(btc_assets))
+    else:
+      print("RSI above 45, printing stats")
+
+    print("Total BTC bought so far:", sum(btc_assets))
+    print("Average price of BTC bought:", statistics.mean(btc_bought_value))
     print("Total buy orders so far:", len(btc_assets))
     print("Checking back again in an hour")
     time.sleep(3600)
