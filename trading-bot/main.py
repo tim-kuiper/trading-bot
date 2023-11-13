@@ -9,6 +9,7 @@ import json
 import io
 import pandas as pd
 import numpy as np
+import statistics
 
 '''
 Trading script utilizing the Kraken API to buy/sell BTCUSDT on RSI for DCA
@@ -31,6 +32,7 @@ api_key = os.environ['api_key_env']
 api_url = "https://api.kraken.com"
 btc_bought_value = []
 btc_assets = []
+total_buy_orders = []
 
 while True:
     def get_kraken_signature(urlpath, data, secret):
@@ -98,17 +100,17 @@ while True:
     
     print("1H RSI:", hourly_rsi)
     
-    if 30 <= hourly_rsi <= 60:
-      print("30 <= hourly_rsi <= 45 block")
+    if 30 <= hourly_rsi <= 45:
+      print("Buying BTC because RSI is:", hourly_rsi)
       # calculate how much btc we can buy according to the strategy, for this we need to convert an X amount of USDT to BTC value
       payload = {'pair': asset_pair}
       request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
       ask_value = request.json()['result'][asset_pair]['a'][0]
       current_btc_value = int(float(ask_value))
       btc_to_buy = str(rsi45_balance / current_btc_value)
-      print("Buying amount of btc:", btc_to_buy)
+      print("Buying the following amount of BTC:", btc_to_buy)
 
-      # construct  request to place buy order
+      # construct buy order
       resp = kraken_request('/0/private/AddOrder', {
           "nonce": str(int(1000*time.time())),
           "ordertype": "market",
@@ -116,22 +118,33 @@ while True:
           "volume": btc_to_buy,
           "pair": asset_pair
       }, api_key, api_sec)
-
-      print(resp.json())
-      
-      # append bought btc value to list
-      if resp.json()['error'] != []:
+      if not resp.json()['error']:
         btc_assets.append(float(btc_to_buy))
-        
-   # elif hourly_rsi < 30:
-   #   print("rsi<30 block")
-   #   payload = {'pair': asset_pair}
-   #   request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-   #   ask_value = request.json()['result'][asset_pair]['a'][0]
-   #   current_btc_value = int(float(ask_value))
-   # # place market order if rsi <45 or <35
-   # else:
-   #   print("RSI above 45, checking back in an hour")
-
-    # sleep for 1 hour
+      else:
+        print('The following error occured when trying to place a buy order:', resp.json()['error'])
+    elif hourly_rsi < 30:
+      print("Buying BTC because RSI is:", hourly_rsi)
+      payload = {'pair': asset_pair}
+      request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
+      ask_value = request.json()['result'][asset_pair]['a'][0]
+      current_btc_value = int(float(ask_value))
+      btc_to_buy = str(rsi30_balance / current_btc_value)
+      print("Buying the following amount of BTC:", btc_to_buy)
+      
+      # construct buy order
+      resp = kraken_request('/0/private/AddOrder', {
+          "nonce": str(int(1000*time.time())),
+          "ordertype": "market",
+          "type": "buy",
+          "volume": btc_to_buy,
+          "pair": asset_pair
+      }, api_key, api_sec)
+      if not resp.json()['error']:
+        btc_assets.append(float(btc_to_buy))
+      else:
+        print('The following error occured when trying to place a buy order:', resp.json()['error'])
+  
+    print("Average price of BTC bought:", statistics.fmean(btc_assets))
+    print("Total buy orders so far:", len(btc_assets))
+    print("Checking back again in an hour")
     time.sleep(3600)
