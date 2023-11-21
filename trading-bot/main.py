@@ -36,6 +36,7 @@ btc_assets = []
 total_buy_orders = []
 
 # create json files to store our data in
+# creates the files if they dont exist
 btc_bought_value_json = json.dumps(btc_bought_value, indent=4) 
 with open('btc_bought.json', 'w') as f:
     f.write(btc_bought_value_json)
@@ -131,8 +132,14 @@ while True:
         "pair": asset_pair
     }, api_key, api_sec)
     if not resp.json()['error']:
+      assets_file = open('btc_assets.json', 'r')
+      assets_contents = assets_file.read()
+      assets_data = json.loads(assets_contents)
+      assets_data.append(float(btc_to_buy))
+      assets_json = json.dumps(assets_data, indent=4)
+      with open('btc_assets.json', 'w') as f:
+          f.write(assets_json)
       # CONT HERE
-      btc_assets.append(float(btc_to_buy))
       btc_bought_value.append(current_btc_value)
     else:
       print('The following error occured when trying to place a buy order:', resp.json()['error'])

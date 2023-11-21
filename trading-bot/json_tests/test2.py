@@ -1,15 +1,5 @@
 import json
 
-# a Python object (list):
-x = []
-
-# convert into JSON:
-y = json.dumps(x, indent=4)
-
-# dump to file
-with open('data.json', 'w') as f:
-    f.write(y)
-
 # read from file
 file = open('data.json', 'r')
 contents = file.read()
