@@ -45,7 +45,7 @@ with open('btc_assets.json', 'w') as f:
     f.write(btc_assets_json)
 total_buy_orders_json = json.dumps(total_buy_orders, indent=4)
 with open('btc_buy_orders.json', 'w') as f:
-    f.write(btc_buy_orders_json)
+    f.write(total_buy_orders_json)
 
 
 while True:
@@ -73,8 +73,8 @@ while True:
   balance = int(balance_float)
   dca_balance = int(balance) * 0.75
   rsi37_balance = int(dca_balance) * 0.02
-  rsi30_balance = int(dca_balance) * 0.03
-  rsi25_balance = int(dca_balance) * 0.05
+  rsi30_balance = int(dca_balance) * 0.05
+  rsi25_balance = int(dca_balance) * 0.07
   
   # set asset pair
   asset_pair = 'XBTUSDT'
@@ -139,8 +139,13 @@ while True:
       assets_json = json.dumps(assets_data, indent=4)
       with open('btc_assets.json', 'w') as f:
           f.write(assets_json)
-      # CONT HERE
-      btc_bought_value.append(current_btc_value)
+      btc_value_file = open('btc_bought.json', 'r')
+      btc_value_contents = btc_value_file.read()
+      btc_value_data = json.loads(btc_value_contents)
+      btc_value_data.append(current_btc_value)
+      btc_value_json = json.dumps(btc_value_data, indent=4)
+      with open('btc_bought.json', 'w') as f:
+          f.write(btc_value_json)
     else:
       print('The following error occured when trying to place a buy order:', resp.json()['error'])
   elif 25 <= hourly_rsi <= 30:
@@ -160,8 +165,20 @@ while True:
         "pair": asset_pair
     }, api_key, api_sec)
     if not resp.json()['error']:
-      btc_assets.append(float(btc_to_buy))
-      btc_bought_value.append(current_btc_value)
+      assets_file = open('btc_assets.json', 'r')
+      assets_contents = assets_file.read()
+      assets_data = json.loads(assets_contents)
+      assets_data.append(float(btc_to_buy))
+      assets_json = json.dumps(assets_data, indent=4)
+      with open('btc_assets.json', 'w') as f:
+          f.write(assets_json)
+      btc_value_file = open('btc_bought.json', 'r')
+      btc_value_contents = btc_value_file.read()
+      btc_value_data = json.loads(btc_value_contents)
+      btc_value_data.append(current_btc_value)
+      btc_value_json = json.dumps(btc_value_data, indent=4)
+      with open('btc_bought.json', 'w') as f:
+          f.write(btc_value_json)
     else:
       print('The following error occured when trying to place a buy order:', resp.json()['error'])
   elif hourly_rsi < 25:
@@ -181,16 +198,33 @@ while True:
         "pair": asset_pair
     }, api_key, api_sec)
     if not resp.json()['error']:
-      btc_assets.append(float(btc_to_buy))
-      btc_bought_value.append(current_btc_value)
+      assets_file = open('btc_assets.json', 'r')
+      assets_contents = assets_file.read()
+      assets_data = json.loads(assets_contents)
+      assets_data.append(float(btc_to_buy))
+      assets_json = json.dumps(assets_data, indent=4)
+      with open('btc_assets.json', 'w') as f:
+          f.write(assets_json)
+      btc_value_file = open('btc_bought.json', 'r')
+      btc_value_contents = btc_value_file.read()
+      btc_value_data = json.loads(btc_value_contents)
+      btc_value_data.append(current_btc_value)
+      btc_value_json = json.dumps(btc_value_data, indent=4)
+      with open('btc_bought.json', 'w') as f:
+          f.write(btc_value_json)
     else:
       print('The following error occured when trying to place a buy order:', resp.json()['error'])
   else:
     print("Nothing to do, printing stats")
-
-  print("Total BTC bought so far:", sum(btc_assets))
-  if btc_bought_value: # tests if list is not empty
-    print("Average price of BTC bought:", statistics.mean(btc_bought_value))
-  print("Total buy orders so far:", len(btc_assets))
+  assets_file = open('btc_assets.json', 'r')
+  assets_contents = assets_file.read()
+  assets_data = json.loads(assets_contents)
+  print("Total BTC bought so far:", sum(assets_data))
+  btc_value_file = open('btc_bought.json', 'r')
+  btc_value_contents = btc_value_file.read()
+  btc_value_data = json.loads(btc_value_contents)
+  if btc_value_data:
+    print("Average price of BTC bought:", statistics.mean(btc_value_data))
+  print("Total buy orders so far:", len(assets_data))
   print("Checking back again in an hour")
   time.sleep(3600)
