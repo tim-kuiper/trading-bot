@@ -120,8 +120,8 @@ while True:
     payload = {'pair': asset_pair}
     request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
     ask_value = request.json()['result'][asset_pair]['a'][0]
-    current_btc_value = int(float(ask_value))
-    btc_to_buy = str(rsi37_balance / current_btc_value)
+    current_btc_ask_value = int(float(ask_value))
+    btc_to_buy = str(rsi37_balance / current_btc_ask_value)
     print("Buying the following amount of BTC:", btc_to_buy)
     # construct buy order
     resp = kraken_request('/0/private/AddOrder', {
@@ -142,7 +142,7 @@ while True:
       btc_value_file = open('btc_bought.json', 'r')
       btc_value_contents = btc_value_file.read()
       btc_value_data = json.loads(btc_value_contents)
-      btc_value_data.append(current_btc_value)
+      btc_value_data.append(current_btc_ask_value)
       btc_value_json = json.dumps(btc_value_data, indent=4)
       with open('btc_bought.json', 'w') as f:
           f.write(btc_value_json)
@@ -153,8 +153,8 @@ while True:
     payload = {'pair': asset_pair}
     request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
     ask_value = request.json()['result'][asset_pair]['a'][0]
-    current_btc_value = int(float(ask_value))
-    btc_to_buy = str(rsi30_balance / current_btc_value)
+    current_btc_ask_value = int(float(ask_value))
+    btc_to_buy = str(rsi30_balance / current_btc_ask_value)
     print("Buying the following amount of BTC:", btc_to_buy)
     # construct buy order
     resp = kraken_request('/0/private/AddOrder', {
@@ -175,7 +175,7 @@ while True:
       btc_value_file = open('btc_bought.json', 'r')
       btc_value_contents = btc_value_file.read()
       btc_value_data = json.loads(btc_value_contents)
-      btc_value_data.append(current_btc_value)
+      btc_value_data.append(current_btc_ask_value)
       btc_value_json = json.dumps(btc_value_data, indent=4)
       with open('btc_bought.json', 'w') as f:
           f.write(btc_value_json)
@@ -186,8 +186,8 @@ while True:
     payload = {'pair': asset_pair}
     request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
     ask_value = request.json()['result'][asset_pair]['a'][0]
-    current_btc_value = int(float(ask_value))
-    btc_to_buy = str(rsi25_balance / current_btc_value)
+    current_btc_ask_value = int(float(ask_value))
+    btc_to_buy = str(rsi25_balance / current_btc_ask_value)
     print("Buying the following amount of BTC:", btc_to_buy)
     # construct buy order
     resp = kraken_request('/0/private/AddOrder', {
@@ -208,12 +208,34 @@ while True:
       btc_value_file = open('btc_bought.json', 'r')
       btc_value_contents = btc_value_file.read()
       btc_value_data = json.loads(btc_value_contents)
-      btc_value_data.append(current_btc_value)
+      btc_value_data.append(current_btc_ask_value)
       btc_value_json = json.dumps(btc_value_data, indent=4)
       with open('btc_bought.json', 'w') as f:
           f.write(btc_value_json)
     else:
       print('The following error occured when trying to place a buy order:', resp.json()['error'])
+  elif 70 <= hourly_rsi <= 75: # sell 20% of btc assets
+    print("Selling BTC because RSI is:", hourly_rsi)
+    payload = {'pair': asset_pair}
+    request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
+    bid_value = request.json()['result'][asset_pair]['b'][0]
+    current_btc_bid_value = int(float(bid_value))
+    btc_to_sell = str(rsi37_balance / current_btc_value) #CONT HERE
+    # open btc assets file
+    # load data
+    # calculate 20% of btc asset data
+    # place sell order using this amount
+    print("Selling the following amount of BTC:", btc_to_buy)
+    # construct buy order
+    resp = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "buy",
+        "volume": btc_to_buy,
+        "pair": asset_pair
+    
+  elif 75 <= hourly_rsi <= 80: # sell 40% of btc assets
+  elif hourly_rsi > 80: # sell 60% of btc assets
   else:
     print("Nothing to do, printing stats")
   assets_file = open('btc_assets.json', 'r')
