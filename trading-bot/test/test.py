@@ -1,10 +1,13 @@
 # get ticket info
 
-import requests
-import json
+import time
+#import requests
+#import json
+#
+#asset_pair = 'XBTUSDT'
+#payload = {'pair': asset_pair}
+#
+#request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
+#print(request.json()['result'])
 
-asset_pair = 'XBTUSDT'
-payload = {'pair': asset_pair}
-
-request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-print(request.json()['result'])
+print(time.asctime())

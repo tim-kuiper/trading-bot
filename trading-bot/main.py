@@ -283,6 +283,7 @@ while True:
       print("Cleared btc_bought.json list")
   else:
     print("Nothing to do, printing stats")
+    print("Current date/time:", time.asctime())
   assets_file = open('btc_assets.json', 'r')
   assets_contents = assets_file.read()
   assets_data = json.loads(assets_contents)
