@@ -68,9 +68,9 @@ while True:
   balance_float = float(balance_data['result']['USDT'])
   balance = int(balance_float)
   dca_balance = int(balance) * 0.75
-  rsi37_balance = int(dca_balance) * 0.02
-  rsi30_balance = int(dca_balance) * 0.05
-  rsi25_balance = int(dca_balance) * 0.07
+  rsi37_balance = float(dca_balance) * 0.02
+  rsi30_balance = float(dca_balance) * 0.05
+  rsi25_balance = float(dca_balance) * 0.07
   
   # set asset pair
   asset_pair = 'XBTUSDT'
@@ -107,6 +107,7 @@ while True:
   # set variable for hourly rsi
   rsi = rsi_tradingview()
   hourly_rsi = float(rsi[-1])
+  # hourly_rsi = 29.54
   
   print("1H RSI:", hourly_rsi)
   
@@ -131,8 +132,9 @@ while True:
       assets_contents = assets_file.read()
       assets_data = json.loads(assets_contents)
       assets_data.append(float(btc_to_buy))
-      total_assets = sum(assets_data)
-      assets_json = json.dumps(total_assets, indent=4)
+      print("assets_data:", assets_data)
+      assets_json = json.dumps(assets_data, indent=4)
+      print("assets_json:", assets_json)
       with open('btc_assets.json', 'w') as f:
           f.write(assets_json)
       print("Added", btc_to_buy, "to asset list")
@@ -152,7 +154,8 @@ while True:
     payload = {'pair': asset_pair}
     request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
     ask_value = request.json()['result'][asset_pair]['a'][0]
-    current_btc_ask_value = int(float(ask_value))
+    # current_btc_ask_value = int(float(ask_value))
+    current_btc_ask_value = float(ask_value)
     btc_to_buy = str(rsi30_balance / current_btc_ask_value)
     print("Buying the following amount of BTC:", btc_to_buy)
     resp = kraken_request('/0/private/AddOrder', {
@@ -168,8 +171,9 @@ while True:
       assets_contents = assets_file.read()
       assets_data = json.loads(assets_contents)
       assets_data.append(float(btc_to_buy))
-      total_assets = sum(assets_data)
-      assets_json = json.dumps(total_assets, indent=4)
+      print("assets_data:", assets_data)
+      assets_json = json.dumps(assets_data, indent=4)
+      print("assets_json:", assets_json)
       with open('btc_assets.json', 'w') as f:
           f.write(assets_json)
       print("Added", btc_to_buy, "to asset list")
@@ -205,8 +209,9 @@ while True:
       assets_contents = assets_file.read()
       assets_data = json.loads(assets_contents)
       assets_data.append(float(btc_to_buy))
-      total_assets = sum(assets_data)
-      assets_json = json.dumps(total_assets, indent=4)
+      print("assets_data:", assets_data)
+      assets_json = json.dumps(assets_data, indent=4)
+      print("assets_json:", assets_json)
       with open('btc_assets.json', 'w') as f:
           f.write(assets_json)
       print("Added", btc_to_buy, "to asset list")
@@ -230,8 +235,8 @@ while True:
     assets_file = open('btc_assets.json', 'r')
     assets_contents = assets_file.read()
     assets_data = json.loads(assets_contents)
-    total_assets = sum(assets_data)
-    btc_to_sell = str(total_assets * 0.33)
+    print("assets_data:", assets_data)
+    btc_to_sell = str(sum(assets_data) * 0.33)
     resp = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
@@ -256,8 +261,8 @@ while True:
     assets_file = open('btc_assets.json', 'r')
     assets_contents = assets_file.read()
     assets_data = json.loads(assets_contents)
-    total_assets = sum(assets_data)
-    btc_to_sell = str(total_assets)
+    print("assets_data:", assets_data)
+    btc_to_sell = str(sum(assets_data))
     resp = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
@@ -287,6 +292,7 @@ while True:
   assets_file = open('btc_assets.json', 'r')
   assets_contents = assets_file.read()
   assets_data = json.loads(assets_contents)
+  print("assets_data:", assets_data)
   print("Total BTC bought so far:", sum(assets_data))
   btc_value_file = open('btc_bought.json', 'r')
   btc_value_contents = btc_value_file.read()

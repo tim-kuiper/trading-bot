@@ -10,4 +10,6 @@ import time
 #request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
 #print(request.json()['result'])
 
-print(time.asctime())
+list = [0.23]
+print(list)
+print(sum(list))
