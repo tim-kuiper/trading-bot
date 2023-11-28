@@ -27,21 +27,32 @@ pd.options.display.max_columns = 8
 api_sec = os.environ['api_sec_env']
 api_key = os.environ['api_key_env']
 api_url = "https://api.kraken.com"
-btc_bought_value = []
-btc_assets = []
-total_buy_orders = []
+btc_bought_file = Path("btc_bought.json")
+btc_assets_file = Path("btc_assets.json")
+total_buy_orders_file = Path("btc_buy_orders.json")
+
+
 
 # create json files to store our data in
 # creates the files if they dont exist
-btc_bought_value_json = json.dumps(btc_bought_value, indent=4) 
-with open('btc_bought.json', 'w') as f:
-    f.write(btc_bought_value_json)
-btc_assets_json = json.dumps(btc_assets, indent=4)
-with open('btc_assets.json', 'w') as f:
-    f.write(btc_assets_json)
-total_buy_orders_json = json.dumps(total_buy_orders, indent=4)
-with open('btc_buy_orders.json', 'w') as f:
-    f.write(total_buy_orders_json)
+
+if btc_bought_file.exists():
+  btc_bought_value = []
+  btc_bought_value_json = json.dumps(btc_bought_value, indent=4) 
+  with open('btc_bought.json', 'w') as f:
+      f.write(btc_bought_value_json)
+
+if btc_assets_file.exists():
+  btc_assets = []
+  btc_assets_json = json.dumps(btc_assets, indent=4)
+  with open('btc_assets.json', 'w') as f:
+      f.write(btc_assets_json)
+
+if total_buy_orders_file.exists():
+  total_buy_orders = []
+  total_buy_orders_json = json.dumps(total_buy_orders, indent=4)
+  with open('btc_buy_orders.json', 'w') as f:
+      f.write(total_buy_orders_json)
 
 
 while True:
@@ -116,7 +127,7 @@ while True:
     payload = {'pair': asset_pair}
     request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
     ask_value = request.json()['result'][asset_pair]['a'][0]
-    current_btc_ask_value = int(float(ask_value))
+    current_btc_ask_value = float(ask_value)
     btc_to_buy = str(rsi37_balance / current_btc_ask_value)
     print("Buying the following amount of BTC:", btc_to_buy)
     resp = kraken_request('/0/private/AddOrder', {
