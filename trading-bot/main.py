@@ -247,7 +247,7 @@ while True:
     if not resp.json()['error']:
       print("Sold", btc_to_sell, "of BTC" )
       print("Substracting", btc_to_sell, "btc_assets.json")
-      remaining_assets = (total_assets - float(btc_to_sell))
+      remaining_assets = (float(sum(assets_data)) - float(btc_to_sell))
       remaining_assets_json = json.dumps(remaining_assets, indent=4)
       with open('btc_assets.json', 'w') as f:
           f.write(remaining_assets_json)
