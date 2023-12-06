@@ -19,6 +19,10 @@ Notes:
 - Based on 1H BTCUSDT chart, executing a potential buy with the following properties:
   - If a trade is executed (BTC is bought) then the value of BTC in USDT during execution is stored in a list
 - List values should be stored and each hour the avg of this list should be printed, indicating the avg price that BTC was bought for
+
+TODO:
+- Trade based on top 5 crypto assets, not BTC only
+  - Therefore we need to generalize the code
 '''
 
 # set vars
