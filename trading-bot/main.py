@@ -54,19 +54,19 @@ total_sol_buy_orders_file = Path("sol_buy_orders.json")
 # create json files to store our data in
 # creates the files if they dont exist
 
-if btc_bought_file.exists():
+if not btc_bought_file.exists():
   btc_bought_value = []
   btc_bought_value_json = json.dumps(btc_bought_value, indent=4) 
   with open('btc_bought.json', 'w') as f:
       f.write(btc_bought_value_json)
 
-if btc_assets_file.exists():
+if not btc_assets_file.exists():
   btc_assets = []
   btc_assets_json = json.dumps(btc_assets, indent=4)
   with open('btc_assets.json', 'w') as f:
       f.write(btc_assets_json)
 
-if total_btc_buy_orders_file.exists():
+if not total_btc_buy_orders_file.exists():
   total_btc_buy_orders = []
   total_btc_buy_orders_json = json.dumps(total_btc_buy_orders, indent=4)
   with open('btc_buy_orders.json', 'w') as f:
@@ -90,11 +90,11 @@ while True:
       return req
   
   # construct  request to get balance
-  # resp = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
-  resp = kraken_request('/0/private/Balance', {"nonce": str(int(5000*time.time()))}, api_key, api_sec)
+  resp = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
 
   # extract balance and do some calculcations according to the trade strategy
   balance_data = resp.json()
+  print(balance_data)
   balance_float = float(balance_data['result']['USDT'])
   balance = int(balance_float)
   dca_balance = int(balance) * 0.75
@@ -141,7 +141,6 @@ while True:
   # set variable for hourly btc rsi
   rsi_btc = rsi_tradingview_btc()
   hourly_rsi_btc = float(rsi_btc[-1])
-  # hourly_rsi = 50
   
   print("1H RSI BTC:", hourly_rsi_btc)
   
