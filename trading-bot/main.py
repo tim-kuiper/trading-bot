@@ -147,7 +147,7 @@ while True:
   
   # if 30 <= hourly_rsi <= 37:
   if 30 <= hourly_rsi_btc <= 37:
-    print("Buying BTC because RSI is:", hourly_rsi)
+    print("Buying BTC because RSI is:", hourly_rsi_btc)
     payload = {'pair': asset_pair_btc}
     request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
     ask_value = request.json()['result'][asset_pair_btc]['a'][0]
@@ -186,11 +186,10 @@ while True:
       print('The following error occured when trying to place a buy order:', resp.json()['error'])
   # elif 25 <= hourly_rsi <= 30:
   elif 25 <= hourly_rsi_btc <= 30:
-    print("Buying BTC because RSI is:", hourly_rsi)
+    print("Buying BTC because RSI is:", hourly_rsi_btc)
     payload = {'pair': asset_pair_btc}
     request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
     ask_value = request.json()['result'][asset_pair_btc]['a'][0]
-    # current_btc_ask_value = int(float(ask_value))
     current_btc_ask_value = float(ask_value)
     btc_to_buy = str(rsi30_balance / current_btc_ask_value)
     print("Buying the following amount of BTC:", btc_to_buy)
@@ -226,7 +225,7 @@ while True:
       print('The following error occured when trying to place a buy order:', resp.json()['error'])
   # elif hourly_rsi < 25:
   elif hourly_rsi_btc < 25:
-    print("Buying BTC because RSI is:", hourly_rsi)
+    print("Buying BTC because RSI is:", hourly_rsi_btc)
     payload = {'pair': asset_pair_btc}
     request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
     ask_value = request.json()['result'][asset_pair_btc]['a'][0]
@@ -269,7 +268,7 @@ while True:
     assets_contents = assets_file.read()
     assets_data = json.loads(assets_contents)
     if assets_data: # sell if we have any BTC assets
-      print("Selling BTC because RSI is:", hourly_rsi)
+      print("Selling BTC because RSI is:", hourly_rsi_btc)
       payload = {'pair': asset_pair_btc}
       request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
       bid_value = request.json()['result'][asset_pair_btc]['b'][0]
@@ -299,7 +298,7 @@ while True:
     assets_contents = assets_file.read()
     assets_data = json.loads(assets_contents)
     if assets_data:
-      print("Selling all BTC assets because RSI is:", hourly_rsi)
+      print("Selling all BTC assets because RSI is:", hourly_rsi_btc)
       payload = {'pair': asset_pair_btc}
       request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
       bid_value = request.json()['result'][asset_pair_btc]['b'][0]
