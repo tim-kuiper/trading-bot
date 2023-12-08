@@ -13,12 +13,12 @@ import statistics
 from pathlib import Path
 
 '''
-Trading script utilizing the Kraken API to buy/sell BTCUSDT on RSI for DCA
+Trading script utilizing the Kraken API to buy/sell BTCUSDT/ETHUSDT/XRPUSDT/ADAUSDT/SOLUSDT on RSI for DCA
 Notes:
 - Using Kraken API key 
 - Traded assets: BTC/ETH/XRP/ADA/SOL
-- Based on 1H BTCUSDT chart, executing a potential buy with the following properties:
-  - If a trade is executed (BTC is bought) then the value of BTC in USDT during execution is stored in a list
+- Based on 1H OHLC charts, executing a potential buy with the following properties:
+  - If a trade is executed (currency is bought) then the value of the currency in USDT during execution is stored in a list
 - List values should be stored and each hour the avg of this list should be printed, indicating the avg price that BTC was bought for
 
 TODO:
