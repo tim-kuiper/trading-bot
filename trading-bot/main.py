@@ -93,6 +93,24 @@ if not total_eth_buy_orders_file.exists():
       f.write(total_eth_buy_orders_json)
 
 # files related to XRP
+if not xrp_bought_file.exists():
+  xrp_bought_value = []
+  xrp_bought_value_json = json.dumps(xrp_bought_value, indent=4) 
+  with open('xrp_bought.json', 'w') as f:
+      f.write(xrp_bought_value_json)
+
+if not xrp_assets_file.exists():
+  xrp_assets = []
+  xrp_assets_json = json.dumps(xrp_assets, indent=4)
+  with open('xrp_assets.json', 'w') as f:
+      f.write(xrp_assets_json)
+
+if not total_xrp_buy_orders_file.exists():
+  total_xrp_buy_orders = []
+  total_xrp_buy_orders_json = json.dumps(total_xrp_buy_orders, indent=4)
+  with open('xrp_buy_orders.json', 'w') as f:
+      f.write(total_xrp_buy_orders_json)
+
 # files related to ADA
 # files related to SOL
 
@@ -121,8 +139,7 @@ while True:
   balance_float = float(balance_data['result']['USDT'])
   balance = int(balance_float)
   dca_balance = int(balance) * 0.75
-  # rsi37_balance = float(dca_balance) * 0.02
-  rsi37_balance = float(dca_balance) * 0.01 # for testing purposes
+  rsi37_balance = float(dca_balance) * 0.02
   rsi30_balance = float(dca_balance) * 0.05
   rsi25_balance = float(dca_balance) * 0.07
 
@@ -144,6 +161,10 @@ while True:
   ohlc_data_raw_btc = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
 
   # get 1H ETH OHLC data
+  payload = {'pair': asset_pair_eth, 'interval': 60}
+  ohlc_data_raw_eth = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
+
+  # get 1H XRP OHLC data
   payload = {'pair': asset_pair_eth, 'interval': 60}
   ohlc_data_raw_eth = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
   
@@ -189,13 +210,11 @@ while True:
   
   # set variable for hourly BTC RSI
   rsi_btc = rsi_tradingview_btc()
-  # hourly_rsi_btc = float(rsi_btc[-1])
-  hourly_rsi_btc = 36
+  hourly_rsi_btc = float(rsi_btc[-1])
 
   # set variable for hourly ETH RSI
   rsi_eth = rsi_tradingview_eth()
-  # hourly_rsi_eth = float(rsi_eth[-1])
-  hourly_rsi_eth = 36 
+  hourly_rsi_eth = float(rsi_eth[-1])
   
   print("1H RSI BTC:", hourly_rsi_btc)
   print("1H RSI ETH:", hourly_rsi_eth)
