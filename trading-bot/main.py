@@ -135,7 +135,6 @@ while True:
 
   # extract balance and do some calculcations according to the trade strategy
   balance_data = resp.json()
-  print(balance_data)
   balance_float = float(balance_data['result']['USDT'])
   balance = int(balance_float)
   dca_balance = int(balance) * 0.75
@@ -149,124 +148,83 @@ while True:
   print("RSI < 30 balance: ", rsi30_balance)
   print("RSI < 25 balance: ", rsi25_balance)
   
-  # set asset pairs
-  asset_pair_btc = 'XBTUSDT'
-  asset_pair_sol = 'SOLUSDT'
-  asset_pair_ada = 'ADAUSDT'
-  asset_pair_eth = 'ETHUSDT'
-  asset_pair_xrp = 'XRPUSDT'
+  # set asset pairs and start looping over them
   
-  # get 1H BTC OHLC data
-  payload = {'pair': asset_pair_btc, 'interval': 60}
-  ohlc_data_raw_btc = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
+  asset_pairs = ['XBTUSDT', 'ETHUSDT', 'XRPUSDT', 'ADAUSDT', 'SOLUSDT']
+  #asset_pair_btc = 'XBTUSDT'
+  #asset_pair_sol = 'SOLUSDT'
+  #asset_pair_ada = 'ADAUSDT'
+  #asset_pair_eth = 'ETHUSDT'
+  #asset_pair_xrp = 'XRPUSDT'
 
-  # get 1H ETH OHLC data
-  payload = {'pair': asset_pair_eth, 'interval': 60}
-  ohlc_data_raw_eth = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
+  for asset_pair in asset_pairs:
+    # 
+    asset_bought_file = Path("btc_bought.json")
+    asset_assets_file = Path("btc_assets.json")
+    total_btc_buy_orders_file = Path("btc_buy_orders.json")
+    # function for obtaining OHLC data and getting the close value
+    def get_ohlcdata():
+        payload = {'pair': asset_pair, 'interval': 60}
+        ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
+        # construct a dataframe and assign columns using BTC ohlc data
+        df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
+        df.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
+        # we are only interested in the BTC close data, so create var for close data columns and set var type as float
+        close_data = df['close'].astype(float) # set close data to float
+        return close_data
 
-  # get 1H XRP OHLC data
-  payload = {'pair': asset_pair_xrp, 'interval': 60}
-  ohlc_data_raw_xrp = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
-  
-  # construct a dataframe and assign columns using BTC ohlc data
-  df_btc = pd.DataFrame(ohlc_data_raw_btc.json()['result'][asset_pair_btc])
-  df_btc.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
+    # define function to display RSI (tradingview calculcation)
+    def rsi_tradingview(period: int = 14, round_rsi: bool = True):
+        delta = get_ohlcdata().diff()
+        up = delta.copy()
+        up[up < 0] = 0
+        up = pd.Series.ewm(up, alpha=1/period).mean()
+        down = delta.copy()
+        down[down > 0] = 0
+        down *= -1
+        down = pd.Series.ewm(down, alpha=1/period).mean()
+        rsi = np.where(up == 0, 0, np.where(down == 0, 100, 100 - (100 / (1 + up / down))))
+        return np.round(rsi, 2) if round_rsi else rsi
 
-  # construct a dataframe and assign columns using ETH ohlc data
-  df_eth = pd.DataFrame(ohlc_data_raw_eth.json()['result'][asset_pair_eth])
-  df_eth.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
+    # set variable for hourly BTC RSI
+    rsi  = rsi_tradingview()
+    # hourly_rsi = float(rsi[-1])
+    hourly_rsi = 38
 
-  # construct a dataframe and assign columns using XRP ohlc data
-  df_xrp = pd.DataFrame(ohlc_data_raw_xrp.json()['result'][asset_pair_xrp])
-  df_xrp.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
-  
-  # we are only interested in the BTC close data, so create var for close data columns and set var type as float
-  close_data_btc = df_btc['close'].astype(float) # set close data to float
+    # print RSI values
+    print("1H RSI", asset_pair, ":", hourly_rsi)
 
-  # we are only interested in the ETH close data, so create var for close data columns and set var type as float
-  close_data_eth = df_eth['close'].astype(float) # set close data to float
+    # function for returning volume of asset_pair to buy according to our strategy
+    def get_volumetobuy()
+        payload = {'pair': asset_pair}
+        request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
+        ask_value = request.json()['result'][asset_pair]['a'][0]
+        current_ask_value = float(ask_value)
+        volume_to_buy = str(rsi37_balance / current_ask_value)
+        return volume_to_buy
+        
+    
+    # function for buying asset_pair
+    def buy_asset():
+        get_volumetobuy()
+        print("Buying the following amount of", asset_pair, ":", volume_to_buy)
+        resp = kraken_request('/0/private/AddOrder', {
+            "nonce": str(int(1000*time.time())),
+            "ordertype": "market",
+            "type": "buy",
+            "volume": volume_to_buy,
+            "pair": asset_pair
+        }, api_key, api_sec)
+        return resp
+          
 
-  # we are only interested in the XRP close data, so create var for close data columns and set var type as float
-  close_data_xrp = df_xrp['close'].astype(float) # set close data to float
-  
-  # define function to display BTC RSI (tradingview calculcation)
-  def rsi_tradingview_btc(period: int = 14, round_rsi: bool = True):
-      delta = close_data_btc.diff()
-      up = delta.copy()
-      up[up < 0] = 0
-      up = pd.Series.ewm(up, alpha=1/period).mean()
-      down = delta.copy()
-      down[down > 0] = 0
-      down *= -1
-      down = pd.Series.ewm(down, alpha=1/period).mean()
-      rsi = np.where(up == 0, 0, np.where(down == 0, 100, 100 - (100 / (1 + up / down))))
-      return np.round(rsi, 2) if round_rsi else rsi
-
-  # define function to display ETH RSI (tradingview calculcation)
-  def rsi_tradingview_eth(period: int = 14, round_rsi: bool = True):
-      delta = close_data_eth.diff()
-      up = delta.copy()
-      up[up < 0] = 0
-      up = pd.Series.ewm(up, alpha=1/period).mean()
-      down = delta.copy()
-      down[down > 0] = 0
-      down *= -1
-      down = pd.Series.ewm(down, alpha=1/period).mean()
-      rsi = np.where(up == 0, 0, np.where(down == 0, 100, 100 - (100 / (1 + up / down))))
-      return np.round(rsi, 2) if round_rsi else rsi
-
-  # define function to display XRP RSI (tradingview calculcation)
-  def rsi_tradingview_xrp(period: int = 14, round_rsi: bool = True):
-      delta = close_data_xrp.diff()
-      up = delta.copy()
-      up[up < 0] = 0
-      up = pd.Series.ewm(up, alpha=1/period).mean()
-      down = delta.copy()
-      down[down > 0] = 0
-      down *= -1
-      down = pd.Series.ewm(down, alpha=1/period).mean()
-      rsi = np.where(up == 0, 0, np.where(down == 0, 100, 100 - (100 / (1 + up / down))))
-      return np.round(rsi, 2) if round_rsi else rsi
-  
-  # set variable for hourly BTC RSI
-  rsi_btc = rsi_tradingview_btc()
-  # hourly_rsi_btc = float(rsi_btc[-1])
-  hourly_rsi_btc = 38
-
-  # set variable for hourly ETH RSI
-  rsi_eth = rsi_tradingview_eth()
-  # hourly_rsi_eth = float(rsi_eth[-1])
-  hourly_rsi_eth = 38
-  
-  # set variable for hourly XRP RSI
-  rsi_xrp = rsi_tradingview_xrp()
-  # hourly_rsi_xrp = float(rsi_xrp[-1])
-  hourly_rsi_xrp = 38
-
-  # print RSI values
-  print("1H RSI BTC:", hourly_rsi_btc)
-  print("1H RSI ETH:", hourly_rsi_eth)
-  print("1H RSI ETH:", hourly_rsi_xrp)
-
-  # BTC block  
-  if 30 <= hourly_rsi_btc <= 37:
-    print("Buying BTC because RSI is:", hourly_rsi_btc)
-    payload = {'pair': asset_pair_btc}
-    request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-    ask_value = request.json()['result'][asset_pair_btc]['a'][0]
-    current_btc_ask_value = float(ask_value)
-    btc_to_buy = str(rsi37_balance / current_btc_ask_value)
-    print("Buying the following amount of BTC:", btc_to_buy)
-    resp = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "buy",
-        "volume": btc_to_buy,
-        "pair": asset_pair_btc
-    }, api_key, api_sec)
+    # buy asset
+    if 30 <= hourly_rsi <= 37:
+      print("Buying", asset_pair, "because RSI is:", hourly_rsi)
+      buy_asset()
     if not resp.json()['error']:
-      print("Succesfully bought", btc_to_buy, "BTC")
-      assets_file = open('btc_assets.json', 'r')
+      print("Succesfully bought", volume_to_buy, "BTC")
+      assets_file = open('btc_assets.json', 'r') # CONT HERE
       assets_contents = assets_file.read()
       assets_data = json.loads(assets_contents)
       assets_data.append(float(btc_to_buy))
