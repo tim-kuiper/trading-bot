@@ -5,9 +5,7 @@ import json
 import time
 from pathlib import Path
 
-testlist = ['one', 'two']
-print(testlist)
+assets = [1, 2, 3]
+assets.clear()
 
-testlist.clear()
-
-print(testlist)
+print(assets)

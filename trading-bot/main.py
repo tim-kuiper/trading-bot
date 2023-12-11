@@ -123,8 +123,8 @@ while True:
 
     # set variable for hourly BTC RSI
     rsi  = rsi_tradingview()
-    # hourly_rsi = float(rsi[-1])
-    hourly_rsi = 38
+    hourly_rsi = float(rsi[-1])
+    # hourly_rsi = 88
 
     # print RSI values
     print("1H RSI", asset_pair, ":", hourly_rsi)
@@ -164,11 +164,11 @@ while True:
         file_contents = file.read()
         assets_data = json.loads(file_contents)
         assets_data.append(float(volume_to_buy))
-        print("Appending", volume_to_buy, "to", total_asset_file)
+        print("Appending", volume_to_buy, "to", total_assets_file)
         assets_json = json.dumps(assets_data, indent=4)
-        with open(total_asset_file, 'w') as f:
+        with open(total_assets_file, 'w') as f:
             f.write(assets_json)
-        print("Appended", volume_to_buy, "to", total_asset_file)
+        print("Appended", volume_to_buy, "to", total_assets_file)
 
     # function for writing bought asset value to file (in USDT), so we can calculate the avg price for which we bought an asset
     def write_to_asset_bought_file():
@@ -185,36 +185,33 @@ while True:
     # buy asset
     if 30 <= hourly_rsi <= 37:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
-      get_asset()
-      ask_value = request.json()['result'][asset_pair]['a'][0]
+      ask_value = get_asset().json()['result'][asset_pair]['a'][0]
       current_ask_value = float(ask_value)
       volume_to_buy = str(rsi37_balance / current_ask_value)
       buy_asset()
-      if not resp.json()['error']:
+      if not get_asset().json()['error']:
         write_to_assets_file()
         write_to_asset_bought_file()
       else:
         print("The following error occured when trying to place a", asset_pair, "buy order:", resp.json()['error'])
     elif 25 <= hourly_rsi <= 30:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
-      get_asset()
-      ask_value = request.json()['result'][asset_pair]['a'][0]
+      ask_value = get_asset().json()['result'][asset_pair]['a'][0]
       current_ask_value = float(ask_value)
       volume_to_buy = str(rsi30_balance / current_ask_value)
       buy_asset()
-      if not resp.json()['error']:
+      if not get_asset().json()['error']:
         write_to_assets_file()
         write_to_asset_bought_file()
       else:
         print("The following error occured when trying to place a", asset_pair, "buy order:", resp.json()['error'])
     elif hourly_rsi < 25:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
-      get_asset()
-      ask_value = request.json()['result'][asset_pair]['a'][0]
+      ask_value = get_asset().json()['result'][asset_pair]['a'][0]
       current_ask_value = float(ask_value)
       volume_to_buy = str(rsi25_balance / current_ask_value)
       buy_asset()
-      if not resp.json()['error']:
+      if not get_asset().json()['error']:
         write_to_assets_file()
         write_to_asset_bought_file()
       else:
@@ -226,12 +223,11 @@ while True:
       assets_data = json.loads(assets_contents)
       if assets_data: # sell if we have any assets to sell
         print("Selling 33% of", asset_pair, "because RSI is:", hourly_rsi)
-        get_asset()
-        bid_value = request.json()['result'][asset_pair]['b'][0]
+        bid_value = get_asset().json()['result'][asset_pair]['b'][0]
         current_bid_value = int(float(bid_value))
         volume_to_sell = str(sum(assets_data) * 0.33)
         sell_asset()
-        if not resp.json()['error']:
+        if not get_asset().json()['error']:
           print("Sold", volume_to_sell, "of", asset_pair)
           print("Substracting", volume_to_sell, asset_pair, "from", total_assets_file)
           remaining_assets = [(float(sum(assets_data)) - float(volume_to_sell))]
@@ -248,16 +244,15 @@ while True:
       assets_data = json.loads(assets_contents)
       if assets_data:
         print("Selling all of", asset_pair, "because RSI is:", hourly_rsi)
-        get_asset()
-        bid_value = request.json()['result'][asset_pair]['b'][0]
+        bid_value = get_asset().json()['result'][asset_pair]['b'][0]
         current_bid_value = int(float(bid_value))
         volume_to_sell = str(sum(assets_data) * 0.33)
         sell_asset()
-        if not resp.json()['error']:
+        if not get_asset().json()['error']:
           print("Sold", volume_to_sell, "of", asset_pair)
           print("Clearing assets list", total_assets_file)
-          clear_assets = assets_data.clear()
-          clear_assets_json = json.dumps(clear_assets, indent=4)
+          assets_data.clear()
+          clear_assets_json = json.dumps(assets_data, indent=4)
           with open(total_assets_file, 'w') as f:
               f.write(clear_assets_json)
         print("Asset list", total_assets_file, "cleared")
@@ -265,8 +260,8 @@ while True:
         asset_value_file = open(asset_bought_value_file, 'r')
         asset_value_contents = asset_value_file.read()
         asset_value_data = json.loads(asset_value_contents)
-        asset_value_clear = asset_value_data.clear()
-        asset_value_json = json.dumps(asset_value_clear, indent=4)
+        asset_value_data.clear()
+        asset_value_json = json.dumps(asset_value_data, indent=4)
         with open(asset_bought_value_file, 'w') as f:
             f.write(asset_value_json)
         print("Cleared", asset_bought_value_file)
@@ -280,7 +275,8 @@ while True:
     assets_contents = assets_file.read()
     assets_data = json.loads(assets_contents)
     print("Current", asset_pair, "assets:", assets_data)
-    print("Total", asset_pair,  "bought so far:", sum(assets_data))
+    if assets_data:
+      print("Total", asset_pair,  "bought so far:", sum(assets_data))
     asset_value_file = open(asset_bought_value_file, 'r')
     asset_value_contents = asset_value_file.read()
     asset_value_data = json.loads(asset_value_contents)
