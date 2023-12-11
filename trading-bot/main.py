@@ -75,27 +75,27 @@ while True:
   for asset_pair in asset_pairs:
     # define asset file names
     asset_bought_value_file = asset_pair + "_bought_value.json"
-    total_asset_file = asset_pair + "_assets.json"
+    total_assets_file = asset_pair + "_assets.json"
     total_buy_orders_file = asset_pair + "_buy_orders.json"
 
     # create asset files if they dont exist
-    if not Path(asset_bought_file).exists():
+    if not Path(asset_bought_value_file).exists():
       asset_bought_value = []
       asset_bought_value_json = json.dumps(asset_bought_value, indent=4) 
-      with open(asset_bought_file, 'w') as f:
+      with open(asset_bought_value_file, 'w') as f:
           f.write(asset_bought_value_json)
     
-    if not Path(total_asset_file).exists():
+    if not Path(total_assets_file).exists():
       total_assets = []
       total_assets_json = json.dumps(total_assets, indent=4)
-      with open(total_asset_file, 'w') as f:
+      with open(total_assets_file, 'w') as f:
           f.write(total_assets_json)
     
     if not Path(total_buy_orders_file).exists():
       total_asset_buy_orders = []
       total_asset_buy_orders_json = json.dumps(total_asset_buy_orders, indent=4)
       with open(total_buy_orders_file, 'w') as f:
-          f.write(total_buy_orders_json)
+          f.write(total_asset_buy_orders_json)
 
     # function for obtaining OHLC data and getting the close value
     def get_ohlcdata():
@@ -129,19 +129,14 @@ while True:
     # print RSI values
     print("1H RSI", asset_pair, ":", hourly_rsi)
 
-    # function for returning volume of asset_pair to buy according to our strategy
-    def get_volumetobuy()
+    # function for obtaining asset info
+    def get_asset():
         payload = {'pair': asset_pair}
         request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-        ask_value = request.json()['result'][asset_pair]['a'][0]
-        current_ask_value = float(ask_value)
-        volume_to_buy = str(rsi37_balance / current_ask_value)
-        return volume_to_buy
-        
+        return request
     
     # function for buying asset_pair
     def buy_asset():
-        get_volumetobuy()
         print("Buying the following amount of", asset_pair, ":", volume_to_buy)
         resp = kraken_request('/0/private/AddOrder', {
             "nonce": str(int(1000*time.time())),
@@ -152,8 +147,19 @@ while True:
         }, api_key, api_sec)
         return resp
 
-    # function for writing bought asset to total_asset_file, needs volume_to_buy var from get_volumetobuy()
-    def write_to_assets_file()
+    def sell_asset():
+        print("Selling the following amount of", asset_pair, ":", volume_to_sell)
+        resp = kraken_request('/0/private/AddOrder', {
+            "nonce": str(int(1000*time.time())),
+            "ordertype": "market",
+            "type": "sell",
+            "volume": volume_to_sell,
+            "pair": asset_pair
+        }, api_key, api_sec)
+        return resp
+
+    # function for writing bought asset to total_asset_file, needs volume_to_buy var from buy_asset()
+    def write_to_assets_file():
         file = open(total_assets_file, 'r')
         file_contents = file.read()
         assets_data = json.loads(file_contents)
@@ -164,575 +170,121 @@ while True:
             f.write(assets_json)
         print("Appended", volume_to_buy, "to", total_asset_file)
 
+    # function for writing bought asset value to file (in USDT), so we can calculate the avg price for which we bought an asset
+    def write_to_asset_bought_file():
+        print("Adding USDT value of", asset_pair, "with the amount of", current_ask_value, "to", asset_bought_value_file)
+        file = open(asset_bought_value_file, 'r')
+        file_contents = file.read()
+        value_data = json.loads(file_contents)
+        value_data.append(current_ask_value)
+        value_json = json.dumps(value_data, indent=4)
+        with open(asset_bought_value_file, 'w') as f:
+            f.write(value_json)
+        print("Added USDT value of", current_ask_value, asset_pair, "to", asset_bought_value_file)
+
     # buy asset
     if 30 <= hourly_rsi <= 37:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
+      get_asset()
+      ask_value = request.json()['result'][asset_pair]['a'][0]
+      current_ask_value = float(ask_value)
+      volume_to_buy = str(rsi37_balance / current_ask_value)
       buy_asset()
-    if not resp.json()['error']:
-      write_to_assets_file()
-      print("Adding USDT value of BTC", current_btc_ask_value, "to btc_bought.json")
-      btc_value_file = open('btc_bought.json', 'r')
-      btc_value_contents = btc_value_file.read()
-      btc_value_data = json.loads(btc_value_contents)
-      btc_value_data.append(current_btc_ask_value)
-      btc_value_json = json.dumps(btc_value_data, indent=4)
-      with open('btc_bought.json', 'w') as f:
-          f.write(btc_value_json)
-      print("Added USDT value of BTC", current_btc_ask_value, "to btc_bought.json")
-    else:
-      print('The following error occured when trying to place a BTC buy order:', resp.json()['error'])
-  elif 25 <= hourly_rsi_btc <= 30:
-    print("Buying BTC because RSI is:", hourly_rsi_btc)
-    payload = {'pair': asset_pair_btc}
-    request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-    ask_value = request.json()['result'][asset_pair_btc]['a'][0]
-    current_btc_ask_value = float(ask_value)
-    btc_to_buy = str(rsi30_balance / current_btc_ask_value)
-    print("Buying the following amount of BTC:", btc_to_buy)
-    resp = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "buy",
-        "volume": btc_to_buy,
-        "pair": asset_pair_btc
-    }, api_key, api_sec)
-    if not resp.json()['error']:
-      print("Succesfully bought", btc_to_buy, "BTC")
-      assets_file = open('btc_assets.json', 'r')
-      assets_contents = assets_file.read()
-      assets_data = json.loads(assets_contents)
-      assets_data.append(float(btc_to_buy))
-      print("Current BTC assets_data:", assets_data)
-      assets_json = json.dumps(assets_data, indent=4)
-      print("assets_json:", assets_json)
-      with open('btc_assets.json', 'w') as f:
-          f.write(assets_json)
-      print("Added", btc_to_buy, "to asset list")
-      print("Adding USDT value of BTC", current_btc_ask_value, "to btc_bought.json")
-      btc_value_file = open('btc_bought.json', 'r')
-      btc_value_contents = btc_value_file.read()
-      btc_value_data = json.loads(btc_value_contents)
-      btc_value_data.append(current_btc_ask_value)
-      btc_value_json = json.dumps(btc_value_data, indent=4)
-      with open('btc_bought.json', 'w') as f:
-          f.write(btc_value_json)
-      print("Added USDT value of BTC", current_btc_ask_value, "to btc_bought.json")
-    else:
-      print('The following error occured when trying to place a BTC buy order:', resp.json()['error'])
-  elif hourly_rsi_btc < 25:
-    print("Buying BTC because RSI is:", hourly_rsi_btc)
-    payload = {'pair': asset_pair_btc}
-    request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-    ask_value = request.json()['result'][asset_pair_btc]['a'][0]
-    current_btc_ask_value = int(float(ask_value))
-    btc_to_buy = str(rsi25_balance / current_btc_ask_value)
-    print("Buying the following amount of BTC:", btc_to_buy)
-    resp = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "buy",
-        "volume": btc_to_buy,
-        "pair": asset_pair_btc
-    }, api_key, api_sec)
-    if not resp.json()['error']:
-      print("Succesfully bought", btc_to_buy, "BTC")
-      assets_file = open('btc_assets.json', 'r')
-      assets_contents = assets_file.read()
-      assets_data = json.loads(assets_contents)
-      assets_data.append(float(btc_to_buy))
-      print("Current BTC assets_data:", assets_data)
-      assets_json = json.dumps(assets_data, indent=4)
-      print("assets_json:", assets_json)
-      with open('btc_assets.json', 'w') as f:
-          f.write(assets_json)
-      print("Added", btc_to_buy, "to asset list")
-      print("Adding USDT value of BTC", current_btc_ask_value, "to btc_bought.json")
-      btc_value_file = open('btc_bought.json', 'r')
-      btc_value_contents = btc_value_file.read()
-      btc_value_data = json.loads(btc_value_contents)
-      btc_value_data.append(current_btc_ask_value)
-      btc_value_json = json.dumps(btc_value_data, indent=4)
-      with open('btc_bought.json', 'w') as f:
-          f.write(btc_value_json)
-      print("Added USDT value of BTC", current_btc_ask_value, "to btc_bought.json")
-    else:
-      print('The following error occured when trying to place a BTC buy order:', resp.json()['error'])
-  elif 70 <= hourly_rsi_btc <= 77: # sell 33% of btc assets if RSI is between 70 and 77
-    assets_file = open('btc_assets.json', 'r')
-    assets_contents = assets_file.read()
-    assets_data = json.loads(assets_contents)
-    if assets_data: # sell if we have any BTC assets
-      print("Selling BTC because RSI is:", hourly_rsi_btc)
-      payload = {'pair': asset_pair_btc}
-      request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-      bid_value = request.json()['result'][asset_pair_btc]['b'][0]
-      current_btc_bid_value = int(float(bid_value))
-      print("Current BTC assets_data:", assets_data)
-      btc_to_sell = str(sum(assets_data) * 0.33)
-      print("Selling", btc_to_sell, "of BTC")
-      resp = kraken_request('/0/private/AddOrder', {
-          "nonce": str(int(1000*time.time())),
-          "ordertype": "market",
-          "type": "sell",
-          "volume": btc_to_sell,
-          "pair": asset_pair_btc
-      }, api_key, api_sec)
       if not resp.json()['error']:
-        print("Sold", btc_to_sell, "of BTC" )
-        print("Substracting", btc_to_sell, "btc_assets.json")
-        remaining_assets = [(float(sum(assets_data)) - float(btc_to_sell))]
-        remaining_assets_json = json.dumps(remaining_assets, indent=4)
-        with open('btc_assets.json', 'w') as f:
-            f.write(remaining_assets_json)
-        print("Substraction done")
-    else:
-      print("No BTC assets to sell")
-  elif hourly_rsi_btc > 77: # sell all btc assets
-    assets_file = open('btc_assets.json', 'r')
-    assets_contents = assets_file.read()
-    assets_data = json.loads(assets_contents)
-    if assets_data:
-      print("Selling all BTC assets because RSI is:", hourly_rsi_btc)
-      payload = {'pair': asset_pair_btc}
-      request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-      bid_value = request.json()['result'][asset_pair_btc]['b'][0]
-      current_btc_bid_value = int(float(bid_value))
-      print("Current BTC assets_data:", assets_data)
-      btc_to_sell = str(sum(assets_data))
-      print("Selling", btc_to_sell, "of BTC")
-      resp = kraken_request('/0/private/AddOrder', {
-          "nonce": str(int(1000*time.time())),
-          "ordertype": "market",
-          "type": "sell",
-          "volume": btc_to_sell,
-          "pair": asset_pair_btc
-      }, api_key, api_sec)
+        write_to_assets_file()
+        write_to_asset_bought_file()
+      else:
+        print("The following error occured when trying to place a", asset_pair, "buy order:", resp.json()['error'])
+    elif 25 <= hourly_rsi <= 30:
+      print("Buying", asset_pair, "because RSI is:", hourly_rsi)
+      get_asset()
+      ask_value = request.json()['result'][asset_pair]['a'][0]
+      current_ask_value = float(ask_value)
+      volume_to_buy = str(rsi30_balance / current_ask_value)
+      buy_asset()
       if not resp.json()['error']:
-        print("Clearing assets list btc_assets.json")
-        clear_assets = assets_data.clear()
-        clear_assets_json = json.dumps(clear_assets, indent=4)
-        with open('btc_assets.json', 'w') as f:
-            f.write(clear_assets_json)
-        print("Asset list btc_assets.json cleared")
-        print("Clearing bought btc list btc_bought.json")
-        btc_value_file = open('btc_bought.json', 'r')
-        btc_value_contents = btc_value_file.read()
-        btc_value_data = json.loads(btc_value_contents)
-        btc_value_clear = btc_value_data.clear()
-        btc_value_json = json.dumps(btc_value_clear, indent=4)
-        with open('btc_bought.json', 'w') as f:
-            f.write(btc_value_json)
-        print("Cleared btc_bought.json list")
-    else:
-      print("No BTC assets to sell")
-  else:
-    print("Nothing to do for BTC, printing stats")
-    print("Current date/time:", time.asctime())
-
-  # ETH block
-  if 30 <= hourly_rsi_eth <= 37:
-    print("Buying ETH because RSI is:", hourly_rsi_eth)
-    payload = {'pair': asset_pair_eth}
-    request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-    ask_value = request.json()['result'][asset_pair_eth]['a'][0]
-    current_eth_ask_value = float(ask_value)
-    eth_to_buy = str(rsi37_balance / current_eth_ask_value)
-    print("Buying the following amount of ETH:", eth_to_buy)
-    resp = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "buy",
-        "volume": eth_to_buy,
-        "pair": asset_pair_eth
-    }, api_key, api_sec)
-    if not resp.json()['error']:
-      print("Succesfully bought", eth_to_buy, "ETH")
-      assets_file = open('eth_assets.json', 'r')
-      assets_contents = assets_file.read()
-      assets_data = json.loads(assets_contents)
-      assets_data.append(float(eth_to_buy))
-      print("Current ETH assets_data:", assets_data)
-      assets_json = json.dumps(assets_data, indent=4)
-      print("assets_json:", assets_json)
-      with open('eth_assets.json', 'w') as f:
-          f.write(assets_json)
-      print("Added", eth_to_buy, "to asset list")
-      print("Adding USDT value of ETH", current_eth_ask_value, "to eth_bought.json")
-      eth_value_file = open('eth_bought.json', 'r')
-      eth_value_contents = eth_value_file.read()
-      eth_value_data = json.loads(eth_value_contents)
-      eth_value_data.append(current_eth_ask_value)
-      eth_value_json = json.dumps(eth_value_data, indent=4)
-      with open('eth_bought.json', 'w') as f:
-          f.write(eth_value_json)
-      print("Added USDT value of ETH", current_eth_ask_value, "to eth_bought.json")
-    else:
-      print('The following error occured when trying to place a ETH buy order:', resp.json()['error'])
-  elif 25 <= hourly_rsi_eth <= 30:
-    print("Buying ETH because RSI is:", hourly_rsi_eth)
-    payload = {'pair': asset_pair_eth}
-    request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-    ask_value = request.json()['result'][asset_pair_eth]['a'][0]
-    current_eth_ask_value = float(ask_value)
-    eth_to_buy = str(rsi30_balance / current_eth_ask_value)
-    print("Buying the following amount of ETH:", eth_to_buy)
-    resp = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "buy",
-        "volume": eth_to_buy,
-        "pair": asset_pair_eth
-    }, api_key, api_sec)
-    if not resp.json()['error']:
-      print("Succesfully bought", eth_to_buy, "ETH")
-      assets_file = open('eth_assets.json', 'r')
-      assets_contents = assets_file.read()
-      assets_data = json.loads(assets_contents)
-      assets_data.append(float(eth_to_buy))
-      print("Current ETH assets_data:", assets_data)
-      assets_json = json.dumps(assets_data, indent=4)
-      print("assets_json:", assets_json)
-      with open('eth_assets.json', 'w') as f:
-          f.write(assets_json)
-      print("Added", eth_to_buy, "to asset list")
-      print("Adding USDT value of ETH", current_eth_ask_value, "to eth_bought.json")
-      eth_value_file = open('eth_bought.json', 'r')
-      eth_value_contents = eth_value_file.read()
-      eth_value_data = json.loads(eth_value_contents)
-      eth_value_data.append(current_eth_ask_value)
-      eth_value_json = json.dumps(eth_value_data, indent=4)
-      with open('eth_bought.json', 'w') as f:
-          f.write(eth_value_json)
-      print("Added USDT value of ETH", current_eth_ask_value, "to eth_bought.json")
-    else:
-      print('The following error occured when trying to place a ETH buy order:', resp.json()['error'])
-  elif hourly_rsi_eth < 25:
-    print("Buying ETH because RSI is:", hourly_rsi_eth)
-    payload = {'pair': asset_pair_eth}
-    request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-    ask_value = request.json()['result'][asset_pair_eth]['a'][0]
-    current_eth_ask_value = int(float(ask_value))
-    eth_to_buy = str(rsi25_balance / current_eth_ask_value)
-    print("Buying the following amount of ETH:", eth_to_buy)
-    resp = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "buy",
-        "volume": eth_to_buy,
-        "pair": asset_pair_eth
-    }, api_key, api_sec)
-    if not resp.json()['error']:
-      print("Succesfully bought", eth_to_buy, "ETH")
-      assets_file = open('eth_assets.json', 'r')
-      assets_contents = assets_file.read()
-      assets_data = json.loads(assets_contents)
-      assets_data.append(float(eth_to_buy))
-      print("Current ETH assets_data:", assets_data)
-      assets_json = json.dumps(assets_data, indent=4)
-      print("assets_json:", assets_json)
-      with open('eth_assets.json', 'w') as f:
-          f.write(assets_json)
-      print("Added", eth_to_buy, "to asset list")
-      print("Adding USDT value of ETH", current_eth_ask_value, "to eth_bought.json")
-      eth_value_file = open('eth_bought.json', 'r')
-      eth_value_contents = eth_value_file.read()
-      eth_value_data = json.loads(eth_value_contents)
-      eth_value_data.append(current_eth_ask_value)
-      eth_value_json = json.dumps(eth_value_data, indent=4)
-      with open('eth_bought.json', 'w') as f:
-          f.write(eth_value_json)
-      print("Added USDT value of ETH", current_eth_ask_value, "to eth_bought.json")
-    else:
-      print('The following error occured when trying to place a ETH buy order:', resp.json()['error'])
-  elif 70 <= hourly_rsi_eth <= 77: # sell 33% of eth assets if RSI is between 70 and 77
-    assets_file = open('eth_assets.json', 'r')
-    assets_contents = assets_file.read()
-    assets_data = json.loads(assets_contents)
-    if assets_data: # sell if we have any ETH assets
-      print("Selling ETH because RSI is:", hourly_rsi_eth)
-      payload = {'pair': asset_pair_eth}
-      request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-      bid_value = request.json()['result'][asset_pair_eth]['b'][0]
-      current_eth_bid_value = int(float(bid_value))
-      print("Current ETH assets_data:", assets_data)
-      eth_to_sell = str(sum(assets_data) * 0.33)
-      print("Selling", eth_to_sell, "of ETH")
-      resp = kraken_request('/0/private/AddOrder', {
-          "nonce": str(int(1000*time.time())),
-          "ordertype": "market",
-          "type": "sell",
-          "volume": eth_to_sell,
-          "pair": asset_pair_eth
-      }, api_key, api_sec)
+        write_to_assets_file()
+        write_to_asset_bought_file()
+      else:
+        print("The following error occured when trying to place a", asset_pair, "buy order:", resp.json()['error'])
+    elif hourly_rsi < 25:
+      print("Buying", asset_pair, "because RSI is:", hourly_rsi)
+      get_asset()
+      ask_value = request.json()['result'][asset_pair]['a'][0]
+      current_ask_value = float(ask_value)
+      volume_to_buy = str(rsi25_balance / current_ask_value)
+      buy_asset()
       if not resp.json()['error']:
-        print("Sold", eth_to_sell, "of ETH" )
-        print("Substracting", eth_to_sell, "eth_assets.json")
-        remaining_assets = [(float(sum(assets_data)) - float(eth_to_sell))]
-        remaining_assets_json = json.dumps(remaining_assets, indent=4)
-        with open('eth_assets.json', 'w') as f:
-            f.write(remaining_assets_json)
-        print("Substraction done")
-    else:
-      print("No ETH assets to sell")
-  elif hourly_rsi_eth > 77: # sell all ETH assets
-    assets_file = open('eth_assets.json', 'r')
-    assets_contents = assets_file.read()
-    assets_data = json.loads(assets_contents)
-    if assets_data:
-      print("Selling all ETH assets because RSI is:", hourly_rsi_eth)
-      payload = {'pair': asset_pair_eth}
-      request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-      bid_value = request.json()['result'][asset_pair_eth]['b'][0]
-      current_eth_bid_value = int(float(bid_value))
-      print("Current ETH assets_data:", assets_data)
-      eth_to_sell = str(sum(assets_data))
-      print("Selling", eth_to_sell, "of ETH")
-      resp = kraken_request('/0/private/AddOrder', {
-          "nonce": str(int(1000*time.time())),
-          "ordertype": "market",
-          "type": "sell",
-          "volume": eth_to_sell,
-          "pair": asset_pair_eth
-      }, api_key, api_sec)
-      if not resp.json()['error']:
-        print("Clearing assets list eth_assets.json")
-        clear_assets = assets_data.clear()
-        clear_assets_json = json.dumps(clear_assets, indent=4)
-        with open('eth_assets.json', 'w') as f:
-            f.write(clear_assets_json)
-        print("Asset list eth_assets.json cleared")
-        print("Clearing bought eth list btc_bought.json")
-        eth_value_file = open('eth_bought.json', 'r')
-        eth_value_contents = eth_value_file.read()
-        eth_value_data = json.loads(eth_value_contents)
-        eth_value_clear = eth_value_data.clear()
-        eth_value_json = json.dumps(eth_value_clear, indent=4)
-        with open('eth_bought.json', 'w') as f:
-            f.write(eth_value_json)
-        print("Cleared eth_bought.json list")
-    else:
-      print("No ETH assets to sell")
-  else:
-    print("Nothing to do for ETH, printing stats")
-    print("Current date/time:", time.asctime())
-  # XRP block  
-  if 30 <= hourly_rsi_xrp <= 37:
-    print("Buying XRP because RSI is:", hourly_rsi_xrp)
-    payload = {'pair': asset_pair_xrp}
-    request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-    ask_value = request.json()['result'][asset_pair_xrp]['a'][0]
-    current_xrp_ask_value = float(ask_value)
-    xrp_to_buy = str(rsi37_balance / current_xrp_ask_value)
-    print("Buying the following amount of XRP:", xrp_to_buy)
-    resp = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "buy",
-        "volume": xrp_to_buy,
-        "pair": asset_pair_xrp
-    }, api_key, api_sec)
-    if not resp.json()['error']:
-      print("Succesfully bought", xrp_to_buy, "XRP")
-      assets_file = open('xrp_assets.json', 'r')
+        write_to_assets_file()
+        write_to_asset_bought_file()
+      else:
+        print("The following error occured when trying to place a", asset_pair, "buy order:", resp.json()['error'])
+    # sell 33% of asset
+    elif 70 <= hourly_rsi <= 77: # sell 33% of assets if RSI is between 70 and 77
+      assets_file = open(total_assets_file, 'r')
       assets_contents = assets_file.read()
       assets_data = json.loads(assets_contents)
-      assets_data.append(float(xrp_to_buy))
-      print("Current XRP assets_data:", assets_data)
-      assets_json = json.dumps(assets_data, indent=4)
-      print("XRP assets_json:", assets_json)
-      with open('xrp_assets.json', 'w') as f:
-          f.write(assets_json)
-      print("Added", xrp_to_buy, "to XRP asset list")
-      print("Adding USDT value of XRP", current_xrp_ask_value, "to xrp_bought.json")
-      xrp_value_file = open('xrp_bought.json', 'r')
-      xrp_value_contents = xrp_value_file.read()
-      xrp_value_data = json.loads(xrp_value_contents)
-      xrp_value_data.append(current_xrp_ask_value)
-      xrp_value_json = json.dumps(xrp_value_data, indent=4)
-      with open('xrp_bought.json', 'w') as f:
-          f.write(xrp_value_json)
-      print("Added USDT value of XRP", current_xrp_ask_value, "to xrp_bought.json")
-    else:
-      print('The following error occured when trying to place a XRP buy order:', resp.json()['error'])
-  elif 25 <= hourly_rsi_xrp <= 30:
-    print("Buying XRP because RSI is:", hourly_rsi_xrp)
-    payload = {'pair': asset_pair_xrp}
-    request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-    ask_value = request.json()['result'][asset_pair_xrp]['a'][0]
-    current_xrp_ask_value = float(ask_value)
-    xrp_to_buy = str(rsi30_balance / current_xrp_ask_value)
-    print("Buying the following amount of XRP:", xrp_to_buy)
-    resp = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "buy",
-        "volume": xrp_to_buy,
-        "pair": asset_pair_xrp
-    }, api_key, api_sec)
-    if not resp.json()['error']:
-      print("Succesfully bought", xrp_to_buy, "XRP")
-      assets_file = open('xrp_assets.json', 'r')
+      if assets_data: # sell if we have any assets to sell
+        print("Selling 33% of", asset_pair, "because RSI is:", hourly_rsi)
+        get_asset()
+        bid_value = request.json()['result'][asset_pair]['b'][0]
+        current_bid_value = int(float(bid_value))
+        volume_to_sell = str(sum(assets_data) * 0.33)
+        sell_asset()
+        if not resp.json()['error']:
+          print("Sold", volume_to_sell, "of", asset_pair)
+          print("Substracting", volume_to_sell, asset_pair, "from", total_assets_file)
+          remaining_assets = [(float(sum(assets_data)) - float(volume_to_sell))]
+          remaining_assets_json = json.dumps(remaining_assets, indent=4)
+          with open(total_assets_file, 'w') as f:
+              f.write(remaining_assets_json)
+          print("Substracted", volume_to_sell, asset_pair, "from", total_assets_file)
+      else:
+        print("No", asset_pair, "to sell")
+    # sell all holdings of asset
+    elif hourly_rsi > 77: # sell all assets
+      assets_file = open(total_assets_file, 'r')
       assets_contents = assets_file.read()
       assets_data = json.loads(assets_contents)
-      assets_data.append(float(xrp_to_buy))
-      print("Current XRP assets_data:", assets_data)
-      assets_json = json.dumps(assets_data, indent=4)
-      print("XRP assets_json:", assets_json)
-      with open('xrp_assets.json', 'w') as f:
-          f.write(assets_json)
-      print("Added", xrp_to_buy, "to XRP asset list")
-      print("Adding USDT value of XRP", current_xrp_ask_value, "to xrp_bought.json")
-      xrp_value_file = open('xrp_bought.json', 'r')
-      xrp_value_contents = xrp_value_file.read()
-      xrp_value_data = json.loads(xrp_value_contents)
-      xrp_value_data.append(current_xrp_ask_value)
-      xrp_value_json = json.dumps(xrp_value_data, indent=4)
-      with open('xrp_bought.json', 'w') as f:
-          f.write(xrp_value_json)
-      print("Added USDT value of XRP", current_xrp_ask_value, "to xrp_bought.json")
+      if assets_data:
+        print("Selling all of", asset_pair, "because RSI is:", hourly_rsi)
+        get_asset()
+        bid_value = request.json()['result'][asset_pair]['b'][0]
+        current_bid_value = int(float(bid_value))
+        volume_to_sell = str(sum(assets_data) * 0.33)
+        sell_asset()
+        if not resp.json()['error']:
+          print("Sold", volume_to_sell, "of", asset_pair)
+          print("Clearing assets list", total_assets_file)
+          clear_assets = assets_data.clear()
+          clear_assets_json = json.dumps(clear_assets, indent=4)
+          with open(total_assets_file, 'w') as f:
+              f.write(clear_assets_json)
+        print("Asset list", total_assets_file, "cleared")
+        print("Clearing bought assets list", asset_bought_value_file)
+        asset_value_file = open(asset_bought_value_file, 'r')
+        asset_value_contents = asset_value_file.read()
+        asset_value_data = json.loads(asset_value_contents)
+        asset_value_clear = asset_value_data.clear()
+        asset_value_json = json.dumps(asset_value_clear, indent=4)
+        with open(asset_bought_value_file, 'w') as f:
+            f.write(asset_value_json)
+        print("Cleared", asset_bought_value_file)
+      else:
+        print("No", asset_pair, "to sell")
     else:
-      print('The following error occured when trying to place a XRP buy order:', resp.json()['error'])
-  elif hourly_rsi_xrp < 25:
-    print("Buying XRP because RSI is:", hourly_rsi_xrp)
-    payload = {'pair': asset_pair_xrp}
-    request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-    ask_value = request.json()['result'][asset_pair_xrp]['a'][0]
-    current_xrp_ask_value = int(float(ask_value))
-    xrp_to_buy = str(rsi25_balance / current_xrp_ask_value)
-    print("Buying the following amount of XRP:", xrp_to_buy)
-    resp = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "buy",
-        "volume": xrp_to_buy,
-        "pair": asset_pair_xrp
-    }, api_key, api_sec)
-    if not resp.json()['error']:
-      print("Succesfully bought", xrp_to_buy, "XRP")
-      assets_file = open('xrp_assets.json', 'r')
-      assets_contents = assets_file.read()
-      assets_data = json.loads(assets_contents)
-      assets_data.append(float(xrp_to_buy))
-      print("Current XRP assets_data:", assets_data)
-      assets_json = json.dumps(assets_data, indent=4)
-      print("XRP assets_json:", assets_json)
-      with open('xrp_assets.json', 'w') as f:
-          f.write(assets_json)
-      print("Added", xrp_to_buy, "to XRP asset list")
-      print("Adding USDT value of XRP", current_xrp_ask_value, "to xrp_bought.json")
-      xrp_value_file = open('xrp_bought.json', 'r')
-      xrp_value_contents = xrp_value_file.read()
-      xrp_value_data = json.loads(xrp_value_contents)
-      xrp_value_data.append(current_xrp_ask_value)
-      xrp_value_json = json.dumps(xrp_value_data, indent=4)
-      with open('xrp_bought.json', 'w') as f:
-          f.write(xrp_value_json)
-      print("Added USDT value of XRP", current_xrp_ask_value, "to xrp_bought.json")
-    else:
-      print('The following error occured when trying to place a XRP buy order:', resp.json()['error'])
-  elif 70 <= hourly_rsi_xrp <= 77: # sell 33% of XRP assets if RSI is between 70 and 77
-    assets_file = open('xrp_assets.json', 'r')
-    assets_contents = assets_file.read()
-    assets_data = json.loads(assets_contents)
-    if assets_data: # sell if we have any XRP assets
-      print("Selling XRP because RSI is:", hourly_rsi_xrp)
-      payload = {'pair': asset_pair_xrp}
-      request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-      bid_value = request.json()['result'][asset_pair_xrp]['b'][0]
-      current_xrp_bid_value = int(float(bid_value))
-      print("Current XRP assets_data:", assets_data)
-      xrp_to_sell = str(sum(assets_data) * 0.33)
-      print("Selling", xrp_to_sell, "of XRP")
-      resp = kraken_request('/0/private/AddOrder', {
-          "nonce": str(int(1000*time.time())),
-          "ordertype": "market",
-          "type": "sell",
-          "volume": xrp_to_sell,
-          "pair": asset_pair_xrp
-      }, api_key, api_sec)
-      if not resp.json()['error']:
-        print("Sold", xrp_to_sell, "of XRP" )
-        print("Substracting", xrp_to_sell, "xrp_assets.json")
-        remaining_assets = [(float(sum(assets_data)) - float(xrp_to_sell))]
-        remaining_assets_json = json.dumps(remaining_assets, indent=4)
-        with open('xrp_assets.json', 'w') as f:
-            f.write(remaining_assets_json)
-        print("Substraction done")
-    else:
-      print("No XRP assets to sell")
-  elif hourly_rsi_xrp > 77: # sell all XRP assets
-    assets_file = open('xrp_assets.json', 'r')
-    assets_contents = assets_file.read()
-    assets_data = json.loads(assets_contents)
-    if assets_data:
-      print("Selling all XRP assets because RSI is:", hourly_rsi_xrp)
-      payload = {'pair': asset_pair_xrp}
-      request = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-      bid_value = request.json()['result'][asset_pair_xrp]['b'][0]
-      current_xrp_bid_value = int(float(bid_value))
-      print("Current XRP assets_data:", assets_data)
-      xrp_to_sell = str(sum(assets_data))
-      print("Selling", xrp_to_sell, "of XRP")
-      resp = kraken_request('/0/private/AddOrder', {
-          "nonce": str(int(1000*time.time())),
-          "ordertype": "market",
-          "type": "sell",
-          "volume": xrp_to_sell,
-          "pair": asset_pair_xrp
-      }, api_key, api_sec)
-      if not resp.json()['error']:
-        print("Clearing assets list xrp_assets.json")
-        clear_assets = assets_data.clear()
-        clear_assets_json = json.dumps(clear_assets, indent=4)
-        with open('xrp_assets.json', 'w') as f:
-            f.write(clear_assets_json)
-        print("Asset list xrp_assets.json cleared")
-        print("Clearing bought XRP list xrp_bought.json")
-        xrp_value_file = open('xrp_bought.json', 'r')
-        xrp_value_contents = xrp_value_file.read()
-        xrp_value_data = json.loads(xrp_value_contents)
-        xrp_value_clear = xrp_value_data.clear()
-        xrp_value_json = json.dumps(xrp_value_clear, indent=4)
-        with open('xrp_bought.json', 'w') as f:
-            f.write(xrp_value_json)
-        print("Cleared xrp_bought.json list")
-    else:
-      print("No XRP assets to sell")
-  else:
-    print("Nothing to do for XRP, printing stats")
-    print("Current date/time:", time.asctime())
-  # print BTC stats
-  assets_file_btc = open('btc_assets.json', 'r')
-  assets_contents_btc = assets_file_btc.read()
-  assets_data_btc = json.loads(assets_contents_btc)
-  print("assets_data_btc:", assets_data_btc)
-  print("Total BTC bought so far:", sum(assets_data_btc))
-  btc_value_file = open('btc_bought.json', 'r')
-  btc_value_contents = btc_value_file.read()
-  btc_value_data = json.loads(btc_value_contents)
-  if btc_value_data:
-    print("Average price of BTC bought:", statistics.mean(btc_value_data))
-  # print ETH stats
-  assets_file_eth = open('eth_assets.json', 'r')
-  assets_contents_eth = assets_file_eth.read()
-  assets_data_eth = json.loads(assets_contents_eth)
-  print("assets_data_eth:", assets_data_eth)
-  print("Total ETH bought so far:", sum(assets_data_eth))
-  eth_value_file = open('eth_bought.json', 'r')
-  eth_value_contents = eth_value_file.read()
-  eth_value_data = json.loads(eth_value_contents)
-  if eth_value_data:
-    print("Average price of ETH bought:", statistics.mean(eth_value_data))
-  # print XRP stats
-  assets_file_xrp = open('xrp_assets.json', 'r')
-  assets_contents_xrp = assets_file_xrp.read()
-  assets_data_xrp = json.loads(assets_contents_xrp)
-  print("assets_data_xrp:", assets_data_xrp)
-  print("Total XRP bought so far:", sum(assets_data_xrp))
-  xrp_value_file = open('xrp_bought.json', 'r')
-  xrp_value_contents = xrp_value_file.read()
-  xrp_value_data = json.loads(xrp_value_contents)
-  if xrp_value_data:
-    print("Average price of XRP bought:", statistics.mean(xrp_value_data))
+      print("Nothing to do, printing stats")
+      print("Current date/time:", time.asctime())
+  # print asset stats
+  assets_file = open(total_assets_file, 'r')
+  assets_contents = assets_file.read()
+  assets_data = json.loads(assets_contents)
+  print("Current", asset_pair, "assets:", assets_data)
+  print("Total", asset_pair,  "bought so far:", sum(assets_data))
+  asset_value_file = open(asset_bought_value_file, 'r')
+  asset_value_contents = asset_value_file.read()
+  asset_value_data = json.loads(asset_value_contents)
+  if asset_value_data:
+    print("Average price of", asset_pair, "bought:", statistics.mean(asset_value_data))
   print("Checking back again in an hour")
   time.sleep(3600)
