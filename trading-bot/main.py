@@ -275,16 +275,16 @@ while True:
     else:
       print("Nothing to do, printing stats")
       print("Current date/time:", time.asctime())
-  # print asset stats
-  assets_file = open(total_assets_file, 'r')
-  assets_contents = assets_file.read()
-  assets_data = json.loads(assets_contents)
-  print("Current", asset_pair, "assets:", assets_data)
-  print("Total", asset_pair,  "bought so far:", sum(assets_data))
-  asset_value_file = open(asset_bought_value_file, 'r')
-  asset_value_contents = asset_value_file.read()
-  asset_value_data = json.loads(asset_value_contents)
-  if asset_value_data:
-    print("Average price of", asset_pair, "bought:", statistics.mean(asset_value_data))
-  print("Checking back again in an hour")
+    # print asset stats
+    assets_file = open(total_assets_file, 'r')
+    assets_contents = assets_file.read()
+    assets_data = json.loads(assets_contents)
+    print("Current", asset_pair, "assets:", assets_data)
+    print("Total", asset_pair,  "bought so far:", sum(assets_data))
+    asset_value_file = open(asset_bought_value_file, 'r')
+    asset_value_contents = asset_value_file.read()
+    asset_value_data = json.loads(asset_value_contents)
+    if asset_value_data:
+      print("Average price of", asset_pair, "bought:", statistics.mean(asset_value_data))
+    print("Checking back again in an hour")
   time.sleep(3600)
