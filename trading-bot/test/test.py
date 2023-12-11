@@ -3,17 +3,19 @@
 import requests
 import json
 import time
+from pathlib import Path
+
 
 #while True:
 # asset_pairs = ['XBTUSDT', 'ETHUSDT', 'XRPUSDT', 'ADAUSDT', 'SOLUSDT']
 #for asset_pair in asset_pairs:
 #  print("bla", asset_pair, ":")
 
-def test():
-    x = 5
-    y = 6
-    return x,y
+asset_pair = 'XBTUSDT'
+file = asset_pair + "_bought.json"
 
-numbers = test()
-
-print(numbers)
+# if Path(file).exists():
+if file.exists():
+  print("file exists")
+else:
+  print("file doesnt exist")

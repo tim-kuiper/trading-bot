@@ -33,86 +33,6 @@ pd.options.display.max_columns = 8
 api_sec = os.environ['api_sec_env']
 api_key = os.environ['api_key_env']
 api_url = "https://api.kraken.com"
-btc_bought_file = Path("btc_bought.json")
-btc_assets_file = Path("btc_assets.json")
-total_btc_buy_orders_file = Path("btc_buy_orders.json")
-eth_bought_file = Path("eth_bought.json")
-eth_assets_file = Path("eth_assets.json")
-total_eth_buy_orders_file = Path("eth_buy_orders.json")
-xrp_bought_file = Path("xrp_bought.json")
-xrp_assets_file = Path("xrp_assets.json")
-total_xrp_buy_orders_file = Path("xrp_buy_orders.json")
-ada_bought_file = Path("ada_bought.json")
-ada_assets_file = Path("ada_assets.json")
-total_ada_buy_orders_file = Path("ada_buy_orders.json")
-sol_bought_file = Path("sol_bought.json")
-sol_assets_file = Path("sol_assets.json")
-total_sol_buy_orders_file = Path("sol_buy_orders.json")
-
-
-
-# create json files to store our data in
-# creates the files if they dont exist
-
-# files related to BTC
-if not btc_bought_file.exists():
-  btc_bought_value = []
-  btc_bought_value_json = json.dumps(btc_bought_value, indent=4) 
-  with open('btc_bought.json', 'w') as f:
-      f.write(btc_bought_value_json)
-
-if not btc_assets_file.exists():
-  btc_assets = []
-  btc_assets_json = json.dumps(btc_assets, indent=4)
-  with open('btc_assets.json', 'w') as f:
-      f.write(btc_assets_json)
-
-if not total_btc_buy_orders_file.exists():
-  total_btc_buy_orders = []
-  total_btc_buy_orders_json = json.dumps(total_btc_buy_orders, indent=4)
-  with open('btc_buy_orders.json', 'w') as f:
-      f.write(total_btc_buy_orders_json)
-
-# files related to ETH
-if not eth_bought_file.exists():
-  eth_bought_value = []
-  eth_bought_value_json = json.dumps(eth_bought_value, indent=4) 
-  with open('eth_bought.json', 'w') as f:
-      f.write(eth_bought_value_json)
-
-if not eth_assets_file.exists():
-  eth_assets = []
-  eth_assets_json = json.dumps(eth_assets, indent=4)
-  with open('eth_assets.json', 'w') as f:
-      f.write(eth_assets_json)
-
-if not total_eth_buy_orders_file.exists():
-  total_eth_buy_orders = []
-  total_eth_buy_orders_json = json.dumps(total_eth_buy_orders, indent=4)
-  with open('eth_buy_orders.json', 'w') as f:
-      f.write(total_eth_buy_orders_json)
-
-# files related to XRP
-if not xrp_bought_file.exists():
-  xrp_bought_value = []
-  xrp_bought_value_json = json.dumps(xrp_bought_value, indent=4) 
-  with open('xrp_bought.json', 'w') as f:
-      f.write(xrp_bought_value_json)
-
-if not xrp_assets_file.exists():
-  xrp_assets = []
-  xrp_assets_json = json.dumps(xrp_assets, indent=4)
-  with open('xrp_assets.json', 'w') as f:
-      f.write(xrp_assets_json)
-
-if not total_xrp_buy_orders_file.exists():
-  total_xrp_buy_orders = []
-  total_xrp_buy_orders_json = json.dumps(total_xrp_buy_orders, indent=4)
-  with open('xrp_buy_orders.json', 'w') as f:
-      f.write(total_xrp_buy_orders_json)
-
-# files related to ADA
-# files related to SOL
 
 while True:
   def get_kraken_signature(urlpath, data, secret):
@@ -151,17 +71,32 @@ while True:
   # set asset pairs and start looping over them
   
   asset_pairs = ['XBTUSDT', 'ETHUSDT', 'XRPUSDT', 'ADAUSDT', 'SOLUSDT']
-  #asset_pair_btc = 'XBTUSDT'
-  #asset_pair_sol = 'SOLUSDT'
-  #asset_pair_ada = 'ADAUSDT'
-  #asset_pair_eth = 'ETHUSDT'
-  #asset_pair_xrp = 'XRPUSDT'
 
   for asset_pair in asset_pairs:
-    # 
-    asset_bought_file = Path("btc_bought.json")
-    asset_assets_file = Path("btc_assets.json")
-    total_btc_buy_orders_file = Path("btc_buy_orders.json")
+    # define asset file names
+    asset_bought_value_file = asset_pair + "_bought_value.json"
+    total_asset_file = asset_pair + "_assets.json"
+    total_buy_orders_file = asset_pair + "_buy_orders.json"
+
+    # create asset files if they dont exist
+    if not Path(asset_bought_file).exists():
+      asset_bought_value = []
+      asset_bought_value_json = json.dumps(asset_bought_value, indent=4) 
+      with open(asset_bought_file, 'w') as f:
+          f.write(asset_bought_value_json)
+    
+    if not Path(total_asset_file).exists():
+      total_assets = []
+      total_assets_json = json.dumps(total_assets, indent=4)
+      with open(total_asset_file, 'w') as f:
+          f.write(total_assets_json)
+    
+    if not Path(total_buy_orders_file).exists():
+      total_asset_buy_orders = []
+      total_asset_buy_orders_json = json.dumps(total_asset_buy_orders, indent=4)
+      with open(total_buy_orders_file, 'w') as f:
+          f.write(total_buy_orders_json)
+
     # function for obtaining OHLC data and getting the close value
     def get_ohlcdata():
         payload = {'pair': asset_pair, 'interval': 60}
@@ -216,24 +151,25 @@ while True:
             "pair": asset_pair
         }, api_key, api_sec)
         return resp
-          
+
+    # function for writing bought asset to total_asset_file, needs volume_to_buy var from get_volumetobuy()
+    def write_to_assets_file()
+        file = open(total_assets_file, 'r')
+        file_contents = file.read()
+        assets_data = json.loads(file_contents)
+        assets_data.append(float(volume_to_buy))
+        print("Appending", volume_to_buy, "to", total_asset_file)
+        assets_json = json.dumps(assets_data, indent=4)
+        with open(total_asset_file, 'w') as f:
+            f.write(assets_json)
+        print("Appended", volume_to_buy, "to", total_asset_file)
 
     # buy asset
     if 30 <= hourly_rsi <= 37:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
       buy_asset()
     if not resp.json()['error']:
-      print("Succesfully bought", volume_to_buy, "BTC")
-      assets_file = open('btc_assets.json', 'r') # CONT HERE
-      assets_contents = assets_file.read()
-      assets_data = json.loads(assets_contents)
-      assets_data.append(float(btc_to_buy))
-      print("Current BTC assets_data:", assets_data)
-      assets_json = json.dumps(assets_data, indent=4)
-      print("assets_json:", assets_json)
-      with open('btc_assets.json', 'w') as f:
-          f.write(assets_json)
-      print("Added", btc_to_buy, "to asset list")
+      write_to_assets_file()
       print("Adding USDT value of BTC", current_btc_ask_value, "to btc_bought.json")
       btc_value_file = open('btc_bought.json', 'r')
       btc_value_contents = btc_value_file.read()
