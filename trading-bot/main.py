@@ -25,6 +25,9 @@ TODO:
 v0.7:
 - Trade based on top 5 crypto assets, not BTC only
   - Therefore we need to generalize the code
+v0.8:
+- Stop using local files to calculate asset holdings, just use the API
+- Create a seperate account for this, for only this bot  
 '''
 
 # set vars
