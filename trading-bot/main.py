@@ -20,14 +20,6 @@ Notes:
 - Based on 1H OHLC charts, executing a potential buy with the following properties:
   - If a trade is executed (currency is bought) then the value of the currency in USDT during execution is stored in a list
 - List values should be stored and each hour the avg of this list should be printed, indicating the avg price that BTC was bought for
-
-TODO:
-v0.7:
-- Trade based on top 5 crypto assets, not BTC only
-  - Therefore we need to generalize the code
-v0.8:
-- Stop using local files to calculate asset holdings, just use the API
-- Create a seperate account for this, for only this bot  
 '''
 
 # set vars
@@ -52,21 +44,19 @@ while True:
       headers['API-Sign'] = get_kraken_signature(uri_path, data, api_sec)             
       req = requests.post((api_url + uri_path), headers=headers, data=data)
       return req
-  
-  # construct  request to get balance
-  resp = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
 
+  # returns our holdings
+  def get_holdings():
+      resp = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
+      return resp
+      
   # extract balance and do some calculcations according to the trade strategy
-  balance_data = resp.json()
-  balance_float = float(balance_data['result']['USDT'])
-  balance = int(balance_float)
-  dca_balance = int(balance) * 0.75
-  rsi37_balance = float(dca_balance) * 0.02
-  rsi30_balance = float(dca_balance) * 0.05
-  rsi25_balance = float(dca_balance) * 0.07
+  balance = float(get_holdings().json()['result']['USDT']) 
+  rsi37_balance = balance * 0.02
+  rsi30_balance = balance * 0.05
+  rsi25_balance = balance * 0.07
 
-  print("Total balance: ", balance)
-  print("DCA balance: ", dca_balance)
+  print("USDT balance: ", balance)
   print("RSI < 37 balance: ", rsi37_balance)
   print("RSI < 30 balance: ", rsi30_balance)
   print("RSI < 25 balance: ", rsi25_balance)
@@ -76,29 +66,18 @@ while True:
   asset_pairs = ['XBTUSDT', 'ETHUSDT', 'XRPUSDT', 'ADAUSDT', 'SOLUSDT']
 
   for asset_pair in asset_pairs:
-    # define asset file names
-    asset_bought_value_file = asset_pair + "_bought_value.json"
-    total_assets_file = asset_pair + "_assets.json"
-    total_buy_orders_file = asset_pair + "_buy_orders.json"
 
-    # create asset files if they dont exist
-    if not Path(asset_bought_value_file).exists():
-      asset_bought_value = []
-      asset_bought_value_json = json.dumps(asset_bought_value, indent=4) 
-      with open(asset_bought_value_file, 'w') as f:
-          f.write(asset_bought_value_json)
-    
-    if not Path(total_assets_file).exists():
-      total_assets = []
-      total_assets_json = json.dumps(total_assets, indent=4)
-      with open(total_assets_file, 'w') as f:
-          f.write(total_assets_json)
-    
-    if not Path(total_buy_orders_file).exists():
-      total_asset_buy_orders = []
-      total_asset_buy_orders_json = json.dumps(total_asset_buy_orders, indent=4)
-      with open(total_buy_orders_file, 'w') as f:
-          f.write(total_asset_buy_orders_json)
+    # set asset code since Kraken asset codes are not consistent
+    if asset_pair == "XBTUSDT":
+      asset_code = "XXBT"
+    elif asset_pair == "ETHUSDT":
+      asset_code = "XETH"
+    elif asset_pair == "XRPUSDT":
+      asset_code = "XXRP"
+    elif asset_pair == "ADAUSDT":
+      asset_code = "ADA"
+    elif asset_pair == "SOLUSDT":
+      asset_code = "SOL"
 
     # function for obtaining OHLC data and getting the close value
     def get_ohlcdata():
@@ -111,7 +90,7 @@ while True:
         close_data = df['close'].astype(float) # set close data to float
         return close_data
 
-    # define function to display RSI (tradingview calculcation)
+    # function to display RSI (tradingview calculcation)
     def rsi_tradingview(period: int = 14, round_rsi: bool = True):
         delta = get_ohlcdata().diff()
         up = delta.copy()
@@ -161,30 +140,6 @@ while True:
         }, api_key, api_sec)
         return resp
 
-    # function for writing bought asset to total_asset_file, needs volume_to_buy var from buy_asset()
-    def write_to_assets_file():
-        file = open(total_assets_file, 'r')
-        file_contents = file.read()
-        assets_data = json.loads(file_contents)
-        assets_data.append(float(volume_to_buy))
-        print("Appending", volume_to_buy, "to", total_assets_file)
-        assets_json = json.dumps(assets_data, indent=4)
-        with open(total_assets_file, 'w') as f:
-            f.write(assets_json)
-        print("Appended", volume_to_buy, "to", total_assets_file)
-
-    # function for writing bought asset value to file (in USDT), so we can calculate the avg price for which we bought an asset
-    def write_to_asset_bought_file():
-        print("Adding USDT value of", asset_pair, "with the amount of", current_ask_value, "to", asset_bought_value_file)
-        file = open(asset_bought_value_file, 'r')
-        file_contents = file.read()
-        value_data = json.loads(file_contents)
-        value_data.append(current_ask_value)
-        value_json = json.dumps(value_data, indent=4)
-        with open(asset_bought_value_file, 'w') as f:
-            f.write(value_json)
-        print("Added USDT value of", current_ask_value, asset_pair, "to", asset_bought_value_file)
-
     # buy asset
     if 30 <= hourly_rsi <= 37:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
@@ -192,98 +147,64 @@ while True:
       current_ask_value = float(ask_value)
       volume_to_buy = str(rsi37_balance / current_ask_value)
       buy_asset()
-      if not get_asset().json()['error']:
-        write_to_assets_file()
-        write_to_asset_bought_file()
+      if not buy_asset().json()['error']:
+        print("Bought", volume_to_buy, "of", asset_pair)
       else:
-        print("The following error occured when trying to place a", asset_pair, "buy order:", resp.json()['error'])
+        print("The following error occured when trying to place a", asset_pair, "buy order:", buy_asset().json()['error'])
     elif 25 <= hourly_rsi <= 30:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
       ask_value = get_asset().json()['result'][asset_pair]['a'][0]
       current_ask_value = float(ask_value)
       volume_to_buy = str(rsi30_balance / current_ask_value)
       buy_asset()
-      if not get_asset().json()['error']:
-        write_to_assets_file()
-        write_to_asset_bought_file()
+      if not buy_asset().json()['error']:
+        print("Bought", volume_to_buy, "of", asset_pair)
       else:
-        print("The following error occured when trying to place a", asset_pair, "buy order:", resp.json()['error'])
+        print("The following error occured when trying to place a", asset_pair, "buy order:", buy_asset().json()['error'])
     elif hourly_rsi < 25:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
       ask_value = get_asset().json()['result'][asset_pair]['a'][0]
       current_ask_value = float(ask_value)
       volume_to_buy = str(rsi25_balance / current_ask_value)
       buy_asset()
-      if not get_asset().json()['error']:
-        write_to_assets_file()
-        write_to_asset_bought_file()
+      if not buy_asset().json()['error']:
+        print("Bought", volume_to_buy, "of", asset_pair)
       else:
-        print("The following error occured when trying to place a", asset_pair, "buy order:", resp.json()['error'])
+        print("The following error occured when trying to place a", asset_pair, "buy order:", buy_asset().json()['error'])
     # sell 33% of asset
     elif 70 <= hourly_rsi <= 77: # sell 33% of assets if RSI is between 70 and 77
-      assets_file = open(total_assets_file, 'r')
-      assets_contents = assets_file.read()
-      assets_data = json.loads(assets_contents)
-      if assets_data: # sell if we have any assets to sell
-        print("Selling 33% of", asset_pair, "because RSI is:", hourly_rsi)
-        bid_value = get_asset().json()['result'][asset_pair]['b'][0]
-        current_bid_value = int(float(bid_value))
-        volume_to_sell = str(sum(assets_data) * 0.33)
-        sell_asset()
-        if not get_asset().json()['error']:
-          print("Sold", volume_to_sell, "of", asset_pair)
-          print("Substracting", volume_to_sell, asset_pair, "from", total_assets_file)
-          remaining_assets = [(float(sum(assets_data)) - float(volume_to_sell))]
-          remaining_assets_json = json.dumps(remaining_assets, indent=4)
-          with open(total_assets_file, 'w') as f:
-              f.write(remaining_assets_json)
-          print("Substracted", volume_to_sell, asset_pair, "from", total_assets_file)
+      if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
+        if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
+          print("Selling 33% of", asset_pair, "because RSI is:", hourly_rsi)
+          volume_to_sell = str(float(get_holdings().json()['result'][asset_code]) * 0.33)
+          sell_asset()
+          if not sell_asset().json()['error']:
+            print("Sold", volume_to_sell, "of", asset_pair)
+          else:
+            print("The following error occured when trying to place a", asset_pair, "sell order:", sell_asset().json()['error'])
+        else:
+          print("No", asset_pair, "to sell because we own 0 of it")
       else:
-        print("No", asset_pair, "to sell")
+        print("No", asset_pair, "to sell because we don't have it in our holdings")
     # sell all holdings of asset
     elif hourly_rsi > 77: # sell all assets
-      assets_file = open(total_assets_file, 'r')
-      assets_contents = assets_file.read()
-      assets_data = json.loads(assets_contents)
-      if assets_data:
-        print("Selling all of", asset_pair, "because RSI is:", hourly_rsi)
-        bid_value = get_asset().json()['result'][asset_pair]['b'][0]
-        current_bid_value = int(float(bid_value))
-        volume_to_sell = str(sum(assets_data) * 0.33)
-        sell_asset()
-        if not get_asset().json()['error']:
-          print("Sold", volume_to_sell, "of", asset_pair)
-          print("Clearing assets list", total_assets_file)
-          assets_data.clear()
-          clear_assets_json = json.dumps(assets_data, indent=4)
-          with open(total_assets_file, 'w') as f:
-              f.write(clear_assets_json)
-        print("Asset list", total_assets_file, "cleared")
-        print("Clearing bought assets list", asset_bought_value_file)
-        asset_value_file = open(asset_bought_value_file, 'r')
-        asset_value_contents = asset_value_file.read()
-        asset_value_data = json.loads(asset_value_contents)
-        asset_value_data.clear()
-        asset_value_json = json.dumps(asset_value_data, indent=4)
-        with open(asset_bought_value_file, 'w') as f:
-            f.write(asset_value_json)
-        print("Cleared", asset_bought_value_file)
+      if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
+        if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
+          print("Selling all of our", asset_pair, "because RSI is:", hourly_rsi)
+          volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
+          sell_asset()
+          if not sell_asset().json()['error']:
+            print("Sold", volume_to_sell, "of", asset_pair)
+          else:
+            print("The following error occured when trying to place a", asset_pair, "sell order:", sell_asset().json()['error'])
+        else:
+          print("No", asset_pair, "to sell because we own 0 of it")
       else:
-        print("No", asset_pair, "to sell")
+        print("No", asset_pair, "to sell because we don't have it in our holdings")
     else:
       print("Nothing to do, printing stats")
-      print("Current date/time:", time.asctime())
-    # print asset stats
-    assets_file = open(total_assets_file, 'r')
-    assets_contents = assets_file.read()
-    assets_data = json.loads(assets_contents)
-    print("Current", asset_pair, "assets:", assets_data)
-    if assets_data:
-      print("Total", asset_pair,  "bought so far:", sum(assets_data))
-    asset_value_file = open(asset_bought_value_file, 'r')
-    asset_value_contents = asset_value_file.read()
-    asset_value_data = json.loads(asset_value_contents)
-    if asset_value_data:
-      print("Average price of", asset_pair, "bought:", statistics.mean(asset_value_data))
-    print("Checking back again in an hour")
+  print("Current date/time:", time.asctime())
+  # print asset stats
+  print("Current asset holdings:", get_holdings().json()['result'])
+  print("Checking back again in an hour")
   time.sleep(3600)
