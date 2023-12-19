@@ -52,12 +52,12 @@ while True:
       
   # extract balance and do some calculcations according to the trade strategy
   balance = float(get_holdings().json()['result']['USDT']) 
-  rsi37_balance = balance * 0.02
+  rsi35_balance = balance * 0.02
   rsi30_balance = balance * 0.05
   rsi25_balance = balance * 0.08
 
   print("USDT balance: ", balance)
-  print("RSI < 37 balance: ", rsi37_balance)
+  print("RSI < 35 balance: ", rsi35_balance)
   print("RSI < 30 balance: ", rsi30_balance)
   print("RSI < 25 balance: ", rsi25_balance)
   
@@ -141,11 +141,11 @@ while True:
         return sell_order
 
     # buy asset
-    if 30 <= hourly_rsi <= 37:
+    if 30 <= hourly_rsi <= 35:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
       ask_value = get_asset().json()['result'][asset_pair]['a'][0]
       current_ask_value = float(ask_value)
-      volume_to_buy = str(rsi37_balance / current_ask_value)
+      volume_to_buy = str(rsi35_balance / current_ask_value)
       if not buy_asset().json()['error']:
         print("Bought", volume_to_buy, "of", asset_pair)
       else:
@@ -169,7 +169,7 @@ while True:
       else:
         print("An error occured when trying to place a", asset_pair, "buy order")
     # sell 33% of asset
-    elif 70 <= hourly_rsi <= 77: # sell 33% of assets if RSI is between 70 and 77
+    elif 68 <= hourly_rsi <= 75: # sell 33% of assets if RSI is between 70 and 77
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
           print("Selling 33% of", asset_pair, "because RSI is:", hourly_rsi)
@@ -183,7 +183,7 @@ while True:
       else:
         print("No", asset_pair, "to sell because we don't have it in our holdings")
     # sell all holdings of asset
-    elif hourly_rsi > 77: # sell all assets
+    elif hourly_rsi > 75: # sell all assets
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
           print("Selling all of our", asset_pair, "because RSI is:", hourly_rsi)
