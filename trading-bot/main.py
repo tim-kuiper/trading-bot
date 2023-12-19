@@ -53,8 +53,8 @@ while True:
   # extract balance and do some calculcations according to the trade strategy
   balance = float(get_holdings().json()['result']['USDT']) 
   rsi35_balance = balance * 0.02
-  rsi30_balance = balance * 0.05
-  rsi25_balance = balance * 0.08
+  rsi30_balance = balance * 0.03
+  rsi25_balance = balance * 0.04
 
   print("USDT balance: ", balance)
   print("RSI < 35 balance: ", rsi35_balance)
