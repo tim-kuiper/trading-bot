@@ -36,4 +36,6 @@ resp = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))
 
 print(resp.json())
 
-print(float(resp.json()['result']['XETH']) * 0.33)
+resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
+
+print(resp.json())

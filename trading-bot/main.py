@@ -51,38 +51,38 @@ while True:
       return holdings
       
   # extract balance and do some calculcations according to the trade strategy
-  balance = float(get_holdings().json()['result']['USDT']) 
+  balance = float(get_holdings().json()['result']['ZUSD']) 
   rsi35_balance = balance * 0.015
   rsi30_balance = balance * 0.02
   rsi25_balance = balance * 0.035
 
-  print("USDT balance: ", balance)
+  print("USD balance: ", balance)
   print("RSI < 35 balance: ", rsi35_balance)
   print("RSI < 30 balance: ", rsi30_balance)
   print("RSI < 25 balance: ", rsi25_balance)
   
   # set asset pairs and start looping over them
   
-  asset_pairs = ['XBTUSDT', 'ETHUSDT', 'XRPUSDT', 'ADAUSDT', 'SOLUSDT', 'MATICUSDT', 'AVAXUSDT', 'DOTUSDT']
+  asset_pairs = ['XXBTZUSD', 'XETHZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'MATICUSD', 'AVAXUSD', 'DOTUSD']
 
   for asset_pair in asset_pairs:
 
     # set asset code since Kraken asset codes are not consistent
-    if asset_pair == "XBTUSDT":
+    if asset_pair == "XXBTZUSD":
       asset_code = "XXBT"
-    elif asset_pair == "ETHUSDT":
+    elif asset_pair == "XETHZUSD":
       asset_code = "XETH"
-    elif asset_pair == "XRPUSDT":
+    elif asset_pair == "XXRPZUSD":
       asset_code = "XXRP"
-    elif asset_pair == "ADAUSDT":
+    elif asset_pair == "ADAUSD":
       asset_code = "ADA"
-    elif asset_pair == "SOLUSDT":
+    elif asset_pair == "SOLUSD":
       asset_code = "SOL"
-    elif asset_pair == "MATICUSDT":
+    elif asset_pair == "MATICUSD":
       asset_code = "MATIC"
-    elif asset_pair == "AVAXUSDT":
+    elif asset_pair == "AVAXUSD":
       asset_code = "AVAX"
-    elif asset_pair == "DOTUSDT":
+    elif asset_pair == "DOTUSD":
       asset_code = "DOT"
 
     # function for obtaining OHLC data and getting the close value
