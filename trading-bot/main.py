@@ -52,9 +52,9 @@ while True:
       
   # extract balance and do some calculcations according to the trade strategy
   balance = float(get_holdings().json()['result']['USDT']) 
-  rsi35_balance = balance * 0.02
-  rsi30_balance = balance * 0.03
-  rsi25_balance = balance * 0.04
+  rsi35_balance = balance * 0.015
+  rsi30_balance = balance * 0.02
+  rsi25_balance = balance * 0.035
 
   print("USDT balance: ", balance)
   print("RSI < 35 balance: ", rsi35_balance)
@@ -63,7 +63,7 @@ while True:
   
   # set asset pairs and start looping over them
   
-  asset_pairs = ['XBTUSDT', 'ETHUSDT', 'XRPUSDT', 'ADAUSDT', 'SOLUSDT']
+  asset_pairs = ['XBTUSDT', 'ETHUSDT', 'XRPUSDT', 'ADAUSDT', 'SOLUSDT', 'MATICUSDT', 'AVAXUSDT', 'DOTUSDT']
 
   for asset_pair in asset_pairs:
 
@@ -78,6 +78,12 @@ while True:
       asset_code = "ADA"
     elif asset_pair == "SOLUSDT":
       asset_code = "SOL"
+    elif asset_pair == "MATICUSDT":
+      asset_code = "MATIC"
+    elif asset_pair == "AVAXUSDT":
+      asset_code = "AVAX"
+    elif asset_pair == "DOTUSDT":
+      asset_code = "DOT"
 
     # function for obtaining OHLC data and getting the close value
     def get_ohlcdata():
