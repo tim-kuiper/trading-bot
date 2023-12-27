@@ -186,7 +186,7 @@ while True:
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
           print("Selling 33% of", asset_pair, "because RSI is:", hourly_rsi)
           volume_to_sell = str(float(get_holdings().json()['result'][asset_code]) * 0.33)
-          if (float(volume_to_sell) * 2) / min_order_size() < 2 # sell all of our asset if we cant sell 2 more times of it
+          if (float(volume_to_sell) * 2) / min_order_size() < 2: # sell all of our asset if we cant sell 2 more times of it
             print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
             volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
             if not sell_asset().json()['error']:
