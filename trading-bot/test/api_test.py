@@ -32,10 +32,12 @@ def kraken_request(uri_path, data, api_key, api_sec):
     return req
 
 # construct  request to get balance
-resp = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
+# resp = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
 
-print(resp.json())
+def testfunc():
+    resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
+    minsize = float(resp.json()['result']['XETHZUSD']['ordermin'])
+    return minsize
 
-resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
-
-print(resp.json())
+if testfunc() < (2*1):
+  print("min order size smaller than 1")
