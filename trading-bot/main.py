@@ -181,7 +181,7 @@ while True:
       else:
         print("An error occured when trying to place a", asset_pair, "buy order")
     # sell 33% of asset
-    elif 68 <= hourly_rsi <= 75: # sell 33% of assets if RSI is between 68 and 75
+    elif 68 <= hourly_rsi <= 73: # sell 33% of assets if RSI is between 68 and 73
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
           print("Selling 33% of", asset_pair, "because RSI is:", hourly_rsi)
@@ -202,7 +202,7 @@ while True:
       else:
         print("No", asset_pair, "to sell because we don't have it in our holdings")
     # sell all holdings of asset
-    elif hourly_rsi > 75: # sell all assets
+    elif hourly_rsi > 73: # sell all of asset
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
           print("Selling all of our", asset_pair, "because RSI is:", hourly_rsi)
