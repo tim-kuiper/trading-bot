@@ -118,7 +118,7 @@ while True:
     # set variable for hourly BTC RSI
     rsi  = rsi_tradingview()
     hourly_rsi = float(rsi[-1])
-    # hourly_rsi = 88
+    # hourly_rsi = 20
 
     # print RSI values
     print("1H RSI", asset_pair, ":", hourly_rsi)
@@ -153,40 +153,27 @@ while True:
         return sell_order
 
     # buy asset
-    if 30 <= hourly_rsi <= 35:
+    if 25 <= hourly_rsi <= 32:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
-      ask_value = get_asset().json()['result'][asset_pair]['a'][0]
-      current_ask_value = float(ask_value)
-      volume_to_buy = str(rsi35_balance / current_ask_value)
-      if not buy_asset().json()['error']:
-        print("Bought", volume_to_buy, "of", asset_pair)
-      else:
-        print("An error occured when trying to place a", asset_pair, "buy order")
-    elif 25 <= hourly_rsi <= 30:
-      print("Buying", asset_pair, "because RSI is:", hourly_rsi)
-      ask_value = get_asset().json()['result'][asset_pair]['a'][0]
-      current_ask_value = float(ask_value)
-      volume_to_buy = str(rsi30_balance / current_ask_value)
+      volume_to_buy = str(min_order_size())
       if not buy_asset().json()['error']:
         print("Bought", volume_to_buy, "of", asset_pair)
       else:
         print("An error occured when trying to place a", asset_pair, "buy order")
     elif hourly_rsi < 25:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
-      ask_value = get_asset().json()['result'][asset_pair]['a'][0]
-      current_ask_value = float(ask_value)
-      volume_to_buy = str(rsi25_balance / current_ask_value)
+      volume_to_buy = str(float(min_order_size() *1.25))
       if not buy_asset().json()['error']:
         print("Bought", volume_to_buy, "of", asset_pair)
       else:
         print("An error occured when trying to place a", asset_pair, "buy order")
-    # sell 33% of asset
-    elif 68 <= hourly_rsi <= 73: # sell 33% of assets if RSI is between 68 and 73
+    # sell asset
+    elif 68 <= hourly_rsi <= 73: # sell 50% of assets if RSI is between 68 and 73
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
           print("Selling 50% of", asset_pair, "holdings because RSI is:", hourly_rsi)
-          volume_to_sell = str(float(get_holdings().json()['result'][asset_code]) * 0.5)
-          if (float(volume_to_sell) * 2) / min_order_size() < 2: # sell all of our asset if we cant sell 2 more times of it
+          volume_to_sell = str(min_order_size())
+          if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
             print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
             volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
             if not sell_asset().json()['error']:
@@ -201,12 +188,31 @@ while True:
           print("No", asset_pair, "to sell because we own 0 of it")
       else:
         print("No", asset_pair, "to sell because we don't have it in our holdings")
-    # sell all holdings of asset
-    elif hourly_rsi > 73: # sell all of asset
+    elif 73 <= hourly_rsi <= 80:
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
-          print("Selling all of our", asset_pair, "because RSI is:", hourly_rsi)
+          volume_to_sell = str(float(min_order_size() * 1.25))
+          if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
+            print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
+            volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
+            if not sell_asset().json()['error']:
+              print("Sold", volume_to_sell, "(all) of", asset_pair)
+            else:
+              print("An error occured when trying to place a", asset_pair, "sell order:")
+          print("Selling", volume_to_sell, "of", asset_pair,  "because RSI is:", hourly_rsi)
+          if not sell_asset().json()['error']:
+            print("Sold", volume_to_sell, "of", asset_pair)
+          else:
+            print("An error occured when trying to place a", asset_pair, "sell order:")
+        else:
+          print("No", asset_pair, "to sell because we own 0 of it")
+      else:
+        print("No", asset_pair, "to sell because we don't have it in our holdings")
+    elif hourly_rsi > 80:
+      if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
+        if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
           volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
+          print("Selling", volume_to_sell, "of", asset_pair,  "(all of our asset) because RSI is:", hourly_rsi)
           if not sell_asset().json()['error']:
             print("Sold", volume_to_sell, "of", asset_pair)
           else:
@@ -220,5 +226,5 @@ while True:
   print("Current date/time:", time.asctime())
   # print asset stats
   print("Current asset holdings:", get_holdings().json()['result'])
-  print("Checking back again in an hour")
-  time.sleep(3600)
+  print("Checking back again in 10 minutes")
+  time.sleep(600)
