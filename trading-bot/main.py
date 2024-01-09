@@ -10,16 +10,9 @@ import io
 import pandas as pd
 import numpy as np
 import statistics
-from pathlib import Path
 
 '''
-Trading script utilizing the Kraken API to buy/sell BTCUSDT/ETHUSDT/XRPUSDT/ADAUSDT/SOLUSDT on RSI for DCA
-Notes:
-- Using Kraken API key 
-- Traded assets: BTC/ETH/XRP/ADA/SOL
-- Based on 1H OHLC charts, executing a potential buy with the following properties:
-  - If a trade is executed (currency is bought) then the value of the currency in USDT during execution is stored in a list
-- List values should be stored and each hour the avg of this list should be printed, indicating the avg price that BTC was bought for
+Trading script utilizing the Kraken API to buy/sell asset pairs based on RSI for DCA
 '''
 
 # set vars
@@ -52,15 +45,9 @@ while True:
       
   # extract balance and do some calculcations according to the trade strategy
   balance = float(get_holdings().json()['result']['ZUSD']) 
-  rsi35_balance = balance * 0.015
-  rsi30_balance = balance * 0.02
-  rsi25_balance = balance * 0.035
 
-  print("USD balance: ", balance)
-  print("RSI < 35 balance: ", rsi35_balance)
-  print("RSI < 30 balance: ", rsi30_balance)
-  print("RSI < 25 balance: ", rsi25_balance)
-  
+  print("Current USD balance: ", balance)
+ 
   # set asset pairs and start looping over them
   
   asset_pairs = ['XXBTZUSD', 'XETHZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'MATICUSD', 'AVAXUSD', 'DOTUSD']
@@ -171,10 +158,10 @@ while True:
     elif 68 <= hourly_rsi <= 73: # sell 50% of assets if RSI is between 68 and 73
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
-          print("Selling 50% of", asset_pair, "holdings because RSI is:", hourly_rsi)
           volume_to_sell = str(min_order_size())
+          print("Selling", volume_to_sell, "of", asset_pair, "holdings because RSI is:", hourly_rsi)
           if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
-            print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
+            print("Selling all of", asset_pair, "in order to not violate the minimum order size of", min_order_size())
             volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
             if not sell_asset().json()['error']:
               print("Sold", volume_to_sell, "of", asset_pair)
@@ -196,7 +183,7 @@ while True:
             print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
             volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
             if not sell_asset().json()['error']:
-              print("Sold", volume_to_sell, "(all) of", asset_pair)
+              print("Sold all of", asset_pair, "(",volume_to_sell,")")
             else:
               print("An error occured when trying to place a", asset_pair, "sell order:")
           print("Selling", volume_to_sell, "of", asset_pair,  "because RSI is:", hourly_rsi)
@@ -212,7 +199,7 @@ while True:
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
           volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
-          print("Selling", volume_to_sell, "of", asset_pair,  "(all of our asset) because RSI is:", hourly_rsi)
+          print("Selling all of asset", asset_pair, "with the amount of", volume_to_sell, "because RSI is:", hourly_rsi)
           if not sell_asset().json()['error']:
             print("Sold", volume_to_sell, "of", asset_pair)
           else:
@@ -224,7 +211,6 @@ while True:
     else:
       print("Nothing to do, printing stats")
   print("Current date/time:", time.asctime())
-  # print asset stats
   print("Current asset holdings:", get_holdings().json()['result'])
   print("Checking back again in 10 minutes")
   time.sleep(600)
