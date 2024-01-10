@@ -80,7 +80,7 @@ while True:
 
     # function for obtaining OHLC data and getting the close value
     def get_ohlcdata():
-        payload = {'pair': asset_pair, 'interval': 60}
+        payload = {'pair': asset_pair, 'interval': 15}
         ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
         # construct a dataframe and assign columns using asset ohlc data
         df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
@@ -108,7 +108,8 @@ while True:
     # hourly_rsi = 20
 
     # print RSI values
-    print("1H RSI", asset_pair, ":", hourly_rsi)
+    # print("1H RSI", asset_pair, ":", hourly_rsi)
+    print("15M RSI", asset_pair, ":", hourly_rsi)
 
     # function for obtaining asset info
     def get_asset():
@@ -140,7 +141,7 @@ while True:
         return sell_order
 
     # buy asset
-    if 25 <= hourly_rsi <= 32:
+    if 25 <= hourly_rsi <= 30:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
       volume_to_buy = str(min_order_size())
       if not buy_asset().json()['error']:
@@ -212,5 +213,5 @@ while True:
       print("Nothing to do, printing stats")
   print("Current date/time:", time.asctime())
   print("Current asset holdings:", get_holdings().json()['result'])
-  print("Checking back again in 10 minutes")
-  time.sleep(600)
+  print("Checking back again in 5 minutes")
+  time.sleep(300)
