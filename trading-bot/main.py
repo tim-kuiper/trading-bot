@@ -74,12 +74,14 @@ while True:
 
     # get min order size for asset_pair
     def min_order_size():
+        time.sleep(1)
         resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
         minimum_order_size = float(resp.json()['result'][asset_pair]['ordermin'])
         return minimum_order_size
 
     # function for obtaining OHLC data and getting the close value
     def get_ohlcdata():
+        time.sleep(1)
         payload = {'pair': asset_pair, 'interval': 15}
         ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
         # construct a dataframe and assign columns using asset ohlc data
@@ -102,22 +104,13 @@ while True:
         rsi = np.where(up == 0, 0, np.where(down == 0, 100, 100 - (100 / (1 + up / down))))
         return np.round(rsi, 2) if round_rsi else rsi
 
-    # set variable for hourly BTC RSI
+    # set variable for RSI
     rsi  = rsi_tradingview()
     hourly_rsi = float(rsi[-1])
-    # hourly_rsi = 20
+    #hourly_rsi = 69
 
-    # print RSI values
-    # print("1H RSI", asset_pair, ":", hourly_rsi)
     print("15M RSI", asset_pair, ":", hourly_rsi)
 
-    # function for obtaining asset info
-    def get_asset():
-        payload = {'pair': asset_pair}
-        asset = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-        return asset
-    
-    # function for buying asset_pair
     def buy_asset():
         print("Buying the following amount of", asset_pair, ":", volume_to_buy)
         buy_order = kraken_request('/0/private/AddOrder', {
@@ -168,10 +161,12 @@ while True:
               print("Sold", volume_to_sell, "of", asset_pair)
             else:
               print("An error occured when trying to place a", asset_pair, "sell order:")
-          if not sell_asset().json()['error']:
-            print("Sold", volume_to_sell, "of", asset_pair)
           else:
-            print("An error occured when trying to place a", asset_pair, "sell order:")
+            print("Selling", volume_to_sell, "of", asset_pair,  "because RSI is:", hourly_rsi)
+            if not sell_asset().json()['error']:
+              print("Sold", volume_to_sell, "of", asset_pair)
+            else:
+              print("An error occured when trying to place a", asset_pair, "sell order:", sell_asset().json()['error'])
         else:
           print("No", asset_pair, "to sell because we own 0 of it")
       else:
@@ -186,12 +181,13 @@ while True:
             if not sell_asset().json()['error']:
               print("Sold all of", asset_pair, "(",volume_to_sell,")")
             else:
-              print("An error occured when trying to place a", asset_pair, "sell order:")
-          print("Selling", volume_to_sell, "of", asset_pair,  "because RSI is:", hourly_rsi)
-          if not sell_asset().json()['error']:
-            print("Sold", volume_to_sell, "of", asset_pair)
+              print("An error occured when trying to place a", asset_pair, "sell order:", sell_asset().json()['error'])
           else:
-            print("An error occured when trying to place a", asset_pair, "sell order:")
+            print("Selling", volume_to_sell, "of", asset_pair,  "because RSI is:", hourly_rsi)
+            if not sell_asset().json()['error']:
+              print("Sold", volume_to_sell, "of", asset_pair)
+            else:
+              print("An error occured when trying to place a", asset_pair, "sell order:", sell_asset().json()['error'])
         else:
           print("No", asset_pair, "to sell because we own 0 of it")
       else:
@@ -204,7 +200,7 @@ while True:
           if not sell_asset().json()['error']:
             print("Sold", volume_to_sell, "of", asset_pair)
           else:
-            print("An error occured when trying to place a", asset_pair, "sell order:")
+            print("An error occured when trying to place a", asset_pair, "sell order:", sell_asset().json()['error'])
         else:
           print("No", asset_pair, "to sell because we own 0 of it")
       else:
