@@ -22,6 +22,7 @@ api_sec = os.environ['api_sec_env']
 api_key = os.environ['api_key_env']
 api_url = "https://api.kraken.com"
 
+
 while True:
   def get_kraken_signature(urlpath, data, secret):
       postdata = urllib.parse.urlencode(data)
@@ -107,7 +108,7 @@ while True:
     # set variable for RSI
     rsi  = rsi_tradingview()
     hourly_rsi = float(rsi[-1])
-    #hourly_rsi = 69
+    # hourly_rsi = 82
 
     print("15M RSI", asset_pair, ":", hourly_rsi)
 
@@ -133,21 +134,39 @@ while True:
         }, api_key, api_sec)
         return sell_order
 
+    # send message to our telegram bot
+    def send_telegram_message():
+        token = "6636019746:AAHBxy9eZH-RhP4Reubb3vxwJY8VhPj_T_U"
+        chat_id = "481520678"
+        message = tg_message
+        url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
+        requests.get(url) # send message
+
     # buy asset
     if 25 <= hourly_rsi <= 30:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
       volume_to_buy = str(min_order_size())
-      if not buy_asset().json()['error']:
+      order_output = buy_asset() # executes buy order and assigns output to var
+      if not order_output.json()['error']:
         print("Bought", volume_to_buy, "of", asset_pair)
+        tg_message = order_output.json()['result']
+        send_telegram_message()
       else:
-        print("An error occured when trying to place a", asset_pair, "buy order")
+        print("An error occured when trying to place a", asset_pair, "buy order:", order_output.json()['error'])
+        tg_message = order_output.json()['error']
+        send_telegram_message()
     elif hourly_rsi < 25:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
       volume_to_buy = str(float(min_order_size() *1.25))
-      if not buy_asset().json()['error']:
+      order_output = buy_asset() # executes buy order and assigns output to var
+      if not order_output.json()['error']:
         print("Bought", volume_to_buy, "of", asset_pair)
+        tg_message = order_output.json()['result']
+        send_telegram_message()
       else:
-        print("An error occured when trying to place a", asset_pair, "buy order")
+        print("An error occured when trying to place a", asset_pair, "buy order:", order_output.json()['error'])
+        tg_message = order_output.json()['error']
+        send_telegram_message()
     # sell asset
     elif 68 <= hourly_rsi <= 73: # sell 50% of assets if RSI is between 68 and 73
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
@@ -157,16 +176,26 @@ while True:
           if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
             print("Selling all of", asset_pair, "in order to not violate the minimum order size of", min_order_size())
             volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
-            if not sell_asset().json()['error']:
+            order_output = sell_asset() # executes sell order and assigns output to var
+            if not order_output.json()['error']:
               print("Sold", volume_to_sell, "of", asset_pair)
+              tg_message = order_output.json()['result']
+              send_telegram_message()
             else:
-              print("An error occured when trying to place a", asset_pair, "sell order:")
+              print("An error occured when trying to place a", asset_pair, "sell order:", order_output.json()['error'])
+              tg_message = order_output.json()['error']
+              send_telegram_message()
           else:
             print("Selling", volume_to_sell, "of", asset_pair,  "because RSI is:", hourly_rsi)
-            if not sell_asset().json()['error']:
+            order_output = sell_asset() # executes sell order and assigns output to var
+            if not order_output.json()['error']:
               print("Sold", volume_to_sell, "of", asset_pair)
+              tg_message = order_output.json()['result']
+              send_telegram_message()
             else:
-              print("An error occured when trying to place a", asset_pair, "sell order:", sell_asset().json()['error'])
+              print("An error occured when trying to place a", asset_pair, "sell order:", order_output.json()['error'])
+              tg_message = order_output.json()['error']
+              send_telegram_message()
         else:
           print("No", asset_pair, "to sell because we own 0 of it")
       else:
@@ -178,16 +207,26 @@ while True:
           if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
             print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
             volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
-            if not sell_asset().json()['error']:
+            order_output = sell_asset() # executes sell order and assigns output to var
+            if not order_output.json()['error']:
               print("Sold all of", asset_pair, "(",volume_to_sell,")")
+              tg_message = order_output.json()['result']
+              send_telegram_message()
             else:
-              print("An error occured when trying to place a", asset_pair, "sell order:", sell_asset().json()['error'])
+              print("An error occured when trying to place a", asset_pair, "sell order:", order_output.json()['error'])
+              tg_message = order_output.json()['error']
+              send_telegram_message()
           else:
             print("Selling", volume_to_sell, "of", asset_pair,  "because RSI is:", hourly_rsi)
-            if not sell_asset().json()['error']:
+            order_output = sell_asset() # executes sell order and assigns output to var
+            if not order_output.json()['error']:
               print("Sold", volume_to_sell, "of", asset_pair)
+              tg_message = order_output.json()['result']
+              send_telegram_message()
             else:
-              print("An error occured when trying to place a", asset_pair, "sell order:", sell_asset().json()['error'])
+              print("An error occured when trying to place a", asset_pair, "sell order:", order_output.json()['error'])
+              tg_message = order_output.json()['error']
+              send_telegram_message()
         else:
           print("No", asset_pair, "to sell because we own 0 of it")
       else:
@@ -197,10 +236,15 @@ while True:
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
           volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
           print("Selling all of asset", asset_pair, "with the amount of", volume_to_sell, "because RSI is:", hourly_rsi)
-          if not sell_asset().json()['error']:
+          order_output = sell_asset() # executes sell order and assigns output to var
+          if not order_output.json()['error']:
             print("Sold", volume_to_sell, "of", asset_pair)
+            tg_message = order_output.json()['result']
+            send_telegram_message()
           else:
-            print("An error occured when trying to place a", asset_pair, "sell order:", sell_asset().json()['error'])
+            print("An error occured when trying to place a", asset_pair, "sell order:", order_output.json()['error'])
+            tg_message = order_output.json()['error']
+            send_telegram_message()
         else:
           print("No", asset_pair, "to sell because we own 0 of it")
       else:

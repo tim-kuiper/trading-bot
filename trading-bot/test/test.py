@@ -1,8 +1,7 @@
-var = {'error': [], 'result': {'txid': ['OEAC7P-VMLSM-PVMWTP'], 'descr': {'order': 'sell 1.50000000 DOTUSD @ market'}}}
+def test():
+    x = 5
+    return x
 
-print(var['error'])
+y = test()
 
-if not var['error']:
-  print("im empty!")
-else:
-  print("im not empty!")
+print(y)
