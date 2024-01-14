@@ -21,6 +21,7 @@ pd.options.display.max_columns = 8
 api_sec = os.environ['api_sec_env']
 api_key = os.environ['api_key_env']
 api_url = "https://api.kraken.com"
+tg_token = os.environ['telegram_token']
 
 
 while True:
@@ -136,7 +137,7 @@ while True:
 
     # send message to our telegram bot
     def send_telegram_message():
-        token = "6636019746:AAHBxy9eZH-RhP4Reubb3vxwJY8VhPj_T_U"
+        token = tg_token
         chat_id = "481520678"
         message = tg_message
         url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
@@ -145,7 +146,7 @@ while True:
     # buy asset
     if 25 <= hourly_rsi <= 30:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
-      volume_to_buy = str(min_order_size())
+      volume_to_buy = str(float(min_order_size()) * 2)
       order_output = buy_asset() # executes buy order and assigns output to var
       if not order_output.json()['error']:
         print("Bought", volume_to_buy, "of", asset_pair)
@@ -157,7 +158,7 @@ while True:
         send_telegram_message()
     elif hourly_rsi < 25:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
-      volume_to_buy = str(float(min_order_size() *1.25))
+      volume_to_buy = str(float(min_order_size() * 3))
       order_output = buy_asset() # executes buy order and assigns output to var
       if not order_output.json()['error']:
         print("Bought", volume_to_buy, "of", asset_pair)
@@ -168,10 +169,10 @@ while True:
         tg_message = order_output.json()['error']
         send_telegram_message()
     # sell asset
-    elif 68 <= hourly_rsi <= 73: # sell 50% of assets if RSI is between 68 and 73
+    elif 68 <= hourly_rsi <= 73: 
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
-          volume_to_sell = str(min_order_size())
+          volume_to_sell = str(float(min_order_size() * 2))
           print("Selling", volume_to_sell, "of", asset_pair, "holdings because RSI is:", hourly_rsi)
           if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
             print("Selling all of", asset_pair, "in order to not violate the minimum order size of", min_order_size())
@@ -203,7 +204,7 @@ while True:
     elif 73 <= hourly_rsi <= 80:
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
-          volume_to_sell = str(float(min_order_size() * 1.25))
+          volume_to_sell = str(float(min_order_size() * 2.5))
           if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
             print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
             volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
