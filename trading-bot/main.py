@@ -76,14 +76,14 @@ while True:
 
     # get min order size for asset_pair
     def min_order_size():
-        time.sleep(1)
+        time.sleep(2)
         resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
         minimum_order_size = float(resp.json()['result'][asset_pair]['ordermin'])
         return minimum_order_size
 
     # function for obtaining OHLC data and getting the close value
     def get_ohlcdata():
-        time.sleep(1)
+        time.sleep(2)
         payload = {'pair': asset_pair, 'interval': 15}
         ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
         # construct a dataframe and assign columns using asset ohlc data
