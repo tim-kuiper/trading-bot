@@ -146,7 +146,7 @@ while True:
     # buy asset
     if 25 <= hourly_rsi <= 30:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
-      volume_to_buy = str(float(min_order_size()) * 2)
+      volume_to_buy = str(float(min_order_size()) * 1)
       order_output = buy_asset() # executes buy order and assigns output to var
       if not order_output.json()['error']:
         print("Bought", volume_to_buy, "of", asset_pair)
@@ -156,9 +156,21 @@ while True:
         print("An error occured when trying to place a", asset_pair, "buy order:", order_output.json()['error'])
         tg_message = order_output.json()['error']
         send_telegram_message()
-    elif hourly_rsi < 25:
+    elif 20 <= hourly_rsi <= 25:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
-      volume_to_buy = str(float(min_order_size() * 3))
+      volume_to_buy = str(float(min_order_size() * 1.5))
+      order_output = buy_asset() # executes buy order and assigns output to var
+      if not order_output.json()['error']:
+        print("Bought", volume_to_buy, "of", asset_pair)
+        tg_message = order_output.json()['result']
+        send_telegram_message()
+      else:
+        print("An error occured when trying to place a", asset_pair, "buy order:", order_output.json()['error'])
+        tg_message = order_output.json()['error']
+        send_telegram_message()
+    elif hourly_rsi < 20:
+      print("Buying", asset_pair, "because RSI is:", hourly_rsi)
+      volume_to_buy = str(float(min_order_size() * 2))
       order_output = buy_asset() # executes buy order and assigns output to var
       if not order_output.json()['error']:
         print("Bought", volume_to_buy, "of", asset_pair)
