@@ -44,11 +44,26 @@ while True:
   def get_holdings():
       holdings = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
       return holdings
-      
-  # extract balance and do some calculcations according to the trade strategy
-  balance = float(get_holdings().json()['result']['ZUSD']) 
 
-  print("Current USD balance: ", balance)
+  # send message to our telegram bot
+  def send_telegram_message():
+      token = tg_token
+      chat_id = "481520678"
+      message = tg_message
+      url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
+      requests.get(url) # send message
+      
+  # extract balance and print/send to telegram 
+  usd_holdings = get_holdings()
+  if not usd_holdings.json()['error']:
+    balance = float(usd_holdings().json()['result']['ZUSD']) 
+    tg_message = "Current USD balance: ", balance
+    send_telegram_message()
+    print("Current USD balance: ", balance)
+  else:
+    print("An error occured trying to get USD balance:", usd_holdings.json()['error'])
+    tg_message = "An error occured trying to get USD balance:", usd_holdings.json()['error']
+    send_telegram_message()
  
   # set asset pairs and start looping over them
   
@@ -134,14 +149,6 @@ while True:
             "pair": asset_pair
         }, api_key, api_sec)
         return sell_order
-
-    # send message to our telegram bot
-    def send_telegram_message():
-        token = tg_token
-        chat_id = "481520678"
-        message = tg_message
-        url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
-        requests.get(url) # send message
 
     # buy asset
     if 25 <= hourly_rsi <= 30:
