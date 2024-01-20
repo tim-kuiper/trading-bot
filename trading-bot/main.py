@@ -101,13 +101,18 @@ while True:
         time.sleep(2)
         payload = {'pair': asset_pair, 'interval': 15}
         ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
-        # construct a dataframe and assign columns using asset ohlc data
-        df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
-        df.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
-        # we are only interested in asset close data, so create var for close data columns and set var type as float
-        close_data = df['close'].astype(float) # set close data to float
-        return close_data
-
+        if not ohlc_data_raw.json()['error']:
+          # construct a dataframe and assign columns using asset ohlc data
+          df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
+          df.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
+          # we are only interested in asset close data, so create var for close data columns and set var type as float
+          close_data = df['close'].astype(float) # set close data to float
+          return close_data
+        else:
+          print("Error requesting", asset_pair, "OHLC data:", ohlc_data_raw.json()['error'])
+          tg_message = "Error requesting", asset_pair, "OHLC data", ohlc_data_raw.json()['error']
+          send_telegram_message()
+            
     # function to display RSI (tradingview calculcation)
     def rsi_tradingview(period: int = 14, round_rsi: bool = True):
         delta = get_ohlcdata().diff()
