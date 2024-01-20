@@ -56,7 +56,7 @@ while True:
   # extract balance and print/send to telegram 
   usd_holdings = get_holdings()
   if not usd_holdings.json()['error']:
-    balance = float(usd_holdings().json()['result']['ZUSD']) 
+    balance = float(usd_holdings.json()['result']['ZUSD']) 
     tg_message = "Current USD balance: ", balance
     send_telegram_message()
     print("Current USD balance: ", balance)
