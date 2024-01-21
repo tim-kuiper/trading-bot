@@ -57,13 +57,9 @@ while True:
   usd_holdings = get_holdings()
   if not usd_holdings.json()['error']:
     balance = float(usd_holdings.json()['result']['ZUSD']) 
-    tg_message = "Current USD balance: ", balance
-    send_telegram_message()
     print("Current USD balance: ", balance)
   else:
     print("An error occured trying to get USD balance:", usd_holdings.json()['error'])
-    tg_message = "An error occured trying to get USD balance:", usd_holdings.json()['error']
-    send_telegram_message()
  
   # set asset pairs and start looping over them
   
