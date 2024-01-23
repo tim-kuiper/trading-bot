@@ -274,5 +274,5 @@ while True:
       print("Nothing to do, printing stats")
   print("Current date/time:", time.asctime())
   print("Current asset holdings:", get_holdings().json()['result'])
-  print("Checking back again in 15 minutes")
-  time.sleep(900)
+  print("Checking back again in 20 minutes")
+  time.sleep(1200)
