@@ -166,7 +166,10 @@ while True:
         send_telegram_message()
     elif 20 <= hourly_rsi <= 25:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
-      volume_to_buy = str(float(min_order_size() * 1.5))
+      if asset_pair == "XETHZUSD":
+        volume_to_buy = str(float(min_order_size() * 1))
+      else:
+        volume_to_buy = str(float(min_order_size() * 1.5))
       order_output = buy_asset() # executes buy order and assigns output to var
       if not order_output.json()['error']:
         print("Bought", volume_to_buy, "of", asset_pair)
@@ -178,7 +181,10 @@ while True:
         send_telegram_message()
     elif hourly_rsi < 20:
       print("Buying", asset_pair, "because RSI is:", hourly_rsi)
-      volume_to_buy = str(float(min_order_size() * 2))
+      if asset_pair == "XETHZUSD":
+        volume_to_buy = str(float(min_order_size() * 1))
+      else:
+        volume_to_buy = str(float(min_order_size() * 2))
       order_output = buy_asset() # executes buy order and assigns output to var
       if not order_output.json()['error']:
         print("Bought", volume_to_buy, "of", asset_pair)
