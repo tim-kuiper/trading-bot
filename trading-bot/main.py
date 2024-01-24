@@ -195,10 +195,10 @@ while True:
         tg_message = order_output.json()['error']
         send_telegram_message()
     # sell asset
-    elif 68 <= hourly_rsi <= 73: 
+    elif 60 <= hourly_rsi <= 65: 
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
-          volume_to_sell = str(float(min_order_size() * 4))
+          volume_to_sell = str(float(min_order_size() * 2))
           print("Selling", volume_to_sell, "of", asset_pair, "holdings because RSI is:", hourly_rsi)
           if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
             print("Selling all of", asset_pair, "in order to not violate the minimum order size of", min_order_size())
@@ -227,10 +227,72 @@ while True:
           print("No", asset_pair, "to sell because we own 0 of it")
       else:
         print("No", asset_pair, "to sell because we don't have it in our holdings")
-    elif 73 <= hourly_rsi <= 80:
+    elif 65 <= hourly_rsi <= 70:
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
-          volume_to_sell = str(float(min_order_size() * 8))
+          volume_to_sell = str(float(min_order_size() * 3))
+          if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
+            print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
+            volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
+            order_output = sell_asset() # executes sell order and assigns output to var
+            if not order_output.json()['error']:
+              print("Sold all of", asset_pair, "(",volume_to_sell,")")
+              tg_message = order_output.json()['result']
+              send_telegram_message()
+            else:
+              print("An error occured when trying to place a", asset_pair, "sell order:", order_output.json()['error'])
+              tg_message = order_output.json()['error']
+              send_telegram_message()
+          else:
+            print("Selling", volume_to_sell, "of", asset_pair,  "because RSI is:", hourly_rsi)
+            order_output = sell_asset() # executes sell order and assigns output to var
+            if not order_output.json()['error']:
+              print("Sold", volume_to_sell, "of", asset_pair)
+              tg_message = order_output.json()['result']
+              send_telegram_message()
+            else:
+              print("An error occured when trying to place a", asset_pair, "sell order:", order_output.json()['error'])
+              tg_message = order_output.json()['error']
+              send_telegram_message()
+        else:
+          print("No", asset_pair, "to sell because we own 0 of it")
+      else:
+        print("No", asset_pair, "to sell because we don't have it in our holdings")
+    elif 70 <= hourly_rsi <= 75:
+      if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
+        if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
+          volume_to_sell = str(float(min_order_size() * 4))
+          if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
+            print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
+            volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
+            order_output = sell_asset() # executes sell order and assigns output to var
+            if not order_output.json()['error']:
+              print("Sold all of", asset_pair, "(",volume_to_sell,")")
+              tg_message = order_output.json()['result']
+              send_telegram_message()
+            else:
+              print("An error occured when trying to place a", asset_pair, "sell order:", order_output.json()['error'])
+              tg_message = order_output.json()['error']
+              send_telegram_message()
+          else:
+            print("Selling", volume_to_sell, "of", asset_pair,  "because RSI is:", hourly_rsi)
+            order_output = sell_asset() # executes sell order and assigns output to var
+            if not order_output.json()['error']:
+              print("Sold", volume_to_sell, "of", asset_pair)
+              tg_message = order_output.json()['result']
+              send_telegram_message()
+            else:
+              print("An error occured when trying to place a", asset_pair, "sell order:", order_output.json()['error'])
+              tg_message = order_output.json()['error']
+              send_telegram_message()
+        else:
+          print("No", asset_pair, "to sell because we own 0 of it")
+      else:
+        print("No", asset_pair, "to sell because we don't have it in our holdings")
+    elif 75 <= hourly_rsi <= 80:
+      if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
+        if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
+          volume_to_sell = str(float(min_order_size() * 5))
           if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
             print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
             volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
