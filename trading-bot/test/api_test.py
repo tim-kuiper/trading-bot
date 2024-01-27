@@ -33,7 +33,7 @@ def kraken_request(uri_path, data, api_key, api_sec):
 
 # construct  request to get balance
 # resp = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
-asset_pairs = ['XXBTZUSD', 'XETHZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'MATICUSD', 'AVAXUSD', 'DOTUSD']
+asset_pairs = ['XXBTZUSD', 'XETHZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'MATICUSD', 'AVAXUSD', 'DOTUSD', 'TIAUSD', 'ICPUSD', 'INJUSD', 'SEIUSD', 'XDGUSD', 'NEARUSD']
 
 for asset_pair in asset_pairs:
   resp = requests.get('https://api.kraken.com/0/public/AssetPairs')

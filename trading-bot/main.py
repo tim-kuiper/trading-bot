@@ -63,7 +63,7 @@ while True:
  
   # set asset pairs and start looping over them
   
-  asset_pairs = ['XXBTZUSD', 'XETHZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'MATICUSD', 'AVAXUSD', 'DOTUSD']
+  asset_pairs = ['XXBTZUSD', 'XETHZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'MATICUSD', 'AVAXUSD', 'DOTUSD', 'TIAUSD', 'ICPUSD', 'INJUSD', 'SEIUSD', 'XDGUSD', 'NEARUSD']
 
   for asset_pair in asset_pairs:
 
@@ -84,6 +84,18 @@ while True:
       asset_code = "AVAX"
     elif asset_pair == "DOTUSD":
       asset_code = "DOT"
+    elif asset_pair == "TIAUSD":
+      asset_code = "TIA"
+    elif asset_pair == "ICPUSD":
+      asset_code = "ICP"
+    elif asset_pair == "INJUSD":
+      asset_code = "INJ"
+    elif asset_pair == "SEIUSD":
+      asset_code = "SEI"
+    elif asset_pair == "XDGUSD":
+      asset_code = "XDG"
+    elif asset_pair == "NEARUSD":
+      asset_code = "NEAR"
 
     # get min order size for asset_pair
     def min_order_size():
