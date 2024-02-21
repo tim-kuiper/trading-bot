@@ -393,5 +393,7 @@ while True:
       print("Nothing to do, printing stats")
   print("Current date/time:", time.asctime())
   print("Current asset holdings:", get_holdings().json()['result'])
+  tg_message = f'Holdings: {get_holdings().json()["result"]}'
+  send_telegram_message()
   print("Checking back again in 20 minutes")
   time.sleep(1200)
