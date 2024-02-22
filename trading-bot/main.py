@@ -250,7 +250,7 @@ while True:
     elif 70 <= hourly_rsi <= 75:
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
-          volume_to_sell = str(float(min_order_size() * 1))
+          volume_to_sell = str(float(min_order_size() * 2))
           if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
             print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
             volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
@@ -281,7 +281,7 @@ while True:
     elif 75 <= hourly_rsi <= 80:
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
-          volume_to_sell = str(float(min_order_size() * 1.5))
+          volume_to_sell = str(float(min_order_size() * 3))
           if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
             print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
             volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
@@ -312,7 +312,7 @@ while True:
     elif 80 <= hourly_rsi <= 85:
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
-          volume_to_sell = str(float(min_order_size() * 2))
+          volume_to_sell = str(float(min_order_size() * 4))
           if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
             print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
             volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
@@ -343,7 +343,7 @@ while True:
     elif 85 <= hourly_rsi <= 90:
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
-          volume_to_sell = str(float(min_order_size() * 2.5))
+          volume_to_sell = str(float(min_order_size() * 5))
           if float(get_holdings().json()['result'][asset_code]) / float(volume_to_sell) < 2: # sell all of our asset if we cant sell 2 more times of it
             print("Selling all of", asset_pair, "in order to not exceed the minimum order size of", min_order_size())
             volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
