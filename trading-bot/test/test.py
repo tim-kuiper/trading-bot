@@ -1,7 +1,8 @@
-def test():
-    x = 5
-    return x
+import time
 
-y = test()
-
-print(y)
+while True:
+  print("outer loop")
+  time.sleep(1)
+  while True:
+    print("inner loop")
+    time.sleep(1)

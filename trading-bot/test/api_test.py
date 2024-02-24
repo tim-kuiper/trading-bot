@@ -31,11 +31,24 @@ def kraken_request(uri_path, data, api_key, api_sec):
     req = requests.post((api_url + uri_path), headers=headers, data=data)
     return req
 
+def get_asset_close():
+    payload = {'pair': asset_pair}
+    resp = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
+    close_value = resp.json()['result'][asset_pair]['c'][0]
+    return close_value
+
 # construct  request to get balance
 # resp = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
-asset_pairs = ['XXBTZUSD', 'XETHZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'MATICUSD', 'AVAXUSD', 'DOTUSD', 'TIAUSD', 'ICPUSD', 'INJUSD', 'SEIUSD', 'XDGUSD', 'NEARUSD']
+asset_pairs = ['XXBTZUSD', 'XETHZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD']
+# usd_order_size = float(30)
+#for asset_pair in asset_pairs:
+#  resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
+#  size = float(resp.json()['result'][asset_pair]['ordermin'])
+#  asset_close = float(get_asset_close())
+#  amount_to_buy = float((usd_order_size / asset_close) * 10)
+#  #print("USD Close for", asset_pair, ":", asset_close)
+#  print("Amount to buy of", asset_pair, ":", amount_to_buy)
 
-for asset_pair in asset_pairs:
-  resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
-  size = float(resp.json()['result'][asset_pair]['ordermin'])
-  print("Min order size for", asset_pair, ":", size)
+resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
+print(resp.json())
+
