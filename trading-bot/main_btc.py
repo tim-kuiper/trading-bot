@@ -19,8 +19,8 @@ Trading script utilizing the Kraken API to buy/sell asset pairs based on RSI+MAC
 # set vars
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
-api_sec = os.environ['api_sec_env']
-api_key = os.environ['api_key_env']
+api_sec = os.environ['api_sec_env_btc']
+api_key = os.environ['api_key_env_btc']
 api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
 
@@ -177,15 +177,18 @@ while True:
 
     # buy asset
     if hourly_rsi < 35:
+      print(asset_pair, ":", "1H RSI < 35, looking for buy opportunity")
+      tg_message = asset_pair, ":", "1H RSI < 35, looking for buy opportunity"
+      send_telegram_message()
       macd_list = []
       while True:
-        print("MACD value list:", macd_list)
+        print("MACD value list for ", asset_pair, ":", macd_list)
         macd_value = get_macd()
         macd_list.append(macd_value)
         if len(macd_list) < 3:
           # calc macd
           macd_value = get_macd()
-          print("Adding", macd_value, "to MACD value list")
+          print("Adding", macd_value, "to", asset_pair,  "MACD value list")
           macd_list.append(macd_value)
           time.sleep(1800)
           continue
@@ -193,7 +196,7 @@ while True:
           # buy asset
           print("MACD in upward trend for 3 iterations, buying:", asset_pair)
           asset_close = float(get_asset_close())
-          usd_order_size = float(400)
+          usd_order_size = float(200) # buy for 200 USD 
           volume_to_buy = str(float(usd_order_size / asset_close))
           order_output = buy_asset() # executes buy order and assigns output to var
           if not order_output.json()['error']:
@@ -206,10 +209,15 @@ while True:
             send_telegram_message()
           macd_list.clear()
           break
-        print("Sleeping for 30 minutes")
+        print(asset_pair, ":", " No upward MACD trend, waiting to buy. Checking back again in 30 minutes")
+        tg_message = asset_pair, ":", " No upward MACD trend, waiting to buy. Checking back again in 30 minutes"
+        send_telegram_message()
         time.sleep(1800)
     # sell asset
     elif hourly_rsi > 69:
+      print(asset_pair, ":", "1H RSI > 69, looking for sell opportunity if we have", asset_pair, "in our holdings")
+      tg_message = asset_pair, ":", "1H RSI > 69, looking for sell opportunity if we have", asset_pair, "in our holdings"
+      send_telegram_message()
       macd_list = []
       while True:
         print("MACD value list:", macd_list)
@@ -244,9 +252,14 @@ while True:
           else:
             print("No", asset_pair, "to sell because we don't have it in our holdings")
             break
+        print(asset_pair, ":", " No downward MACD trend, waiting to sell. Checking back again in 30 minutes")
+        tg_message = asset_pair, ":", " No downward MACD trend, waiting to sell. Checking back again in 30 minutes"
+        send_telegram_message()
         time.sleep(1800)
     else:
       print("Nothing to do, printing stats")
+      tg_message = (asset_code, " 1H RSI:", hourly_rsi, "nothing to do, printing stats")
+      send_telegram_message()
   print("Current date/time:", time.asctime())
   print("Current asset holdings:", get_holdings().json()['result'])
   tg_message = f'Holdings: {get_holdings().json()["result"]}'
