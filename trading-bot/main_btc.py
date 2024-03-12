@@ -242,7 +242,6 @@ while True:
         tg_message = f"{asset_pair}: No downward MACD trend, waiting to sell. Checking back again in 30 minutes"
         send_telegram_message()
         time.sleep(1800)
-      # sell asset
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
           volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
@@ -265,12 +264,10 @@ while True:
         tg_message = f"No {asset_pair} to sell because we don't have it in our holdings"
         send_telegram_message()
     else:
-      print(f"{asset_pair} 1H RSI {hourly_rsi}. Nothing to do, printing stats")
-      tg_message = f"{asset_pair} 1H RSI {hourly_rsi}. Nothing to do, printing stats"
+      print(f"{asset_pair} 1H RSI {hourly_rsi}")
+      tg_message = f"{asset_pair} 1H RSI {hourly_rsi}"
       send_telegram_message()
   print(f"Current date/time: {time.asctime()}")
   print(f"Current asset holdings: {get_holdings().json()['result']}")
-  tg_message = f"Current asset holdings: {get_holdings().json()['result']}"
-  send_telegram_message()
   print(f"Checking back again in 30 minutes")
   time.sleep(1800)

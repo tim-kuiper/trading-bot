@@ -265,12 +265,10 @@ while True:
         tg_message = f"No {asset_pair} to sell because we don't have it in our holdings"
         send_telegram_message()
     else:
-      print(f"{asset_pair} 1H RSI {hourly_rsi}. Nothing to do, printing stats")
-      tg_message = f"{asset_pair} 1H RSI {hourly_rsi}. Nothing to do, printing stats"
+      print(f"{asset_pair} 1H RSI {hourly_rsi}")
+      tg_message = f"{asset_pair} 1H RSI {hourly_rsi}"
       send_telegram_message()
   print(f"Current date/time: {time.asctime()}")
   print(f"Current asset holdings: {get_holdings().json()['result']}")
-  tg_message = f"Current asset holdings: {get_holdings().json()['result']}"
-  send_telegram_message()
   print(f"Checking back again in 30 minutes")
   time.sleep(1800)
