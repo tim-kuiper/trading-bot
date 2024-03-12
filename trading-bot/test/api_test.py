@@ -12,8 +12,8 @@ import numpy as np
 import statistics
 from pathlib import Path
 
-api_sec = os.environ['api_sec_env']
-api_key = os.environ['api_key_env']
+api_sec = os.environ['api_sec_env_btc']
+api_key = os.environ['api_key_env_btc']
 api_url = "https://api.kraken.com"
 
 def get_kraken_signature(urlpath, data, secret):

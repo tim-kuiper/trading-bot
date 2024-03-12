@@ -19,8 +19,8 @@ Trading script utilizing the Kraken API to buy/sell asset pairs based on RSI+MAC
 # set vars
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
-api_sec = os.environ['api_sec_env_btc']
-api_key = os.environ['api_key_env_btc']
+api_sec = os.environ['api_sec_env_eth']
+api_key = os.environ['api_key_env_eth']
 api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
 
@@ -64,7 +64,7 @@ while True:
  
   # set asset pairs and start looping over them
   
-  asset_pairs = ['XXBTZUSD']
+  asset_pairs = ['XETHZUSD']
 
   for asset_pair in asset_pairs:
 
@@ -77,6 +77,8 @@ while True:
       asset_code = "ADA"
     if asset_pair == "SOLUSD":
       asset_code = "SOL"
+    if asset_pair == "XETHZUSD":
+      asset_code = "XETH"
 
     # get min order size for asset_pair
     def min_order_size():
