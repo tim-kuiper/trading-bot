@@ -16,7 +16,7 @@ api_sec = os.environ['api_sec_env_btc']
 api_key = os.environ['api_key_env_btc']
 api_url = "https://api.kraken.com"
 
-def get_kraken_signature(urlpath, data, secret):
+def get_kraken_signature(urlpath, data, secret)
     postdata = urllib.parse.urlencode(data)
     encoded = (str(data['nonce']) + postdata).encode()
     message = urlpath.encode() + hashlib.sha256(encoded).digest()
