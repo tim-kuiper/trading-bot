@@ -78,9 +78,9 @@ while True:
     if asset_pair == "SOLUSD":
       asset_code = "SOL"
     if asset_pair == "MATICUSD":
-      asset_code == "MATIC"
+      asset_code = "MATIC"
     if asset_pair == "AVAXUSD":
-      asset_code == "AVAX"
+      asset_code = "AVAX"
 
     # get min order size for asset_pair
     def min_order_size():
