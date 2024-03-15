@@ -236,7 +236,7 @@ while True:
         tg_message = f"Not enough {asset_pair} left to buy, checking back later"
         send_telegram_message()
     # sell asset
-    elif hourly_rsi > 69:
+    elif hourly_rsi > 65:
       print(f"{asset_pair}: 1H RSI {hourly_rsi}, looking for sell opportunity if we have {asset_pair} in our holdings")
       tg_message = f"{asset_pair}: 1H RSI {hourly_rsi}, looking for sell opportunity if we have {asset_pair} in our holdings"
       send_telegram_message()
