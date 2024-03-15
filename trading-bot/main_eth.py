@@ -58,9 +58,9 @@ while True:
   usd_holdings = get_holdings()
   if not usd_holdings.json()['error']:
     balance = float(usd_holdings.json()['result']['ZUSD']) 
-    print("Current USD balance: ", balance)
+    print(f"Current USD balance: {balance}")
   else:
-    print("An error occured trying to get USD balance:", usd_holdings.json()['error'])
+    print(f"An error occured trying to get USD balance: {usd_holdings.json()['error']}")
  
   # set asset pairs and start looping over them
   
@@ -77,8 +77,12 @@ while True:
       asset_code = "ADA"
     if asset_pair == "SOLUSD":
       asset_code = "SOL"
+    if asset_pair == "AVAXUSD":
+       asset_code = "AVAX"
+    if asset_pair == "MATICUSD":
+      asset_code = "MATIC"
     if asset_pair == "XETHZUSD":
-      asset_code = "XETH"
+       asset_code = "XETH"
 
     # get min order size for asset_pair
     def min_order_size():
@@ -107,8 +111,8 @@ while True:
           close_data = df['close'].astype(float) # set close data to float
           return close_data
         else:
-          print("Error requesting", asset_pair, "OHLC data:", ohlc_data_raw.json()['error'])
-          tg_message = "Error requesting", asset_pair, "OHLC data", ohlc_data_raw.json()['error']
+          print(f"Error requesting {asset_pair} OHLC data: {ohlc_data_raw.json()['error']}")
+          tg_message = f"Error requesting {asset_pair} OHLC data {ohlc_data_raw.json()['error']}"
           send_telegram_message()
 
     # function for obtaining OHLC data for MACD and getting the close value, interval in minutes
@@ -124,8 +128,8 @@ while True:
           close_data = df['close']
           return close_data
         else:
-          print("Error requesting", asset_pair, "OHLC data:", ohlc_data_raw.json()['error'])
-          tg_message = "Error requesting", asset_pair, "OHLC data", ohlc_data_raw.json()['error']
+          print(f"Error requesting {asset_pair} OHLC data: {ohlc_data_raw.json()['error']}")
+          tg_message = f"Error requesting {asset_pair} OHLC data {ohlc_data_raw.json()['error']}"
           send_telegram_message()
             
     # function to display RSI (tradingview calculcation)
@@ -155,8 +159,8 @@ while True:
     # set variable for MACD list
     macd_list = []
 
-    # set variable for order size in USD
-    order_size = 200
+    # set variable for order size in USD (5% of USD holdings)
+    order_size = float(0.05 * float(get_holdings().json()['result']['ZUSD']))
 
     # set these vars for testing purposes
     # hourly_rsi = 70
@@ -198,7 +202,7 @@ while True:
         macd_value = get_macd()
         print(f"Adding {macd_value} to {asset_pair} MACD value list")
         macd_list.append(macd_value)
-        time.sleep(1800)
+        time.sleep(3600)
       while macd_list[-1] < macd_list[-2] < macd_list[-3]:
         # keep adding macd values to list until macd_list[-1] > macd_list[-2] > macd_list[-3]
         macd_value = get_macd()
@@ -207,23 +211,30 @@ while True:
         print(f"{asset_pair}: No upward MACD trend, waiting to buy. Checking back again in 30 minutes")
         tg_message = f"{asset_pair}: No upward MACD trend, waiting to buy. Checking back again in 30 minutes"
         send_telegram_message()
-        time.sleep(1800)
+        time.sleep(3600)
       # buy asset
       print(f"MACD in upward trend for 3 iterations, buying {asset_pair}")
-      asset_close = float(get_asset_close())
-      # usd_order_size = float(200) # buy for 200 USD 
-      usd_order_size = order_size
-      volume_to_buy = str(float(usd_order_size / asset_close))
-      order_output = buy_asset() # executes buy order and assigns output to var
-      if not order_output.json()['error']:
-        print(f"Bought {volume_to_buy} of {asset_pair}")
-        tg_message = order_output.json()['result']
-        send_telegram_message()
+      # usd_order_size = float(200) # buy for 200 USD
+      if min_order_size() < order_size:
+        asset_close = float(get_asset_close())
+        usd_order_size = order_size
+        volume_to_buy = str(float(usd_order_size / asset_close))
+        order_output = buy_asset() # executes buy order and assigns output to var
+        if not order_output.json()['error']:
+          macd_list.clear()
+          print(f"Bought {volume_to_buy} of {asset_pair}")
+          tg_message = order_output.json()['result']
+          send_telegram_message()
+        else:
+          macd_list.clear()
+          print(f"An error occured while trying to place a {asset_pair} buy order: {order_output.json()['error']}")
+          tg_message = f"An error occured while trying to place a {asset_pair} buy order: {order_output.json()['error']}"
+          send_telegram_message()
       else:
-        print(f"An error occured when trying to place a {asset_pair} buy order: {order_output.json()['error']}")
-        tg_message = order_output.json()['error']
+        macd_list.clear()
+        print(f"Not enough {asset_pair} left to buy, checking back later")
+        tg_message = f"Not enough {asset_pair} left to buy, checking back later"
         send_telegram_message()
-      macd_list.clear()
     # sell asset
     elif hourly_rsi > 69:
       print(f"{asset_pair}: 1H RSI {hourly_rsi}, looking for sell opportunity if we have {asset_pair} in our holdings")
@@ -234,7 +245,7 @@ while True:
         macd_value = get_macd()
         print(f"Adding {macd_value} to {asset_pair} MACD value list")
         macd_list.append(macd_value)
-        time.sleep(1800)
+        time.sleep(3600)
       while macd_list[-1] > macd_list[-2] > macd_list[-3]:
         # keep adding macd values to list until macd_list[-1] < macd_list[-2] < macd_list[-3]
         macd_value = get_macd()
@@ -243,20 +254,24 @@ while True:
         print(f"{asset_pair}: No downward MACD trend, waiting to sell. Checking back again in 30 minutes")
         tg_message = f"{asset_pair}: No downward MACD trend, waiting to sell. Checking back again in 30 minutes"
         send_telegram_message()
-        time.sleep(1800)
-      # sell asset
+        time.sleep(3600)
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
           volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
-          print(f"Selling {volume_to_sell} of {asset_pair}")
-          order_output = sell_asset() # executes sell order and assigns output to var
-          if not order_output.json()['error']:
-            print(f"Sold {volume_to_sell} of {asset_pair}")
-            tg_message = order_output.json()['result']
-            send_telegram_message()
+          if min_order_size() < float(get_holdings().json()['result'][asset_code]):
+            print(f"Selling {volume_to_sell} of {asset_pair}")
+            order_output = sell_asset() # executes sell order and assigns output to var
+            if not order_output.json()['error']:
+              print(f"Sold {volume_to_sell} of {asset_pair}")
+              tg_message = order_output.json()['result']
+              send_telegram_message()
+            else:
+              print(f"An error occured when trying to place a sell order for {asset_pair}: {order_output.json()['error']}")
+              tg_message = f"An error occured when trying to place a sell order for {asset_pair}: {order_output.json()['error']}"
+              send_telegram_message()
           else:
-            print(f"An error occured when trying to place a sell order for {asset_pair}: {order_output.json()['error']}")
-            tg_message = f"An error occured when trying to place a sell order for {asset_pair}: {order_output.json()['error']}"
+            print(f"Not enough {asset_pair} left to sell, checking back later")
+            tg_message = f"Not enough {asset_pair} left to sell, checking back later"
             send_telegram_message()
         else:
           print(f"No {asset_pair} to sell because we own 0 of it")
@@ -272,5 +287,5 @@ while True:
       send_telegram_message()
   print(f"Current date/time: {time.asctime()}")
   print(f"Current asset holdings: {get_holdings().json()['result']}")
-  print(f"Checking back again in 30 minutes")
-  time.sleep(1800)
+  print(f"Checking back again in 60 minutes")
+  time.sleep(3600)

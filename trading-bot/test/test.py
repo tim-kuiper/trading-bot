@@ -19,8 +19,8 @@ Trading script utilizing the Kraken API to buy/sell asset pairs based on RSI for
 # set vars
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
-api_sec = os.environ['api_sec_env']
-api_key = os.environ['api_key_env']
+api_sec = os.environ['api_sec_env_btc']
+api_key = os.environ['api_key_env_btc']
 api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
 
@@ -114,5 +114,7 @@ while True:
     macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
     macd_dict = macd.to_dict()
     macd_values = list(macd_dict.values())
-    print(macd_values[-1])
+    order_size = float(0.05 * float(get_holdings().json()['result']['ZUSD']))
+    print(f"MACD value: {macd_values[-1]}")
+    print(f"Order Size: {order_size}")
     time.sleep(60)
