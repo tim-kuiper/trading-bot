@@ -27,7 +27,6 @@ loop_time_seconds = 3600
 interval_time_minutes = 60
 asset_list = []
 
-
 while True:
   def get_kraken_signature(urlpath, data, secret):
       postdata = urllib.parse.urlencode(data)
@@ -86,6 +85,11 @@ while True:
       asset_code = "MATIC"
     if asset_pair == "XETHZUSD":
        asset_code = "XETH"
+
+    # set vars for file / file path
+    file_extension = '.json'
+    asset_file = asset_code.lower() + file_extension
+    asset_file_path = './' + asset_file
 
     # get min order size for asset_pair
     def min_order_size():
@@ -228,6 +232,24 @@ while True:
           print(f"Bought {volume_to_buy} of {asset_pair}")
           tg_message = order_output.json()['result']
           send_telegram_message()
+          file_exists = os.path.exists(asset_file_path)
+          if not file_exists:
+            print(f"Asset file {asset_file} does not exist yet, creating one")
+            f = open(asset_file, "w")
+            f.write(json.dumps(asset_list))
+            f.close
+            print(f"Appended {asset_list} to {asset_file}")
+          else:
+            print(f"Asset file {asset_file} already exists, reading from file and appending {volume_to_buy} {asset_code} to it")
+            f = open(asset_file, "r")
+            asset_json = f.read()
+            f.close
+            asset_list = json.loads(asset_json)
+            asset_list.append(float(volume_to_buy))
+            f = open(asset_file, "w")
+            f.write(json.dumps(asset_list))
+            f.close
+            print(f"Appended {volume_to_buy} to {asset_file}")
         else:
           macd_list.clear()
           print(f"An error occured while trying to place a {asset_pair} buy order: {order_output.json()['error']}")
@@ -260,6 +282,10 @@ while True:
         time.sleep(loop_time_seconds)
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
+          # check our asset list and determine the volume to sell
+          file_exists = os.path.exists(asset_file_path)
+          if not file_exists:
+            print(f"We have") #CONT HERE
           volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
           if min_order_size() < float(get_holdings().json()['result'][asset_code]):
             print(f"Selling {volume_to_sell} of {asset_pair}")
