@@ -23,9 +23,11 @@ api_sec = os.environ['api_sec_env_btc']
 api_key = os.environ['api_key_env_btc']
 api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
-loop_time_seconds = 3600
-interval_time_minutes = 60
+loop_time_seconds = 14400
+interval_time_minutes = 240
+interval_time_simple = '4h'
 asset_list = []
+order_size = 200
 
 while True:
   def get_kraken_signature(urlpath, data, secret):
@@ -66,7 +68,7 @@ while True:
  
   # set asset pairs and start looping over them
   
-  asset_pairs = ['XXBTZUSD']
+  asset_pairs = ['MATICUSD']
 
   for asset_pair in asset_pairs:
 
@@ -88,7 +90,7 @@ while True:
 
     # set vars for file / file path
     file_extension = '.json'
-    asset_file = asset_code.lower() + file_extension
+    asset_file = asset_code.lower() + '_' + interval_time_simple  + file_extension
     asset_file_path = './' + asset_file
 
     # get min order size for asset_pair
@@ -166,16 +168,13 @@ while True:
     # set variable for MACD list
     macd_list = []
 
-    # set variable for order size in USD (5% of USD holdings)
-    # order_size = float(0.05 * float(get_holdings().json()['result']['ZUSD']))
-
     # set these vars for testing purposes
-    hourly_rsi = 34
-    macd_list = [1, 2, 3] # for buying asset
+    # hourly_rsi = 75
+    # macd_list = [1, 2, 3] # for buying asset
     # macd_list = [3, 2, 1] # for selling asset
-    order_size = 15
+    # order_size = 15
 
-    print(f"1H RSI  {asset_pair}: {hourly_rsi}")
+    print(f"{interval_time_simple} RSI  {asset_pair}: {hourly_rsi}")
 
     def buy_asset():
         print("Buying the following amount of", asset_pair, ":", volume_to_buy)
@@ -201,8 +200,8 @@ while True:
 
     # buy asset
     if hourly_rsi < 35:
-      print(f"{asset_pair}: 1H RSI {hourly_rsi}, looking for buy opportunity")
-      tg_message = f"{asset_pair}: 1H RSI {hourly_rsi}, looking for buy opportunity"
+      print(f"{asset_pair}: {interval_time_simple} RSI {hourly_rsi}, looking for buy opportunity")
+      tg_message = f"{asset_pair}: {interval_time_simple} RSI {hourly_rsi}, looking for buy opportunity"
       send_telegram_message()
       while len(macd_list) < 3:
         # keep adding macd values to list until it has 3 values in it
@@ -262,8 +261,8 @@ while True:
         send_telegram_message()
     # sell asset
     elif hourly_rsi > 65:
-      print(f"{asset_pair}: 1H RSI {hourly_rsi}, looking for sell opportunity if we have {asset_pair} in our holdings")
-      tg_message = f"{asset_pair}: 1H RSI {hourly_rsi}, looking for sell opportunity if we have {asset_pair} in our holdings"
+      print(f"{asset_pair}: {interval_time_simple} RSI {hourly_rsi}, looking for sell opportunity if we have {asset_pair} in our holdings")
+      tg_message = f"{asset_pair}: {interval_time_simple} RSI {hourly_rsi}, looking for sell opportunity if we have {asset_pair} in our holdings"
       send_telegram_message()
       while len(macd_list) < 3:
         # keep adding macd values to list until it has 3 values in it
@@ -285,24 +284,35 @@ while True:
           # check our asset list and determine the volume to sell
           file_exists = os.path.exists(asset_file_path)
           if not file_exists:
-            print(f"We have") #CONT HERE
-          volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
-          if min_order_size() < float(get_holdings().json()['result'][asset_code]):
-            print(f"Selling {volume_to_sell} of {asset_pair}")
-            order_output = sell_asset() # executes sell order and assigns output to var
-            if not order_output.json()['error']:
-              asset_list.clear()
-              print(f"Sold {volume_to_sell} of {asset_pair}")
-              tg_message = order_output.json()['result']
-              send_telegram_message()
-            else:
-              print(f"An error occured when trying to place a sell order for {asset_pair}: {order_output.json()['error']}")
-              tg_message = f"An error occured when trying to place a sell order for {asset_pair}: {order_output.json()['error']}"
-              send_telegram_message()
+            print(f"We dont have an asset file, so there is nothing to sell")
           else:
-            print(f"Not enough {asset_pair} left to sell, checking back later")
-            tg_message = f"Not enough {asset_pair} left to sell, checking back later"
-            send_telegram_message()
+            print(f"We do have an asset file, reading asset file")
+            f = open(asset_file, "r")
+            asset_json = f.read()
+            asset_list = json.loads(asset_json)
+            volume_to_sell = str(sum(asset_list))
+            f.close()
+          # volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
+            # if min_order_size() < float(get_holdings().json()['result'][asset_code]):
+            if min_order_size() < float(volume_to_sell):
+              print(f"Selling {volume_to_sell} of {asset_pair}")
+              order_output = sell_asset() # executes sell order and assigns output to var
+              if not order_output.json()['error']:
+                asset_list.clear()
+                print(f"Removing {asset_file} from the current directory")
+                os.remove(asset_file)
+                print(f"Removed {asset_file} from the current directory")
+                print(f"Sold {volume_to_sell} of {asset_pair}")
+                tg_message = order_output.json()['result']
+                send_telegram_message()
+              else:
+                print(f"An error occured when trying to place a sell order for {asset_pair}: {order_output.json()['error']}")
+                tg_message = f"An error occured when trying to place a sell order for {asset_pair}: {order_output.json()['error']}"
+                send_telegram_message()
+            else:
+              print(f"Not enough {asset_pair} left to sell, checking back later")
+              tg_message = f"Not enough {asset_pair} left to sell, checking back later"
+              send_telegram_message()
         else:
           print(f"No {asset_pair} to sell because we own 0 of it")
           tg_message = f"No {asset_pair} to sell because we own 0 of it"
@@ -312,8 +322,8 @@ while True:
         tg_message = f"No {asset_pair} to sell because we don't have it in our holdings"
         send_telegram_message()
     else:
-      print(f"{asset_pair} 1H RSI {hourly_rsi}")
-      tg_message = f"{asset_pair} 1H RSI {hourly_rsi}"
+      print(f"{asset_pair} {interval_time_simple} RSI {hourly_rsi}")
+      tg_message = f"{asset_pair} {interval_time_simple} RSI {hourly_rsi}"
       send_telegram_message()
   print(f"Current date/time: {time.asctime()}")
   print(f"Current asset holdings: {get_holdings().json()['result']}")
