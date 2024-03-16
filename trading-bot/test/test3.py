@@ -1,6 +1,4 @@
-array = [0, 1, 2, 3, 4, 5]
-for i in array:
-  print(i)
-  while True:
-    print(i)
-    break
+import json
+
+asset_list = [1.5, 2.5, 3,5]
+print(json.dumps(asset_list))

@@ -23,6 +23,9 @@ api_sec = os.environ['api_sec_env_btc']
 api_key = os.environ['api_key_env_btc']
 api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
+loop_time_seconds = 3600
+interval_time_minutes = 60
+asset_list = []
 
 
 while True:
@@ -101,7 +104,7 @@ while True:
     # function for obtaining OHLC data and getting the close value, interval in minutes
     def get_ohlcdata():
         time.sleep(2)
-        payload = {'pair': asset_pair, 'interval': 60}
+        payload = {'pair': asset_pair, 'interval': interval_time_minutes}
         ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
         if not ohlc_data_raw.json()['error']:
           # construct a dataframe and assign columns using asset ohlc data
@@ -118,7 +121,7 @@ while True:
     # function for obtaining OHLC data for MACD and getting the close value, interval in minutes
     def get_ohlcdata_macd():
         time.sleep(2)
-        payload = {'pair': asset_pair, 'interval': 60}
+        payload = {'pair': asset_pair, 'interval': interval_time_minutes}
         ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
         if not ohlc_data_raw.json()['error']:
           # construct a dataframe and assign columns using asset ohlc data
@@ -160,13 +163,13 @@ while True:
     macd_list = []
 
     # set variable for order size in USD (5% of USD holdings)
-    order_size = float(0.05 * float(get_holdings().json()['result']['ZUSD']))
+    # order_size = float(0.05 * float(get_holdings().json()['result']['ZUSD']))
 
     # set these vars for testing purposes
-    # hourly_rsi = 70
-    # macd_list = [1, 2, 3] # for buying asset
+    hourly_rsi = 34
+    macd_list = [1, 2, 3] # for buying asset
     # macd_list = [3, 2, 1] # for selling asset
-    # order_size = 10
+    order_size = 15
 
     print(f"1H RSI  {asset_pair}: {hourly_rsi}")
 
@@ -202,19 +205,18 @@ while True:
         macd_value = get_macd()
         print(f"Adding {macd_value} to {asset_pair} MACD value list")
         macd_list.append(macd_value)
-        time.sleep(3600)
+        time.sleep(loop_time_seconds)
       while macd_list[-1] < macd_list[-2] < macd_list[-3]:
         # keep adding macd values to list until macd_list[-1] > macd_list[-2] > macd_list[-3]
         macd_value = get_macd()
         print(f"Adding {macd_value} to {asset_pair} MACD value list")
         macd_list.append(macd_value)
-        print(f"{asset_pair}: No upward MACD trend, waiting to buy. Checking back again in 30 minutes")
-        tg_message = f"{asset_pair}: No upward MACD trend, waiting to buy. Checking back again in 30 minutes"
+        print(f"{asset_pair}: No upward MACD trend, waiting to buy. Checking back again in {loop_time_seconds} seconds")
+        tg_message = f"{asset_pair}: No upward MACD trend, waiting to buy. Checking back again in {loop_time_seconds} seconds"
         send_telegram_message()
-        time.sleep(3600)
+        time.sleep(loop_time_seconds)
       # buy asset
       print(f"MACD in upward trend for 3 iterations, buying {asset_pair}")
-      # usd_order_size = float(200) # buy for 200 USD
       if min_order_size() < order_size:
         asset_close = float(get_asset_close())
         usd_order_size = order_size
@@ -222,6 +224,7 @@ while True:
         order_output = buy_asset() # executes buy order and assigns output to var
         if not order_output.json()['error']:
           macd_list.clear()
+          asset_list.append(float(volume_to_buy))
           print(f"Bought {volume_to_buy} of {asset_pair}")
           tg_message = order_output.json()['result']
           send_telegram_message()
@@ -245,16 +248,16 @@ while True:
         macd_value = get_macd()
         print(f"Adding {macd_value} to {asset_pair} MACD value list")
         macd_list.append(macd_value)
-        time.sleep(3600)
+        time.sleep(loop_time_seconds)
       while macd_list[-1] > macd_list[-2] > macd_list[-3]:
         # keep adding macd values to list until macd_list[-1] < macd_list[-2] < macd_list[-3]
         macd_value = get_macd()
         print(f"Adding {macd_value} to {asset_pair} MACD value list")
         macd_list.append(macd_value)
-        print(f"{asset_pair}: No downward MACD trend, waiting to sell. Checking back again in 30 minutes")
-        tg_message = f"{asset_pair}: No downward MACD trend, waiting to sell. Checking back again in 30 minutes"
+        print(f"{asset_pair}: No downward MACD trend, waiting to sell. Checking back again in {loop_time_seconds} seconds")
+        tg_message = f"{asset_pair}: No downward MACD trend, waiting to sell. Checking back again in {loop_time_seconds} seconds"
         send_telegram_message()
-        time.sleep(3600)
+        time.sleep(loop_time_seconds)
       if asset_code in get_holdings().json()['result']: # check whether asset is present in our holdings
         if float(get_holdings().json()['result'][asset_code]) > 0: # check whether we actually have more than 0
           volume_to_sell = str(float(get_holdings().json()['result'][asset_code]))
@@ -262,6 +265,7 @@ while True:
             print(f"Selling {volume_to_sell} of {asset_pair}")
             order_output = sell_asset() # executes sell order and assigns output to var
             if not order_output.json()['error']:
+              asset_list.clear()
               print(f"Sold {volume_to_sell} of {asset_pair}")
               tg_message = order_output.json()['result']
               send_telegram_message()
@@ -287,5 +291,5 @@ while True:
       send_telegram_message()
   print(f"Current date/time: {time.asctime()}")
   print(f"Current asset holdings: {get_holdings().json()['result']}")
-  print(f"Checking back again in 60 minutes")
-  time.sleep(3600)
+  print(f"Checking back again in {loop_time_seconds} seconds")
+  time.sleep(loop_time_seconds)
