@@ -199,7 +199,7 @@ while True:
         return sell_order
 
     # buy asset
-    if hourly_rsi < 35:
+    if hourly_rsi < 40:
       print(f"{asset_pair}: {interval_time_simple} RSI {hourly_rsi}, looking for buy opportunity")
       tg_message = f"{asset_pair}: {interval_time_simple} RSI {hourly_rsi}, looking for buy opportunity"
       send_telegram_message()

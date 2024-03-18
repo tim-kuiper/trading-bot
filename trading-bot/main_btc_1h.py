@@ -169,7 +169,7 @@ while True:
     macd_list = []
 
     # set these vars for testing purposes
-    # hourly_rsi = 75
+    # hourly_rsi = 25
     # macd_list = [1, 2, 3] # for buying asset
     # macd_list = [3, 2, 1] # for selling asset
     # order_size = 15

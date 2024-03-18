@@ -32,6 +32,7 @@ file_exists = os.path.exists(asset_file_path)
 
 # if file doesnt exist, create it
 if not file_exists:
+  print(f"{asset_file} doesnt exist yet, creating a new one")
   f = open(asset_file, "w")
   asset_list.append(3)
   f.write(json.dumps(asset_list))
