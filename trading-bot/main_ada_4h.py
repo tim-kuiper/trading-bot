@@ -236,18 +236,18 @@ while True:
             print(f"Asset file {asset_file} does not exist yet, creating one")
             f = open(asset_file, "w")
             f.write(json.dumps(asset_list))
-            f.close
+            f.close()
             print(f"Appended {asset_list} to {asset_file}")
           else:
             print(f"Asset file {asset_file} already exists, reading from file and appending {volume_to_buy} {asset_code} to it")
             f = open(asset_file, "r")
             asset_json = f.read()
-            f.close
+            f.close()
             asset_list = json.loads(asset_json)
             asset_list.append(float(volume_to_buy))
             f = open(asset_file, "w")
             f.write(json.dumps(asset_list))
-            f.close
+            f.close()
             print(f"Appended {volume_to_buy} to {asset_file}")
         else:
           macd_list.clear()

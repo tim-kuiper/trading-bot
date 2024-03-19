@@ -36,17 +36,18 @@ if not file_exists:
   f = open(asset_file, "w")
   asset_list.append(3)
   f.write(json.dumps(asset_list))
-  f.close
+  f.close()
 else:
   print(f"{asset_file} already exists, reading from file and appending element")
   f = open(asset_file, "r")
   data_json = f.read()
-  f.close
+  print(data_json)
+  f.close()
   asset_list = json.loads(data_json)
   asset_list.append(3)
   f = open(asset_file, "w")
   f.write(json.dumps(asset_list))
-  f.close
+  f.close()
   
   
   
