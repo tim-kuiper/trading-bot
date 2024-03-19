@@ -26,7 +26,6 @@ tg_token = os.environ['telegram_token']
 loop_time_seconds = 14400
 interval_time_minutes = 240
 interval_time_simple = '4h'
-asset_list = []
 order_size = 200
 
 while True:
@@ -165,8 +164,9 @@ while True:
     rsi  = rsi_tradingview()
     hourly_rsi = float(rsi[-1])
    
-    # set variable for MACD list
+    # set variable for MACD/asset list
     macd_list = []
+    asset_list = []
 
     # set these vars for testing purposes
     # hourly_rsi = 75

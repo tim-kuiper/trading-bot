@@ -26,7 +26,6 @@ tg_token = os.environ['telegram_token']
 loop_time_seconds = 86400
 interval_time_minutes = 1440
 interval_time_simple = '1d'
-asset_list = []
 order_size = 500
 
 while True:
@@ -167,6 +166,7 @@ while True:
    
     # set variable for MACD list
     macd_list = []
+    asset_list = []
 
     # set these vars for testing purposes
     # hourly_rsi = 75
