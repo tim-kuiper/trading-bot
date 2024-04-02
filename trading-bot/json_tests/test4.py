@@ -101,7 +101,7 @@ while True:
       print(f"rsi list for {asset_pair} not empty, reading value")
       rsi = rsi_list[0]
       print(f"read rsi {rsi} value")
-      if rsi < 35 and len(macd_list) <= 3:
+      if rsi < 35 and len(macd_list) < 3:
         print(f"rsi < 35 and macd_list < 3 for {asset_pair}")
         # append macd value to macd list
         macd = random.randint(1,100)
@@ -139,7 +139,7 @@ while True:
           f = open(asset_file, "w")
           f.write(json.dumps(asset_dict))
           f.close()
-      elif rsi > 65 and len(macd_list) <= 3:
+      elif rsi > 65 and len(macd_list) < 3:
         # append macd value to macd list
         macd = random.randint(1,100)
         macd_list.append(macd)
@@ -182,4 +182,4 @@ while True:
         f = open(asset_file, "w")
         f.write(json.dumps(asset_dict))
         f.close()
-    #time.sleep(1) 
+    time.sleep(1) 
