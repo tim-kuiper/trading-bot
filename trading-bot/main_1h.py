@@ -38,25 +38,14 @@ file_extension = '.json'
 asset_file = timeframe + file_extension 
 asset_file_path = './' + asset_file
 asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'AVAXUSD', 'MATICUSD', 'XETHZUSD']
-
-def get_kraken_signature(urlpath, data, secret):
-    postdata = urllib.parse.urlencode(data)
-    encoded = (str(data['nonce']) + postdata).encode()
-    message = urlpath.encode() + hashlib.sha256(encoded).digest()
-    mac = hmac.new(base64.b64decode(secret), message, hashlib.sha512)
-    sigdigest = base64.b64encode(mac.digest())
-    return sigdigest.decode()
-
-def kraken_request(uri_path, data, api_key, api_sec):
-    headers = {}
-    headers['API-Key'] = api_key
-    headers['API-Sign'] = get_kraken_signature(uri_path, data, api_sec)
-    req = requests.post((api_url + uri_path), headers=headers, data=data)
-    return req
-
-def get_holdings():
-    holdings = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
-    return holdings
+pd.options.display.max_rows = 999
+pd.options.display.max_columns = 8
+api_url = "https://api.kraken.com"
+tg_token = os.environ['telegram_token']
+loop_time_seconds = 3600
+interval_time_minutes = 60
+interval_time_simple = '1h'
+order_size = 20
 
 def send_telegram_message():
     token = tg_token
@@ -90,31 +79,56 @@ for asset_pair in asset_pairs:
       print(f"Appended {asset_pair} to {asset_file}")
 
 while True:
-  # extract balance and print/send to telegram 
-  usd_holdings = get_holdings()
-  if not usd_holdings.json()['error']:
-    balance = float(usd_holdings.json()['result']['ZUSD'])
-    print(f"Current USD balance: {balance}")
-  else:
-    print(f"An error occured trying to get USD balance: {usd_holdings.json()['error']}")
-
   # main for loop for hourly loop
   for asset_pair in asset_pairs:
-    # set asset code since Kraken asset codes are not consistent
+    # set asset code / api tokens for asset pair 
     if asset_pair == "XXBTZUSD":
       asset_code = "XXBT"
+      api_sec = os.environ['api_sec_env_btc']
+      api_key = os.environ['api_key_env_btc']
     if asset_pair == "XXRPZUSD":
       asset_code = "XXRP"
+      api_sec = os.environ['api_sec_env_xrp']
+      api_key = os.environ['api_key_env_xrp']
     if asset_pair == "ADAUSD":
       asset_code = "ADA"
+      api_sec = os.environ['api_sec_env_ada']
+      api_key = os.environ['api_key_env_ada']
     if asset_pair == "SOLUSD":
       asset_code = "SOL"
+      api_sec = os.environ['api_sec_env_sol']
+      api_key = os.environ['api_key_env_sol']
     if asset_pair == "AVAXUSD":
-       asset_code = "AVAX"
+      asset_code = "AVAX"
+      api_sec = os.environ['api_sec_env_avax']
+      api_key = os.environ['api_key_env_avax']
     if asset_pair == "MATICUSD":
       asset_code = "MATIC"
+      api_sec = os.environ['api_sec_env_matic']
+      api_key = os.environ['api_key_env_matic']
     if asset_pair == "XETHZUSD":
       asset_code = "XETH"
+      api_sec = os.environ['api_sec_env_eth']
+      api_key = os.environ['api_key_env_eth']
+
+    def get_kraken_signature(urlpath, data, secret):
+        postdata = urllib.parse.urlencode(data)
+        encoded = (str(data['nonce']) + postdata).encode()
+        message = urlpath.encode() + hashlib.sha256(encoded).digest()
+        mac = hmac.new(base64.b64decode(secret), message, hashlib.sha512)
+        sigdigest = base64.b64encode(mac.digest())
+        return sigdigest.decode()
+    
+    def kraken_request(uri_path, data, api_key, api_sec):
+        headers = {}
+        headers['API-Key'] = api_key
+        headers['API-Sign'] = get_kraken_signature(uri_path, data, api_sec)
+        req = requests.post((api_url + uri_path), headers=headers, data=data)
+        return req
+    
+    def get_holdings():
+        holdings = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
+        return holdings
 
     # get min order size for asset_pair
     def min_order_size():
@@ -219,85 +233,124 @@ while True:
         }, api_key, api_sec)
         return sell_order
   
-    # open asset_dict, check for existing rsi value
-    # if existing rsi value exists, overwrite it with a newly discovered one
     print(f"opening asset file {asset_file}")
     f = open(asset_file, "r")
     asset_json = f.read()
     f.close()
+
     asset_dict = json.loads(asset_json)
     macd_list = asset_dict[asset_pair]["macd"] 
     rsi_list = asset_dict[asset_pair]["rsi"]
     holdings_list = asset_dict[asset_pair]["holdings"]
-    if not rsi_list:
-      print(f"rsi list for  {asset_pair} empty, appending new rsi entry")
-      # asset_pair rsi list empty, calculating rsi/macd and appending to list
-      rsi_list.append(rsi)
-      macd = get_macd()
+
+    print(f"rsi list for  {asset_pair} empty, appending new rsi entry")
+    # asset_pair rsi list empty, calculating rsi/macd and appending to list
+    rsi_list.append(rsi)
+    macd = get_macd()
+    macd_list.append(macd)
+    asset_dict[asset_pair]["rsi"] = rsi_list
+    asset_dict[asset_pair]["macd"] = macd_list
+    f = open(asset_file, "w")
+    f.write(json.dumps(asset_dict))
+    f.close()
+
+    if rsi < 35 and len(macd_list) < 3:
+      print(f"{asset_pair} RSI: {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
+      # append macd value to macd list
+      macd = get_macd() 
       macd_list.append(macd)
-      asset_dict[asset_pair]["rsi"] = rsi_list
       asset_dict[asset_pair]["macd"] = macd_list
+      # write to asset_file
       f = open(asset_file, "w")
       f.write(json.dumps(asset_dict))
       f.close()
-      print(f"appended rsi value {rsi} for {asset_pair} to rsi list")
-    else:
-      # asset_pair has rsi, reading rsi value and macd list
-      print(f"rsi list for {asset_pair} not empty, reading value")
-      rsi = rsi_list[0]
-      if rsi < 35 and len(macd_list) < 3:
-        print(f"{asset_pair} RSI: {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
+      print(f"Appended {macd} macd value to macd list for {asset_pair}")
+      print(f"{asset_pair} MACD list: {asset_dict[asset_pair]['macd']}")
+      tg_message = f"{asset_pair} RSI: {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
+      send_telegram_message()
+    elif rsi < 35 and len(macd_list) >= 3:
+      print(f"{asset_pair} RSI: 35 and macd_list >= 3 for {asset_pair}")
+      tg_message = f"RSI < 35 and macd_list >= 3 for {asset_pair}"
+      send_telegram_message()
+      if macd_list[-3] < macd_list[-2] < macd_list[-1]:
+        print(f"{asset_pair} MACD in upward trend for 3 iterations: {macd_list[-3:]}, buying {asset_pair}")
+        tg_message = f"{asset_pair} MACD in upward trend for 3 iterations: {macd_list[-3:]}, buying {asset_pair}"
+        send_telegram_message()
+        asset_close = float(get_asset_close())
+        usd_order_size = order_size
+        volume_to_buy = str(float(usd_order_size / asset_close))
+        order_output = buy_asset() # executes buy order and assigns output to var
+        if not order_output.json()['error']:
+          print(f"Bought {volume_to_buy} of {asset_pair}")
+          tg_message = order_output.json()['result']
+          send_telegram_message()        
+          # clear rsi/macd lists from asset_dict
+          macd_list.clear()
+          rsi_list.clear()
+          holdings_list.append(buy_amount)
+          asset_dict[asset_pair]["macd"] = macd_list
+          asset_dict[asset_pair]["rsi"] = rsi_list
+          asset_dict[asset_pair]["holdings"] = holdings_list
+          f = open(asset_file, "w")
+          f.write(json.dumps(asset_dict))
+          f.close()
+      else: 
         # append macd value to macd list
         macd = get_macd() 
         macd_list.append(macd)
+        print(f"Appending {macd} to {asset_pair} macd list")
         asset_dict[asset_pair]["macd"] = macd_list
         # write to asset_file
         f = open(asset_file, "w")
         f.write(json.dumps(asset_dict))
         f.close()
-        print(f"Appended {macd} macd value to macd list for {asset_pair}")
-        print(f"{asset_pair} MACD list: {asset_dict[asset_pair]['macd']}")
-        tg_message = f"{asset_pair} RSI: {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
-        send_telegram_message()
-      elif rsi < 35 and len(macd_list) >= 3:
-        print(f"{asset_pair} RSI: 35 and macd_list >= 3 for {asset_pair}")
-        tg_message = f"RSI < 35 and macd_list >= 3 for {asset_pair}")
-        send_telegram_message()
-        if macd_list[-3] < macd_list[-2] < macd_list[-1]:
-          print(f"{asset_pair} MACD in upward trend for 3 iterations: {macd_list[-3:]}, buying {asset_pair}")
-          tg_message = f"{asset_pair} MACD in upward trend for 3 iterations: {macd_list[-3:]}, buying {asset_pair}")
+    elif rsi > 65 and len(macd_list) < 3:
+      print(f"{asset_pair} RSI: {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
+      # append macd value to macd list
+      macd = get_macd() 
+      macd_list.append(macd)
+      asset_dict[asset_pair]["macd"] = macd_list
+      # write to asset_file
+      f = open(asset_file, "w")
+      f.write(json.dumps(asset_dict))
+      f.close()
+      print(f"Appended {macd} macd value to macd list for {asset_pair}")
+      print(f"{asset_pair} MACD list: {asset_dict[asset_pair]['macd']}")
+      tg_message = f"{asset_pair} RSI: {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
+    elif rsi > 65 and len(macd_list) >= 3:
+      if macd_list[-3] > macd_list[-2] > macd_list[-1]:
+        # sell asset
+        if float(sum(holdings_list)) > 0: # check if we have some in our holdings
+          volume_to_sell = str(sum(holdings_list))
+          if min_order_size() < float(volume_to_sell):
+            print(f"Selling {volume_to_sell} of {asset_pair}")
+            if not order_output.json()['error']:
+              macd_list.clear()
+              rsi_list.clear()
+              holdings_list.clear()
+              asset_dict[asset_pair]["macd"] = macd_list
+              asset_dict[asset_pair]["rsi"] = rsi_list
+              asset_dict[asset_pair]["holdings"] = holdings_list
+              f = open(asset_file, "w")
+              f.write(json.dumps(asset_dict))
+              f.close()
+              print(f"Sold {volume_to_sell} of {asset_pair}")
+              tg_message = order_output.json()['result']
+              send_telegram_message()
+            else:
+              print(f"An error occured when trying to place a sell order for {asset_pair}: {order_output.json()['error']}")
+              tg_message = f"An error occured when trying to place a sell order for {asset_pair}: {order_output.json()['error']}"
+              send_telegram_message()
+          else:
+            print(f"Not enough of {asset_pair} left to sell")
+            tg_message = f"Not enough of {asset_pair} left to sell"
+            send_telegram_message()
+        else:
+          print(f"No {asset_pair} to sell because we own 0 of it")  
+          tg_message = f"No {asset_pair} to sell because we own 0 of it"
           send_telegram_message()
-          asset_close = float(get_asset_close())
-          usd_order_size = order_size
-          volume_to_buy = str(float(usd_order_size / asset_close))
-          order_output = buy_asset() # executes buy order and assigns output to var
-          if not order_output.json()['error']:
-            print(f"Bought {volume_to_buy} of {asset_pair}")
-            tg_message = order_output.json()['result']
-            send_telegram_message()        
-            # clear rsi/macd lists from asset_dict
-            macd_list.clear()
-            rsi_list.clear()
-            holdings_list.append(buy_amount)
-            asset_dict[asset_pair]["macd"] = macd_list
-            asset_dict[asset_pair]["rsi"] = rsi_list
-            asset_dict[asset_pair]["holdings"] = holdings_list
-            f = open(asset_file, "w")
-            f.write(json.dumps(asset_dict))
-            f.close()
-        else: 
-          # append macd value to macd list
-          macd = get_macd() 
-          macd_list.append(macd)
-          print(f"Appending {macd} to {asset_pair} macd list")
-          asset_dict[asset_pair]["macd"] = macd_list
-          # write to asset_file
-          f = open(asset_file, "w")
-          f.write(json.dumps(asset_dict))
-          f.close()
-      elif rsi > 65 and len(macd_list) < 3:
-        print(f"{asset_pair} RSI: {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
-        # append macd value to macd list
+      else:
+        print(f"No downward MACD trend for {asset_pair} yet")
         macd = get_macd() 
         macd_list.append(macd)
         asset_dict[asset_pair]["macd"] = macd_list
@@ -305,46 +358,9 @@ while True:
         f = open(asset_file, "w")
         f.write(json.dumps(asset_dict))
         f.close()
-        print(f"Appended {macd} macd value to macd list for {asset_pair}")
-        print(f"{asset_pair} MACD list: {asset_dict[asset_pair]['macd']}")
-        tg_message = f"{asset_pair} RSI: {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
-      elif rsi > 65 and len(macd_list) >= 3:
-        if macd_list[-3] > macd_list[-2] > macd_list[-1]:
-          # sell asset
-          sell_asset = True
-          if float(sum(holdings_list)) > 0: # check if we have some in our holdings
-            volume_to_sell = str(sum(holdings_list))
-            if min_order_size() < float(volume_to_sell):
-              print(f"Selling {volume_to_sell} of {asset_pair}")
-             # CONT HERE 
-          print(f"Selling {asset_pair}")
-          if sell_asset:
-            # clear rsi/macd/holdings lists from asset_dict
-            macd_list.clear()
-            rsi_list.clear()
-            holdings_list.clear()
-            asset_dict[asset_pair]["macd"] = macd_list
-            asset_dict[asset_pair]["rsi"] = rsi_list
-            asset_dict[asset_pair]["holdings"] = holdings_list
-            f = open(asset_file, "w")
-            f.write(json.dumps(asset_dict))
-            f.close()
-        else: 
-          # append macd value to macd list
-          macd = random.randint(1,100)
-          macd_list.append(macd)
-          asset_dict[asset_pair]["macd"] = macd_list
-          # write to asset_file
-          f = open(asset_file, "w")
-          f.write(json.dumps(asset_dict))
-          f.close()
-      else:
-        print(f"rsi value read from file is {rsi}, calculating new rsi value and adding it to file")
-        rsi = random.randint(1,100)
-        rsi_list.clear()
-        rsi_list.append(rsi)
-        asset_dict[asset_pair]["rsi"] = rsi_list
-        f = open(asset_file, "w")
-        f.write(json.dumps(asset_dict))
-        f.close()
-    time.sleep(1) 
+    else:
+      print(f"{asset_pair} RSI: {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds")
+      tg_message = f"{asset_pair} RSI: {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds"
+      send_telegram_message()
+    time.sleep(3) # sleep 3 seconds between asset pair
+  time.sleep(loop_time_seconds)
