@@ -45,7 +45,7 @@ tg_token = os.environ['telegram_token']
 loop_time_seconds = 3600
 interval_time_minutes = 60
 interval_time_simple = '1h'
-order_size = 20
+order_size = 50
 
 def send_telegram_message():
     token = tg_token
@@ -243,16 +243,28 @@ while True:
     rsi_list = asset_dict[asset_pair]["rsi"]
     holdings_list = asset_dict[asset_pair]["holdings"]
 
-    print(f"rsi list for  {asset_pair} empty, appending new rsi entry")
-    # asset_pair rsi list empty, calculating rsi/macd and appending to list
-    rsi_list.append(rsi)
-    macd = get_macd()
-    macd_list.append(macd)
-    asset_dict[asset_pair]["rsi"] = rsi_list
-    asset_dict[asset_pair]["macd"] = macd_list
-    f = open(asset_file, "w")
-    f.write(json.dumps(asset_dict))
-    f.close()
+    if len(rsi_list) == 1:
+      if rsi_list[0] < 35:
+        print(f"Read {rsi_list[0]} RSI for {asset_pair} in file, keeping value in list")
+        rsi = rsi_list[0]
+      elif rsi_list[0] > 65:
+        print(f"Read {rsi_list[0]} RSI for {asset_pair} in file, keeping value in list")
+        rsi = rsi_list[0]
+      else:
+        print(f"Clearing RSI value from {asset_pair} because RSI is {rsi_list[0]}")
+        rsi_list.clear()
+        rsi_list.append(rsi)
+        asset_dict[asset_pair]["rsi"] = rsi_list
+        f = open(asset_file, "w")
+        f.write(json.dumps(asset_dict))
+        f.close()
+    elif len(rsi_list) == 0:
+      print(f"{asset_pair} RSI list is empty, appending {rsi} to it")
+      rsi_list.append(rsi)
+      asset_dict[asset_pair]["rsi"] = rsi_list
+      f = open(asset_file, "w")
+      f.write(json.dumps(asset_dict))
+      f.close()
 
     if rsi < 35 and len(macd_list) < 3:
       print(f"{asset_pair} RSI: {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
