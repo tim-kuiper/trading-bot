@@ -359,10 +359,26 @@ while True:
               tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
               send_telegram_message()
           else:
+            # clear rsi/macd lists from asset_dict
+            macd_list.clear()
+            rsi_list.clear()
+            asset_dict[asset_pair]["macd"] = macd_list
+            asset_dict[asset_pair]["rsi"] = rsi_list
+            f = open(asset_file, "w")
+            f.write(json.dumps(asset_dict))
+            f.close()
             print(f"{interval_time_simple} {asset_pair}: Not enough left to sell")
             tg_message = f"{interval_time_simple} {asset_pair}: Not enough left to sell"
             send_telegram_message()
         else:
+          # clear rsi/macd lists from asset_dict
+          macd_list.clear()
+          rsi_list.clear()
+          asset_dict[asset_pair]["macd"] = macd_list
+          asset_dict[asset_pair]["rsi"] = rsi_list
+          f = open(asset_file, "w")
+          f.write(json.dumps(asset_dict))
+          f.close()
           print(f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it")  
           tg_message = f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it"
           send_telegram_message()
