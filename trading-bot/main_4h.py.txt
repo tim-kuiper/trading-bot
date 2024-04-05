@@ -1,0 +1,37 @@
+Asset file 4h.json exists, reading
+Asset file 4h.json exists, reading
+Asset file 4h.json exists, reading
+Asset file 4h.json exists, reading
+Asset file 4h.json exists, reading
+Asset file 4h.json exists, reading
+Asset file 4h.json exists, reading
+4h RSI  XXBTZUSD: 48.93
+opening asset file 4h.json
+4h XXBTZUSD: Clearing RSI value 45.96
+4h XXBTZUSD: RSI 48.93, nothing to do. Checking back in 14400 seconds
+4h RSI  XXRPZUSD: 43.09
+opening asset file 4h.json
+4h XXRPZUSD: Clearing RSI value 40.66
+4h XXRPZUSD: RSI 43.09, nothing to do. Checking back in 14400 seconds
+4h RSI  ADAUSD: 36.38
+opening asset file 4h.json
+4h ADAUSD: Read 34.39 RSI in file, keeping value in list
+4h ADAUSD: RSI 34.39 and length of macd list: 1
+4h ADAUSD: Appended -0.011877819912070597 macd value to macd list
+4h ADAUSD: MACD list [-0.012278989960730513, -0.011877819912070597]
+4h RSI  SOLUSD: 36.49
+opening asset file 4h.json
+4h SOLUSD: Clearing RSI value 36.12
+4h SOLUSD: RSI 36.49, nothing to do. Checking back in 14400 seconds
+4h RSI  AVAXUSD: 31.33
+opening asset file 4h.json
+4h AVAXUSD: Read 33.93 RSI in file, keeping value in list
+4h AVAXUSD: RSI < 35 and macd_list >= 3
+4h AVAXUSD: MACD in upward trend for 3 iterations: [-1.4036168573221275, -1.4012236949289658, -1.3815122724321043], buying AVAXUSD
+Buying the following amount of AVAXUSD : 4.398504508467122
+4h AVAXUSD: Bought 4.398504508467122
+Traceback (most recent call last):
+  File "/root/python/trading-bot/main_4h.py", line 301, in <module>
+    holdings_list.append(buy_amount)
+                         ^^^^^^^^^^
+NameError: name 'buy_amount' is not defined

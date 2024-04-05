@@ -298,7 +298,7 @@ while True:
           # clear rsi/macd lists from asset_dict
           macd_list.clear()
           rsi_list.clear()
-          holdings_list.append(buy_amount)
+          holdings_list.append(float(volume_to_buy))
           asset_dict[asset_pair]["macd"] = macd_list
           asset_dict[asset_pair]["rsi"] = rsi_list
           asset_dict[asset_pair]["holdings"] = holdings_list
