@@ -31,7 +31,6 @@ Flow:
   - If MACD list values from asset_pair is in an downwards trend for 3 iterations, sell asset and clear asset_pair holding, rsi and macd list
 
 '''
-# my_dict = {"asset1": {"rsi": 37, "macd": [1, 2, 3]}, "asset2": {"rsi": 40, "macd": [2, 3, 1]}}
 asset_dict = {}
 timeframe = "1h"
 file_extension = '.json'
@@ -245,13 +244,13 @@ while True:
 
     if len(rsi_list) == 1:
       if rsi_list[0] < 35:
-        print(f"Read {rsi_list[0]} RSI for {asset_pair} in file, keeping value in list")
+        print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
         rsi = rsi_list[0]
       elif rsi_list[0] > 65:
-        print(f"Read {rsi_list[0]} RSI for {asset_pair} in file, keeping value in list")
+        print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
         rsi = rsi_list[0]
       else:
-        print(f"Clearing RSI value from {asset_pair} because RSI is {rsi_list[0]}")
+        print(f"{interval_time_simple} {asset_pair}: Clearing RSI value {rsi_list[0]}")
         rsi_list.clear()
         rsi_list.append(rsi)
         asset_dict[asset_pair]["rsi"] = rsi_list
@@ -259,7 +258,7 @@ while True:
         f.write(json.dumps(asset_dict))
         f.close()
     elif len(rsi_list) == 0:
-      print(f"{asset_pair} RSI list is empty, appending {rsi} to it")
+      print(f"{interval_time_simple} {asset_pair}: RSI list is empty, appending {rsi} to it")
       rsi_list.append(rsi)
       asset_dict[asset_pair]["rsi"] = rsi_list
       f = open(asset_file, "w")
@@ -267,7 +266,7 @@ while True:
       f.close()
 
     if rsi < 35 and len(macd_list) < 3:
-      print(f"{asset_pair} RSI: {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
+      print(f"{interval_time_simple} {asset_pair}: RSI {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
       # append macd value to macd list
       macd = get_macd() 
       macd_list.append(macd)
@@ -276,24 +275,24 @@ while True:
       f = open(asset_file, "w")
       f.write(json.dumps(asset_dict))
       f.close()
-      print(f"Appended {macd} macd value to macd list for {asset_pair}")
-      print(f"{asset_pair} MACD list: {asset_dict[asset_pair]['macd']}")
-      tg_message = f"{asset_pair} RSI: {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
+      print(f"{interval_time_simple} {asset_pair}: Appended {macd} macd value to macd list")
+      print(f"{interval_time_simple} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
+      tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
       send_telegram_message()
     elif rsi < 35 and len(macd_list) >= 3:
-      print(f"{asset_pair} RSI: 35 and macd_list >= 3 for {asset_pair}")
-      tg_message = f"RSI < 35 and macd_list >= 3 for {asset_pair}"
+      print(f"{interval_time_simple} {asset_pair}: RSI < 35 and macd_list >= 3")
+      tg_message = f"{interval_time_simple} {asset_pair}: RSI < 35 and macd_list >= 3"
       send_telegram_message()
       if macd_list[-3] < macd_list[-2] < macd_list[-1]:
-        print(f"{asset_pair} MACD in upward trend for 3 iterations: {macd_list[-3:]}, buying {asset_pair}")
-        tg_message = f"{asset_pair} MACD in upward trend for 3 iterations: {macd_list[-3:]}, buying {asset_pair}"
+        print(f"{interval_time_simple} {asset_pair}: MACD in upward trend for 3 iterations: {macd_list[-3:]}, buying {asset_pair}")
+        tg_message = f"{interval_time_simple} {asset_pair}: MACD in upward trend for 3 iterations: {macd_list[-3:]}, buying {asset_pair}"
         send_telegram_message()
         asset_close = float(get_asset_close())
         usd_order_size = order_size
         volume_to_buy = str(float(usd_order_size / asset_close))
         order_output = buy_asset() # executes buy order and assigns output to var
         if not order_output.json()['error']:
-          print(f"Bought {volume_to_buy} of {asset_pair}")
+          print(f"{interval_time_simple} {asset_pair}: Bought {volume_to_buy}")
           tg_message = order_output.json()['result']
           send_telegram_message()        
           # clear rsi/macd lists from asset_dict
@@ -306,18 +305,22 @@ while True:
           f = open(asset_file, "w")
           f.write(json.dumps(asset_dict))
           f.close()
+        else:
+          print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
+          tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
+          send_telegram_message()
       else: 
         # append macd value to macd list
         macd = get_macd() 
         macd_list.append(macd)
-        print(f"Appending {macd} to {asset_pair} macd list")
+        print(f"{interval_time_simple} {asset_pair}: Appending {macd} macd list")
         asset_dict[asset_pair]["macd"] = macd_list
         # write to asset_file
         f = open(asset_file, "w")
         f.write(json.dumps(asset_dict))
         f.close()
     elif rsi > 65 and len(macd_list) < 3:
-      print(f"{asset_pair} RSI: {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
+      print(f"{interval_time_simple} {asset_pair}: RSI {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
       # append macd value to macd list
       macd = get_macd() 
       macd_list.append(macd)
@@ -326,16 +329,18 @@ while True:
       f = open(asset_file, "w")
       f.write(json.dumps(asset_dict))
       f.close()
-      print(f"Appended {macd} macd value to macd list for {asset_pair}")
-      print(f"{asset_pair} MACD list: {asset_dict[asset_pair]['macd']}")
-      tg_message = f"{asset_pair} RSI: {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
+      print(f"{interval_time_simple} {asset_pair}: Appended {macd} macd value to macd list")
+      print(f"{interval_time_simple} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
+      tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
     elif rsi > 65 and len(macd_list) >= 3:
       if macd_list[-3] > macd_list[-2] > macd_list[-1]:
         # sell asset
+        print(f"{interval_time_simple} {asset_pair}: MACD in downward trend for 3 iterations: {macd_list[-3:]}, selling {asset_pair}")
+        tg_message = f"{interval_time_simple} {asset_pair}: MACD in downward trend for 3 iterations: {macd_list[-3:]}, selling {asset_pair}"
+        send_telegram_message()
         if float(sum(holdings_list)) > 0: # check if we have some in our holdings
           volume_to_sell = str(sum(holdings_list))
           if min_order_size() < float(volume_to_sell):
-            print(f"Selling {volume_to_sell} of {asset_pair}")
             if not order_output.json()['error']:
               macd_list.clear()
               rsi_list.clear()
@@ -346,23 +351,23 @@ while True:
               f = open(asset_file, "w")
               f.write(json.dumps(asset_dict))
               f.close()
-              print(f"Sold {volume_to_sell} of {asset_pair}")
+              print(f"{interval_time_simple} {asset_pair}: Sold {volume_to_sell}")
               tg_message = order_output.json()['result']
-              send_telegram_message()
+              send_telegram_message()        
             else:
-              print(f"An error occured when trying to place a sell order for {asset_pair}: {order_output.json()['error']}")
-              tg_message = f"An error occured when trying to place a sell order for {asset_pair}: {order_output.json()['error']}"
+              print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
+              tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
               send_telegram_message()
           else:
-            print(f"Not enough of {asset_pair} left to sell")
-            tg_message = f"Not enough of {asset_pair} left to sell"
+            print(f"{interval_time_simple} {asset_pair}: Not enough left to sell")
+            tg_message = f"{interval_time_simple} {asset_pair}: Not enough left to sell"
             send_telegram_message()
         else:
-          print(f"No {asset_pair} to sell because we own 0 of it")  
-          tg_message = f"No {asset_pair} to sell because we own 0 of it"
+          print(f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it")  
+          tg_message = f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it"
           send_telegram_message()
       else:
-        print(f"No downward MACD trend for {asset_pair} yet")
+        print(f"{interval_time_simple} {asset_pair}: No downward MACD trend yet")
         macd = get_macd() 
         macd_list.append(macd)
         asset_dict[asset_pair]["macd"] = macd_list
@@ -371,8 +376,8 @@ while True:
         f.write(json.dumps(asset_dict))
         f.close()
     else:
-      print(f"{asset_pair} RSI: {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds")
-      tg_message = f"{asset_pair} RSI: {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds"
+      print(f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds")
+      tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds"
       send_telegram_message()
     time.sleep(3) # sleep 3 seconds between asset pair
   time.sleep(loop_time_seconds)
