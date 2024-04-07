@@ -341,6 +341,7 @@ while True:
         if float(sum(holdings_list)) > 0: # check if we have some in our holdings
           volume_to_sell = str(sum(holdings_list))
           if min_order_size() < float(volume_to_sell):
+            order_output = sell_asset()
             if not order_output.json()['error']:
               macd_list.clear()
               rsi_list.clear()
