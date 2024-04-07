@@ -1,0 +1,93 @@
+Asset file 4h.json exists, reading
+Asset file 4h.json exists, reading
+Asset file 4h.json exists, reading
+Asset file 4h.json exists, reading
+Asset file 4h.json exists, reading
+Asset file 4h.json exists, reading
+Asset file 4h.json exists, reading
+4h RSI  XXBTZUSD: 62.02
+opening asset file 4h.json
+4h XXBTZUSD: Clearing RSI value 59.78
+4h XXBTZUSD: RSI 62.02, nothing to do. Checking back in 14400 seconds
+4h RSI  XXRPZUSD: 54.33
+opening asset file 4h.json
+4h XXRPZUSD: Clearing RSI value 52.99
+4h XXRPZUSD: RSI 54.33, nothing to do. Checking back in 14400 seconds
+4h RSI  ADAUSD: 53.74
+opening asset file 4h.json
+4h ADAUSD: Clearing RSI value 51.33
+4h ADAUSD: RSI 53.74, nothing to do. Checking back in 14400 seconds
+4h RSI  SOLUSD: 49.09
+opening asset file 4h.json
+4h SOLUSD: Clearing RSI value 49.35
+4h SOLUSD: RSI 49.09, nothing to do. Checking back in 14400 seconds
+4h RSI  AVAXUSD: 56.22
+opening asset file 4h.json
+4h AVAXUSD: Clearing RSI value 57.13
+4h AVAXUSD: RSI 56.22, nothing to do. Checking back in 14400 seconds
+4h RSI  MATICUSD: 49.86
+opening asset file 4h.json
+4h MATICUSD: Clearing RSI value 47.23
+4h MATICUSD: RSI 49.86, nothing to do. Checking back in 14400 seconds
+4h RSI  XETHZUSD: 56.79
+opening asset file 4h.json
+4h XETHZUSD: Clearing RSI value 55.06
+4h XETHZUSD: RSI 56.79, nothing to do. Checking back in 14400 seconds
+4h RSI  XXBTZUSD: 60.79
+opening asset file 4h.json
+4h XXBTZUSD: Clearing RSI value 62.02
+4h XXBTZUSD: RSI 60.79, nothing to do. Checking back in 14400 seconds
+4h RSI  XXRPZUSD: 54.12
+opening asset file 4h.json
+4h XXRPZUSD: Clearing RSI value 54.33
+4h XXRPZUSD: RSI 54.12, nothing to do. Checking back in 14400 seconds
+4h RSI  ADAUSD: 54.24
+opening asset file 4h.json
+4h ADAUSD: Clearing RSI value 53.74
+4h ADAUSD: RSI 54.24, nothing to do. Checking back in 14400 seconds
+4h RSI  SOLUSD: 49.07
+opening asset file 4h.json
+4h SOLUSD: Clearing RSI value 49.09
+4h SOLUSD: RSI 49.07, nothing to do. Checking back in 14400 seconds
+4h RSI  AVAXUSD: 56.45
+opening asset file 4h.json
+4h AVAXUSD: Clearing RSI value 56.22
+4h AVAXUSD: RSI 56.45, nothing to do. Checking back in 14400 seconds
+4h RSI  MATICUSD: 51.8
+opening asset file 4h.json
+4h MATICUSD: Clearing RSI value 49.86
+4h MATICUSD: RSI 51.8, nothing to do. Checking back in 14400 seconds
+4h RSI  XETHZUSD: 57.45
+opening asset file 4h.json
+4h XETHZUSD: Clearing RSI value 56.79
+4h XETHZUSD: RSI 57.45, nothing to do. Checking back in 14400 seconds
+4h RSI  XXBTZUSD: 66.33
+opening asset file 4h.json
+4h XXBTZUSD: Clearing RSI value 60.79
+4h XXBTZUSD: RSI 66.33 and length of macd list: 0
+4h XXBTZUSD: Appended 579.1519890083 macd value to macd list
+4h XXBTZUSD: MACD list [579.1519890083]
+4h RSI  XXRPZUSD: 56.24
+opening asset file 4h.json
+4h XXRPZUSD: Clearing RSI value 54.12
+4h XXRPZUSD: RSI 56.24, nothing to do. Checking back in 14400 seconds
+4h RSI  ADAUSD: 56.34
+opening asset file 4h.json
+4h ADAUSD: Clearing RSI value 54.24
+4h ADAUSD: RSI 56.34, nothing to do. Checking back in 14400 seconds
+4h RSI  SOLUSD: 52.83
+opening asset file 4h.json
+4h SOLUSD: Clearing RSI value 49.07
+4h SOLUSD: RSI 52.83, nothing to do. Checking back in 14400 seconds
+4h RSI  AVAXUSD: 58.39
+opening asset file 4h.json
+4h AVAXUSD: Clearing RSI value 56.45
+4h AVAXUSD: RSI 58.39, nothing to do. Checking back in 14400 seconds
+4h RSI  MATICUSD: 57.94
+opening asset file 4h.json
+4h MATICUSD: Clearing RSI value 51.8
+4h MATICUSD: RSI 57.94, nothing to do. Checking back in 14400 seconds
+4h RSI  XETHZUSD: 60.18
+opening asset file 4h.json
+4h XETHZUSD: Clearing RSI value 57.45
+4h XETHZUSD: RSI 60.18, nothing to do. Checking back in 14400 seconds

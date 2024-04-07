@@ -49,30 +49,6 @@ def send_telegram_message():
     url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
     requests.get(url) # send message
 
-# for loop for instantiating asset_dict 
-for asset_pair in asset_pairs:
-  asset_file_exists = os.path.exists(asset_file_path)
-  # create file if it doesnt exist, add dictionary per asset to it
-  if not asset_file_exists:
-    print(f"Asset file {asset_file} doesnt exist , creating one")
-    f = open(asset_file, "w")
-    asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": []}})
-    f.write(json.dumps(asset_dict))
-    f.close()
-  else:
-    print(f"Asset file {asset_file} exists, reading")
-    f = open(asset_file, "r")
-    asset_json = f.read()
-    f.close()
-    asset_dict = json.loads(asset_json)
-    if asset_pair not in asset_dict.keys():
-      print(f"Asset pair {asset_pair} not present in asset file {asset_file}, updating file")
-      asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": []}})
-      f = open(asset_file, "w")
-      f.write(json.dumps(asset_dict))
-      f.close()
-      print(f"Appended {asset_pair} to {asset_file}")
-
 while True:
   list_1h.append(1)
   list_4h.append(4)

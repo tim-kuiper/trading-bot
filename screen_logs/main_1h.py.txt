@@ -1,0 +1,355 @@
+Asset file 1h.json exists, reading
+Asset file 1h.json exists, reading
+Asset file 1h.json exists, reading
+Asset file 1h.json exists, reading
+Asset file 1h.json exists, reading
+Asset file 1h.json exists, reading
+Asset file 1h.json exists, reading
+1h RSI  XXBTZUSD: 68.01
+opening asset file 1h.json
+1h XXBTZUSD: Read 66.63 RSI in file, keeping value in list
+1h XXBTZUSD: MACD in downward trend for 3 iterations: [429.9565842174634, 416.96399989479687, 413.0216726604849], selling XXBTZUSD
+1h XXBTZUSD: Nothing left to sell because we own 0 of it
+1h RSI  XXRPZUSD: 60.27
+opening asset file 1h.json
+1h XXRPZUSD: Clearing RSI value 59.77
+1h XXRPZUSD: RSI 60.27, nothing to do. Checking back in 3600 seconds
+1h RSI  ADAUSD: 66.96
+opening asset file 1h.json
+1h ADAUSD: Read 66.58 RSI in file, keeping value in list
+1h ADAUSD: RSI 66.58 and length of macd list: 2
+1h ADAUSD: Appended 0.0028856080687376107 macd value to macd list
+1h ADAUSD: MACD list [0.002776524468278918, 0.0027696192595210167, 0.0028856080687376107]
+1h RSI  SOLUSD: 57.47
+opening asset file 1h.json
+1h SOLUSD: Read 66.68 RSI in file, keeping value in list
+1h SOLUSD: MACD in downward trend for 3 iterations: [1.155911189771757, 1.1451478093160858, 1.0330610338616282], selling SOLUSD
+Selling the following amount of SOLUSD : 0.5763629889361159
+1h SOLUSD: Sold 0.5763629889361159
+1h RSI  AVAXUSD: 61.47
+opening asset file 1h.json
+1h AVAXUSD: Clearing RSI value 60.49
+1h AVAXUSD: RSI 61.47, nothing to do. Checking back in 3600 seconds
+1h RSI  MATICUSD: 59.31
+opening asset file 1h.json
+1h MATICUSD: Clearing RSI value 57.25
+1h MATICUSD: RSI 59.31, nothing to do. Checking back in 3600 seconds
+1h RSI  XETHZUSD: 61.46
+opening asset file 1h.json
+1h XETHZUSD: Read 66.22 RSI in file, keeping value in list
+1h XETHZUSD: No downward MACD trend yet
+1h RSI  XXBTZUSD: 61.73
+opening asset file 1h.json
+1h XXBTZUSD: RSI list is empty, appending 61.73 to it
+1h XXBTZUSD: RSI 61.73, nothing to do. Checking back in 3600 seconds
+1h RSI  XXRPZUSD: 57.58
+opening asset file 1h.json
+1h XXRPZUSD: Clearing RSI value 60.27
+1h XXRPZUSD: RSI 57.58, nothing to do. Checking back in 3600 seconds
+1h RSI  ADAUSD: 58.09
+opening asset file 1h.json
+1h ADAUSD: Read 66.58 RSI in file, keeping value in list
+1h ADAUSD: No downward MACD trend yet
+1h RSI  SOLUSD: 50.81
+opening asset file 1h.json
+1h SOLUSD: RSI list is empty, appending 50.81 to it
+1h SOLUSD: RSI 50.81, nothing to do. Checking back in 3600 seconds
+1h RSI  AVAXUSD: 56.02
+opening asset file 1h.json
+1h AVAXUSD: Clearing RSI value 61.47
+1h AVAXUSD: RSI 56.02, nothing to do. Checking back in 3600 seconds
+1h RSI  MATICUSD: 56.0
+opening asset file 1h.json
+1h MATICUSD: Clearing RSI value 59.31
+1h MATICUSD: RSI 56.0, nothing to do. Checking back in 3600 seconds
+1h RSI  XETHZUSD: 56.83
+opening asset file 1h.json
+1h XETHZUSD: Read 66.22 RSI in file, keeping value in list
+1h XETHZUSD: MACD in downward trend for 3 iterations: [16.576779221688412, 16.503917429952708, 16.031364086076337], selling XETHZUSD
+1h XETHZUSD: Nothing left to sell because we own 0 of it
+1h RSI  XXBTZUSD: 64.64
+opening asset file 1h.json
+1h XXBTZUSD: Clearing RSI value 61.73
+1h XXBTZUSD: RSI 64.64, nothing to do. Checking back in 3600 seconds
+1h RSI  XXRPZUSD: 59.0
+opening asset file 1h.json
+1h XXRPZUSD: Clearing RSI value 57.58
+1h XXRPZUSD: RSI 59.0, nothing to do. Checking back in 3600 seconds
+1h RSI  ADAUSD: 60.97
+opening asset file 1h.json
+1h ADAUSD: Read 66.58 RSI in file, keeping value in list
+1h ADAUSD: No downward MACD trend yet
+1h RSI  SOLUSD: 55.88
+opening asset file 1h.json
+1h SOLUSD: Clearing RSI value 50.81
+1h SOLUSD: RSI 55.88, nothing to do. Checking back in 3600 seconds
+1h RSI  AVAXUSD: 59.3
+opening asset file 1h.json
+1h AVAXUSD: Clearing RSI value 56.02
+1h AVAXUSD: RSI 59.3, nothing to do. Checking back in 3600 seconds
+1h RSI  MATICUSD: 58.62
+opening asset file 1h.json
+1h MATICUSD: Clearing RSI value 56.0
+1h MATICUSD: RSI 58.62, nothing to do. Checking back in 3600 seconds
+1h RSI  XETHZUSD: 60.14
+opening asset file 1h.json
+1h XETHZUSD: RSI list is empty, appending 60.14 to it
+1h XETHZUSD: RSI 60.14, nothing to do. Checking back in 3600 seconds
+1h RSI  XXBTZUSD: 63.13
+opening asset file 1h.json
+1h XXBTZUSD: Clearing RSI value 64.64
+1h XXBTZUSD: RSI 63.13, nothing to do. Checking back in 3600 seconds
+1h RSI  XXRPZUSD: 60.66
+opening asset file 1h.json
+1h XXRPZUSD: Clearing RSI value 59.0
+1h XXRPZUSD: RSI 60.66, nothing to do. Checking back in 3600 seconds
+1h RSI  ADAUSD: 64.86
+opening asset file 1h.json
+1h ADAUSD: Read 66.58 RSI in file, keeping value in list
+1h ADAUSD: MACD in downward trend for 3 iterations: [0.0028856080687376107, 0.0028693929899731296, 0.002851828098164755], selling ADAUSD
+1h ADAUSD: Nothing left to sell because we own 0 of it
+1h RSI  SOLUSD: 58.51
+opening asset file 1h.json
+1h SOLUSD: Clearing RSI value 55.88
+1h SOLUSD: RSI 58.51, nothing to do. Checking back in 3600 seconds
+1h RSI  AVAXUSD: 61.24
+opening asset file 1h.json
+1h AVAXUSD: Clearing RSI value 59.3
+1h AVAXUSD: RSI 61.24, nothing to do. Checking back in 3600 seconds
+1h RSI  MATICUSD: 59.76
+opening asset file 1h.json
+1h MATICUSD: Clearing RSI value 58.62
+1h MATICUSD: RSI 59.76, nothing to do. Checking back in 3600 seconds
+1h RSI  XETHZUSD: 60.09
+opening asset file 1h.json
+1h XETHZUSD: Clearing RSI value 60.14
+1h XETHZUSD: RSI 60.09, nothing to do. Checking back in 3600 seconds
+1h RSI  XXBTZUSD: 62.43
+opening asset file 1h.json
+1h XXBTZUSD: Clearing RSI value 63.13
+1h XXBTZUSD: RSI 62.43, nothing to do. Checking back in 3600 seconds
+1h RSI  XXRPZUSD: 57.71
+opening asset file 1h.json
+1h XXRPZUSD: Clearing RSI value 60.66
+1h XXRPZUSD: RSI 57.71, nothing to do. Checking back in 3600 seconds
+1h RSI  ADAUSD: 64.01
+opening asset file 1h.json
+1h ADAUSD: RSI list is empty, appending 64.01 to it
+1h ADAUSD: RSI 64.01, nothing to do. Checking back in 3600 seconds
+1h RSI  SOLUSD: 57.76
+opening asset file 1h.json
+1h SOLUSD: Clearing RSI value 58.51
+1h SOLUSD: RSI 57.76, nothing to do. Checking back in 3600 seconds
+1h RSI  AVAXUSD: 59.84
+opening asset file 1h.json
+1h AVAXUSD: Clearing RSI value 61.24
+1h AVAXUSD: RSI 59.84, nothing to do. Checking back in 3600 seconds
+1h RSI  MATICUSD: 61.26
+opening asset file 1h.json
+1h MATICUSD: Clearing RSI value 59.76
+1h MATICUSD: RSI 61.26, nothing to do. Checking back in 3600 seconds
+1h RSI  XETHZUSD: 61.58
+opening asset file 1h.json
+1h XETHZUSD: Clearing RSI value 60.09
+1h XETHZUSD: RSI 61.58, nothing to do. Checking back in 3600 seconds
+1h RSI  XXBTZUSD: 64.46
+opening asset file 1h.json
+1h XXBTZUSD: Clearing RSI value 62.43
+1h XXBTZUSD: RSI 64.46, nothing to do. Checking back in 3600 seconds
+1h RSI  XXRPZUSD: 67.89
+opening asset file 1h.json
+1h XXRPZUSD: Clearing RSI value 57.71
+1h XXRPZUSD: RSI 67.89 and length of macd list: 0
+1h XXRPZUSD: Appended 0.0021986433741487676 macd value to macd list
+1h XXRPZUSD: MACD list [0.0021986433741487676]
+1h RSI  ADAUSD: 67.1
+opening asset file 1h.json
+1h ADAUSD: Clearing RSI value 64.01
+1h ADAUSD: RSI 67.1 and length of macd list: 0
+1h ADAUSD: Appended 0.003324067486149329 macd value to macd list
+1h ADAUSD: MACD list [0.003324067486149329]
+1h RSI  SOLUSD: 60.89
+opening asset file 1h.json
+1h SOLUSD: Clearing RSI value 57.76
+1h SOLUSD: RSI 60.89, nothing to do. Checking back in 3600 seconds
+1h RSI  AVAXUSD: 61.04
+opening asset file 1h.json
+1h AVAXUSD: Clearing RSI value 59.84
+1h AVAXUSD: RSI 61.04, nothing to do. Checking back in 3600 seconds
+1h RSI  MATICUSD: 67.38
+opening asset file 1h.json
+1h MATICUSD: Clearing RSI value 61.26
+1h MATICUSD: RSI 67.38 and length of macd list: 0
+1h MATICUSD: Appended 0.0038623915732575176 macd value to macd list
+1h MATICUSD: MACD list [0.0038623915732575176]
+1h RSI  XETHZUSD: 65.02
+opening asset file 1h.json
+1h XETHZUSD: Clearing RSI value 61.58
+1h XETHZUSD: RSI 65.02 and length of macd list: 0
+1h XETHZUSD: Appended 15.712565175743748 macd value to macd list
+1h XETHZUSD: MACD list [15.712565175743748]
+1h RSI  XXBTZUSD: 65.02
+opening asset file 1h.json
+1h XXBTZUSD: Clearing RSI value 64.46
+1h XXBTZUSD: RSI 65.02 and length of macd list: 0
+1h XXBTZUSD: Appended 326.0913162668585 macd value to macd list
+1h XXBTZUSD: MACD list [326.0913162668585]
+1h RSI  XXRPZUSD: 65.59
+opening asset file 1h.json
+1h XXRPZUSD: Read 67.89 RSI in file, keeping value in list
+1h XXRPZUSD: RSI 67.89 and length of macd list: 1
+1h XXRPZUSD: Appended 0.002212641830868778 macd value to macd list
+1h XXRPZUSD: MACD list [0.0021986433741487676, 0.002212641830868778]
+1h RSI  ADAUSD: 65.7
+opening asset file 1h.json
+1h ADAUSD: Read 67.1 RSI in file, keeping value in list
+1h ADAUSD: RSI 67.1 and length of macd list: 1
+1h ADAUSD: Appended 0.003418278029936994 macd value to macd list
+1h ADAUSD: MACD list [0.003324067486149329, 0.003418278029936994]
+1h RSI  SOLUSD: 62.56
+opening asset file 1h.json
+1h SOLUSD: Clearing RSI value 60.89
+1h SOLUSD: RSI 62.56, nothing to do. Checking back in 3600 seconds
+1h RSI  AVAXUSD: 58.77
+opening asset file 1h.json
+1h AVAXUSD: Clearing RSI value 61.04
+1h AVAXUSD: RSI 58.77, nothing to do. Checking back in 3600 seconds
+1h RSI  MATICUSD: 65.08
+opening asset file 1h.json
+1h MATICUSD: Read 67.38 RSI in file, keeping value in list
+1h MATICUSD: RSI 67.38 and length of macd list: 1
+1h MATICUSD: Appended 0.004002903951653369 macd value to macd list
+1h MATICUSD: MACD list [0.0038623915732575176, 0.004002903951653369]
+1h RSI  XETHZUSD: 64.62
+opening asset file 1h.json
+1h XETHZUSD: Read 65.02 RSI in file, keeping value in list
+1h XETHZUSD: RSI 65.02 and length of macd list: 1
+1h XETHZUSD: Appended 15.918193659777899 macd value to macd list
+1h XETHZUSD: MACD list [15.712565175743748, 15.918193659777899]
+1h RSI  XXBTZUSD: 64.72
+opening asset file 1h.json
+1h XXBTZUSD: Read 65.02 RSI in file, keeping value in list
+1h XXBTZUSD: RSI 65.02 and length of macd list: 1
+1h XXBTZUSD: Appended 325.1000087384891 macd value to macd list
+1h XXBTZUSD: MACD list [326.0913162668585, 325.1000087384891]
+1h RSI  XXRPZUSD: 55.2
+opening asset file 1h.json
+1h XXRPZUSD: Read 67.89 RSI in file, keeping value in list
+1h XXRPZUSD: RSI 67.89 and length of macd list: 2
+1h XXRPZUSD: Appended 0.0021545261654470904 macd value to macd list
+1h XXRPZUSD: MACD list [0.0021986433741487676, 0.002212641830868778, 0.0021545261654470904]
+1h RSI  ADAUSD: 56.99
+opening asset file 1h.json
+1h ADAUSD: Read 67.1 RSI in file, keeping value in list
+1h ADAUSD: RSI 67.1 and length of macd list: 2
+1h ADAUSD: Appended 0.003139873653227987 macd value to macd list
+1h ADAUSD: MACD list [0.003324067486149329, 0.003418278029936994, 0.003139873653227987]
+1h RSI  SOLUSD: 53.97
+opening asset file 1h.json
+1h SOLUSD: Clearing RSI value 62.56
+1h SOLUSD: RSI 53.97, nothing to do. Checking back in 3600 seconds
+1h RSI  AVAXUSD: 52.72
+opening asset file 1h.json
+1h AVAXUSD: Clearing RSI value 58.77
+1h AVAXUSD: RSI 52.72, nothing to do. Checking back in 3600 seconds
+1h RSI  MATICUSD: 61.27
+opening asset file 1h.json
+1h MATICUSD: Read 67.38 RSI in file, keeping value in list
+1h MATICUSD: RSI 67.38 and length of macd list: 2
+1h MATICUSD: Appended 0.004339418104757242 macd value to macd list
+1h MATICUSD: MACD list [0.0038623915732575176, 0.004002903951653369, 0.004339418104757242]
+1h RSI  XETHZUSD: 57.63
+opening asset file 1h.json
+1h XETHZUSD: Read 65.02 RSI in file, keeping value in list
+1h XETHZUSD: RSI 65.02 and length of macd list: 2
+1h XETHZUSD: Appended 14.949343289432818 macd value to macd list
+1h XETHZUSD: MACD list [15.712565175743748, 15.918193659777899, 14.949343289432818]
+1h RSI  XXBTZUSD: 74.75
+opening asset file 1h.json
+1h XXBTZUSD: Read 65.02 RSI in file, keeping value in list
+1h XXBTZUSD: RSI 65.02 and length of macd list: 2
+1h XXBTZUSD: Appended 367.00682790845167 macd value to macd list
+1h XXBTZUSD: MACD list [326.0913162668585, 325.1000087384891, 367.00682790845167]
+1h RSI  XXRPZUSD: 55.73
+opening asset file 1h.json
+1h XXRPZUSD: Read 67.89 RSI in file, keeping value in list
+1h XXRPZUSD: No downward MACD trend yet
+1h RSI  ADAUSD: 61.61
+opening asset file 1h.json
+1h ADAUSD: Read 67.1 RSI in file, keeping value in list
+1h ADAUSD: No downward MACD trend yet
+1h RSI  SOLUSD: 59.52
+opening asset file 1h.json
+1h SOLUSD: Clearing RSI value 53.97
+1h SOLUSD: RSI 59.52, nothing to do. Checking back in 3600 seconds
+1h RSI  AVAXUSD: 61.0
+opening asset file 1h.json
+1h AVAXUSD: Clearing RSI value 52.72
+1h AVAXUSD: RSI 61.0, nothing to do. Checking back in 3600 seconds
+1h RSI  MATICUSD: 66.34
+opening asset file 1h.json
+1h MATICUSD: Read 67.38 RSI in file, keeping value in list
+1h MATICUSD: No downward MACD trend yet
+1h RSI  XETHZUSD: 60.49
+opening asset file 1h.json
+1h XETHZUSD: Read 65.02 RSI in file, keeping value in list
+1h XETHZUSD: No downward MACD trend yet
+1h RSI  XXBTZUSD: 62.92
+opening asset file 1h.json
+1h XXBTZUSD: Read 65.02 RSI in file, keeping value in list
+1h XXBTZUSD: No downward MACD trend yet
+1h RSI  XXRPZUSD: 50.67
+opening asset file 1h.json
+1h XXRPZUSD: Read 67.89 RSI in file, keeping value in list
+1h XXRPZUSD: MACD in downward trend for 3 iterations: [0.002212641830868778, 0.0021545261654470904, 0.001999432543308144], selling XXRPZUSD
+1h XXRPZUSD: Nothing left to sell because we own 0 of it
+1h RSI  ADAUSD: 51.87
+opening asset file 1h.json
+1h ADAUSD: Read 67.1 RSI in file, keeping value in list
+1h ADAUSD: MACD in downward trend for 3 iterations: [0.003418278029936994, 0.003139873653227987, 0.0030873814407380573], selling ADAUSD
+1h ADAUSD: Nothing left to sell because we own 0 of it
+1h RSI  SOLUSD: 51.33
+opening asset file 1h.json
+1h SOLUSD: Clearing RSI value 59.52
+1h SOLUSD: RSI 51.33, nothing to do. Checking back in 3600 seconds
+1h RSI  AVAXUSD: 53.2
+opening asset file 1h.json
+1h AVAXUSD: Clearing RSI value 61.0
+1h AVAXUSD: RSI 53.2, nothing to do. Checking back in 3600 seconds
+1h RSI  MATICUSD: 59.96
+opening asset file 1h.json
+1h MATICUSD: Read 67.38 RSI in file, keeping value in list
+1h MATICUSD: No downward MACD trend yet
+1h RSI  XETHZUSD: 51.4
+opening asset file 1h.json
+1h XETHZUSD: Read 65.02 RSI in file, keeping value in list
+1h XETHZUSD: MACD in downward trend for 3 iterations: [15.918193659777899, 14.949343289432818, 14.503707945759288], selling XETHZUSD
+1h XETHZUSD: Nothing left to sell because we own 0 of it
+1h RSI  XXBTZUSD: 54.35
+opening asset file 1h.json
+1h XXBTZUSD: Read 65.02 RSI in file, keeping value in list
+1h XXBTZUSD: No downward MACD trend yet
+1h RSI  XXRPZUSD: 47.73
+opening asset file 1h.json
+1h XXRPZUSD: RSI list is empty, appending 47.73 to it
+1h XXRPZUSD: RSI 47.73, nothing to do. Checking back in 3600 seconds
+1h RSI  ADAUSD: 47.19
+opening asset file 1h.json
+1h ADAUSD: RSI list is empty, appending 47.19 to it
+1h ADAUSD: RSI 47.19, nothing to do. Checking back in 3600 seconds
+1h RSI  SOLUSD: 45.89
+opening asset file 1h.json
+1h SOLUSD: Clearing RSI value 51.33
+1h SOLUSD: RSI 45.89, nothing to do. Checking back in 3600 seconds
+1h RSI  AVAXUSD: 53.09
+opening asset file 1h.json
+1h AVAXUSD: Clearing RSI value 53.2
+1h AVAXUSD: RSI 53.09, nothing to do. Checking back in 3600 seconds
+1h RSI  MATICUSD: 54.97
+opening asset file 1h.json
+1h MATICUSD: Read 67.38 RSI in file, keeping value in list
+1h MATICUSD: No downward MACD trend yet
+1h RSI  XETHZUSD: 49.94
+opening asset file 1h.json
+1h XETHZUSD: RSI list is empty, appending 49.94 to it
+1h XETHZUSD: RSI 49.94, nothing to do. Checking back in 3600 seconds
