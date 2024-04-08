@@ -401,6 +401,7 @@ while True:
         tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds"
         send_telegram_message()
       time.sleep(3) # sleep 3 seconds between asset pair
+    list_1h.clear()
   if len(list_4h) == 4:
     timeframe = "4h"
     file_extension = '.json'
@@ -749,6 +750,7 @@ while True:
         tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds"
         send_telegram_message()
       time.sleep(3) # sleep 3 seconds between asset pair
+    list_4h.clear()
   if len(list_24h) == 24:
     timeframe = "1d"
     file_extension = '.json'
@@ -1097,4 +1099,5 @@ while True:
         tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds"
         send_telegram_message()
       time.sleep(3) # sleep 3 seconds between asset pair
+    list_24h.clear()
   time.sleep(loop_time_seconds)
