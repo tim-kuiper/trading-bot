@@ -1,8 +1,9 @@
-def test():
-    test = 2
-    bla = 3
-    pro = 4
-    return test,bla,pro
+def test_func1():
+    output = test_func2()
+    return output
 
-#y = test(1)
-print(test(test))
+def test_func2():
+    var4 = 5
+    return var4
+
+print(test_func1())

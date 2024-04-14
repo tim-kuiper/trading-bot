@@ -32,6 +32,7 @@ Flow:
 '''
 
 # set vars
+## general vars
 asset_dict = {}
 asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'AVAXUSD', 'MATICUSD', 'XETHZUSD']
 pd.options.display.max_rows = 999
@@ -42,6 +43,36 @@ list_1h = []
 list_4h = []
 list_24h = []
 loop_time_seconds = 3600
+
+## asset pair specific vars
+if asset_pair == "XXBTZUSD":
+  asset_code = "XXBT"
+  api_sec = os.environ['api_sec_env_btc']
+  api_key = os.environ['api_key_env_btc']
+if asset_pair == "XXRPZUSD":
+  asset_code = "XXRP"
+  api_sec = os.environ['api_sec_env_xrp']
+  api_key = os.environ['api_key_env_xrp']
+if asset_pair == "ADAUSD":
+  asset_code = "ADA"
+  api_sec = os.environ['api_sec_env_ada']
+  api_key = os.environ['api_key_env_ada']
+if asset_pair == "SOLUSD":
+  asset_code = "SOL"
+  api_sec = os.environ['api_sec_env_sol']
+  api_key = os.environ['api_key_env_sol']
+if asset_pair == "AVAXUSD":
+  asset_code = "AVAX"
+  api_sec = os.environ['api_sec_env_avax']
+  api_key = os.environ['api_key_env_avax']
+if asset_pair == "MATICUSD":
+  asset_code = "MATIC"
+  api_sec = os.environ['api_sec_env_matic']
+  api_key = os.environ['api_key_env_matic']
+if asset_pair == "XETHZUSD":
+  asset_code = "XETH"
+  api_sec = os.environ['api_sec_env_eth']
+  api_key = os.environ['api_key_env_eth']
 
 # functions
 def send_telegram_message():
@@ -70,14 +101,12 @@ def get_holdings():
     holdings = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
     return holdings
 
-# get min order size for asset_pair
 def min_order_size():
     time.sleep(2)
     resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
     minimum_order_size = float(resp.json()['result'][asset_pair]['ordermin'])
     return minimum_order_size
 
-# get asset_pair close value
 def get_asset_close():
     time.sleep(2)
     payload = {'pair': asset_pair}
@@ -85,7 +114,6 @@ def get_asset_close():
     close_value = resp.json()['result'][asset_pair]['c'][0]
     return close_value
 
-# function for obtaining OHLC data and getting the close value, interval in minutes
 def get_ohlcdata():
     time.sleep(2)
     payload = {'pair': asset_pair, 'interval': interval_time_minutes}
@@ -102,7 +130,6 @@ def get_ohlcdata():
       tg_message = f"Error requesting {asset_pair} OHLC data {ohlc_data_raw.json()['error']}"
       send_telegram_message()
 
-# function for obtaining OHLC data for MACD and getting the close value, interval in minutes
 def get_ohlcdata_macd():
     time.sleep(2)
     payload = {'pair': asset_pair, 'interval': interval_time_minutes}
@@ -141,8 +168,8 @@ def sell_asset():
     }, api_key, api_sec)
     return sell_order
 
-  # function to display RSI (tradingview calculcation)
 def rsi_tradingview(period: int = 14, round_rsi: bool = True):
+    # RSI tradingview calculation
     delta = get_ohlcdata().diff()
     up = delta.copy()
     up[up < 0] = 0
@@ -166,56 +193,17 @@ def check_create_asset_file():
     # create file if it doesnt exist, add dictionary per asset to it
     if not asset_file_exists:
       print(f"Asset file {asset_file} doesnt exist , creating one")
-      f = open(asset_file, "w")
       asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": []}})
-      f.write(json.dumps(asset_dict))
-      f.close()
+      write_to_asset_file()
     else:
       print(f"Asset file {asset_file} exists, reading")
-      f = open(asset_file, "r")
-      asset_json = f.read()
-      f.close()
+      read_asset_file()
       asset_dict = json.loads(asset_json)
       if asset_pair not in asset_dict.keys():
         print(f"Asset pair {asset_pair} not present in asset file {asset_file}, updating file")
         asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": []}})
-        f = open(asset_file, "w")
-        f.write(json.dumps(asset_dict))
-        f.close()
+        write_to_asset_file()
         print(f"Appended {asset_pair} to {asset_file}")
-
-def asset_pair_vars():
-    # set asset code / api tokens for asset pair 
-    if asset_pair == "XXBTZUSD":
-      asset_code = "XXBT"
-      api_sec = os.environ['api_sec_env_btc']
-      api_key = os.environ['api_key_env_btc']
-    if asset_pair == "XXRPZUSD":
-      asset_code = "XXRP"
-      api_sec = os.environ['api_sec_env_xrp']
-      api_key = os.environ['api_key_env_xrp']
-    if asset_pair == "ADAUSD":
-      asset_code = "ADA"
-      api_sec = os.environ['api_sec_env_ada']
-      api_key = os.environ['api_key_env_ada']
-    if asset_pair == "SOLUSD":
-      asset_code = "SOL"
-      api_sec = os.environ['api_sec_env_sol']
-      api_key = os.environ['api_key_env_sol']
-    if asset_pair == "AVAXUSD":
-      asset_code = "AVAX"
-      api_sec = os.environ['api_sec_env_avax']
-      api_key = os.environ['api_key_env_avax']
-    if asset_pair == "MATICUSD":
-      asset_code = "MATIC"
-      api_sec = os.environ['api_sec_env_matic']
-      api_key = os.environ['api_key_env_matic']
-    if asset_pair == "XETHZUSD":
-      asset_code = "XETH"
-      api_sec = os.environ['api_sec_env_eth']
-      api_key = os.environ['api_key_env_eth']
-    return asset_code,api_sec,api_key
- 
 
 def write_to_asset_file():
     f = open(asset_file, "w")
@@ -226,7 +214,8 @@ def read_asset_file():
     f = open(asset_file, "r")
     asset_json = f.read()
     f.close()
-    
+    return asset_json
+
 # main loop
 while True:
   list_1h.append(1)
@@ -241,7 +230,6 @@ while True:
     interval_time_simple = '1h'
     order_size = 50
     for asset_pair in asset_pairs:
-      asset_pair_vars()
       check_create_asset_file()
       rsi_list_values  = rsi_tradingview()
       rsi = float(rsi_list_values[-1])
@@ -252,14 +240,11 @@ while True:
       # order_size = 15
       print(f"{interval_time_simple} RSI  {asset_pair}: {rsi}")
       print(f"opening asset file {asset_file}")
-      f = open(asset_file, "r")
-      asset_json = f.read()
-      f.close()
+      read_asset_file()
       asset_dict = json.loads(asset_json)
       macd_list = asset_dict[asset_pair]["macd"] 
       rsi_list = asset_dict[asset_pair]["rsi"]
       holdings_list = asset_dict[asset_pair]["holdings"]
-
       if len(rsi_list) == 1:
         if rsi_list[0] < 35:
           print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
@@ -272,9 +257,7 @@ while True:
           rsi_list.clear()
           rsi_list.append(rsi)
           asset_dict[asset_pair]["rsi"] = rsi_list
-          f = open(asset_file, "w")
-          f.write(json.dumps(asset_dict))
-          f.close()
+          write_to_asset_file()
       elif len(rsi_list) == 0:
         print(f"{interval_time_simple} {asset_pair}: RSI list is empty, appending {rsi} to it")
         rsi_list.append(rsi)
@@ -414,9 +397,6 @@ while True:
     interval_time_simple = '4h'
     order_size = 100
     for asset_pair in asset_pairs:
-      asset_pair_vars()
-      asset_file_exists = os.path.exists(asset_file_path)
-      # create file if it doesnt exist, add dictionary per asset to it
       check_create_asset_file()
       rsi_list_values  = rsi_tradingview()
       rsi = float(rsi_list_values[-1])
@@ -427,15 +407,11 @@ while True:
       # order_size = 15
       print(f"{interval_time_simple} RSI  {asset_pair}: {rsi}")
       print(f"opening asset file {asset_file}")
-      f = open(asset_file, "r")
-      asset_json = f.read()
-      f.close()
-
+      read_asset_file()
       asset_dict = json.loads(asset_json)
       macd_list = asset_dict[asset_pair]["macd"] 
       rsi_list = asset_dict[asset_pair]["rsi"]
       holdings_list = asset_dict[asset_pair]["holdings"]
-
       if len(rsi_list) == 1:
         if rsi_list[0] < 35:
           print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
@@ -454,7 +430,6 @@ while True:
         rsi_list.append(rsi)
         asset_dict[asset_pair]["rsi"] = rsi_list
         write_to_asset_file()
-
       if rsi < 35 and len(macd_list) < 3:
         print(f"{interval_time_simple} {asset_pair}: RSI {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
         macd = get_macd() 
@@ -570,10 +545,7 @@ while True:
     interval_time_simple = '1d'
     order_size = 250
     for asset_pair in asset_pairs:
-      asset_pair_vars()
-      asset_file_exists = os.path.exists(asset_file_path)
       check_create_asset_file()
-      # set variable for RSI
       rsi_list_values  = rsi_tradingview()
       rsi = float(rsi_list_values[-1])
       # set these vars for testing purposes
@@ -583,14 +555,11 @@ while True:
       # order_size = 15
       print(f"{interval_time_simple} RSI  {asset_pair}: {rsi}")
       print(f"opening asset file {asset_file}")
-      f = open(asset_file, "r")
-      asset_json = f.read()
-      f.close()
+      read_asset_file()
       asset_dict = json.loads(asset_json)
       macd_list = asset_dict[asset_pair]["macd"] 
       rsi_list = asset_dict[asset_pair]["rsi"]
       holdings_list = asset_dict[asset_pair]["holdings"]
-
       if len(rsi_list) == 1:
         if rsi_list[0] < 35:
           print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
