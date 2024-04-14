@@ -1,9 +1,8 @@
 def test_func1():
-    output = test_func2()
-    return output
+    asset_code = "asset_code_val"
+    api_sec = "api_sec_val"
+    api_key = "api_key_val"
+    return [asset_code, api_sec, api_key]
 
-def test_func2():
-    var4 = 5
-    return var4
 
-print(test_func1())
+print(test_func1()[1])

@@ -44,37 +44,39 @@ list_4h = []
 list_24h = []
 loop_time_seconds = 3600
 
-## asset pair specific vars
-if asset_pair == "XXBTZUSD":
-  asset_code = "XXBT"
-  api_sec = os.environ['api_sec_env_btc']
-  api_key = os.environ['api_key_env_btc']
-if asset_pair == "XXRPZUSD":
-  asset_code = "XXRP"
-  api_sec = os.environ['api_sec_env_xrp']
-  api_key = os.environ['api_key_env_xrp']
-if asset_pair == "ADAUSD":
-  asset_code = "ADA"
-  api_sec = os.environ['api_sec_env_ada']
-  api_key = os.environ['api_key_env_ada']
-if asset_pair == "SOLUSD":
-  asset_code = "SOL"
-  api_sec = os.environ['api_sec_env_sol']
-  api_key = os.environ['api_key_env_sol']
-if asset_pair == "AVAXUSD":
-  asset_code = "AVAX"
-  api_sec = os.environ['api_sec_env_avax']
-  api_key = os.environ['api_key_env_avax']
-if asset_pair == "MATICUSD":
-  asset_code = "MATIC"
-  api_sec = os.environ['api_sec_env_matic']
-  api_key = os.environ['api_key_env_matic']
-if asset_pair == "XETHZUSD":
-  asset_code = "XETH"
-  api_sec = os.environ['api_sec_env_eth']
-  api_key = os.environ['api_key_env_eth']
-
 # functions
+def get_asset_vars():
+    ## asset pair specific vars
+    if asset_pair == "XXBTZUSD":
+      asset_code = "XXBT"
+      api_sec = os.environ['api_sec_env_btc']
+      api_key = os.environ['api_key_env_btc']
+    if asset_pair == "XXRPZUSD":
+      asset_code = "XXRP"
+      api_sec = os.environ['api_sec_env_xrp']
+      api_key = os.environ['api_key_env_xrp']
+    if asset_pair == "ADAUSD":
+      asset_code = "ADA"
+      api_sec = os.environ['api_sec_env_ada']
+      api_key = os.environ['api_key_env_ada']
+    if asset_pair == "SOLUSD":
+      asset_code = "SOL"
+      api_sec = os.environ['api_sec_env_sol']
+      api_key = os.environ['api_key_env_sol']
+    if asset_pair == "AVAXUSD":
+      asset_code = "AVAX"
+      api_sec = os.environ['api_sec_env_avax']
+      api_key = os.environ['api_key_env_avax']
+    if asset_pair == "MATICUSD":
+      asset_code = "MATIC"
+      api_sec = os.environ['api_sec_env_matic']
+      api_key = os.environ['api_key_env_matic']
+    if asset_pair == "XETHZUSD":
+      asset_code = "XETH"
+      api_sec = os.environ['api_sec_env_eth']
+      api_key = os.environ['api_key_env_eth']
+    return [asset_code, api_sec, api_key]
+    
 def send_telegram_message():
     token = tg_token
     chat_id = "481520678"
@@ -197,8 +199,7 @@ def check_create_asset_file():
       write_to_asset_file()
     else:
       print(f"Asset file {asset_file} exists, reading")
-      read_asset_file()
-      asset_dict = json.loads(asset_json)
+      asset_dict = json.loads(read_asset_file())
       if asset_pair not in asset_dict.keys():
         print(f"Asset pair {asset_pair} not present in asset file {asset_file}, updating file")
         asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": []}})
@@ -230,6 +231,8 @@ while True:
     interval_time_simple = '1h'
     order_size = 50
     for asset_pair in asset_pairs:
+      api_key = get_asset_vars()[2]
+      api_sec = get_asset_vars()[1]
       check_create_asset_file()
       rsi_list_values  = rsi_tradingview()
       rsi = float(rsi_list_values[-1])
@@ -240,8 +243,7 @@ while True:
       # order_size = 15
       print(f"{interval_time_simple} RSI  {asset_pair}: {rsi}")
       print(f"opening asset file {asset_file}")
-      read_asset_file()
-      asset_dict = json.loads(asset_json)
+      asset_dict = json.loads(read_asset_file())
       macd_list = asset_dict[asset_pair]["macd"] 
       rsi_list = asset_dict[asset_pair]["rsi"]
       holdings_list = asset_dict[asset_pair]["holdings"]
@@ -397,6 +399,8 @@ while True:
     interval_time_simple = '4h'
     order_size = 100
     for asset_pair in asset_pairs:
+      api_key = get_asset_vars()[2]
+      api_sec = get_asset_vars()[1]
       check_create_asset_file()
       rsi_list_values  = rsi_tradingview()
       rsi = float(rsi_list_values[-1])
@@ -407,8 +411,7 @@ while True:
       # order_size = 15
       print(f"{interval_time_simple} RSI  {asset_pair}: {rsi}")
       print(f"opening asset file {asset_file}")
-      read_asset_file()
-      asset_dict = json.loads(asset_json)
+      asset_dict = json.loads(read_asset_file())
       macd_list = asset_dict[asset_pair]["macd"] 
       rsi_list = asset_dict[asset_pair]["rsi"]
       holdings_list = asset_dict[asset_pair]["holdings"]
@@ -545,6 +548,8 @@ while True:
     interval_time_simple = '1d'
     order_size = 250
     for asset_pair in asset_pairs:
+      api_key = get_asset_vars()[2]
+      api_sec = get_asset_vars()[1]
       check_create_asset_file()
       rsi_list_values  = rsi_tradingview()
       rsi = float(rsi_list_values[-1])
@@ -555,8 +560,7 @@ while True:
       # order_size = 15
       print(f"{interval_time_simple} RSI  {asset_pair}: {rsi}")
       print(f"opening asset file {asset_file}")
-      read_asset_file()
-      asset_dict = json.loads(asset_json)
+      asset_dict = json.loads(read_asset_file())
       macd_list = asset_dict[asset_pair]["macd"] 
       rsi_list = asset_dict[asset_pair]["rsi"]
       holdings_list = asset_dict[asset_pair]["holdings"]
