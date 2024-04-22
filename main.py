@@ -485,6 +485,7 @@ while True:
         print(f"{interval_time_simple} {asset_pair}: Appended {macd} macd value to macd list")
         print(f"{interval_time_simple} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
         tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
+        send_telegram_message()
       elif rsi > 65 and len(macd_list) >= 3:
         if macd_list[-3] > macd_list[-2] > macd_list[-1]:
           print(f"{interval_time_simple} {asset_pair}: MACD in downward trend for 3 iterations: {macd_list[-3:]}, selling {asset_pair}")
@@ -634,6 +635,7 @@ while True:
         print(f"{interval_time_simple} {asset_pair}: Appended {macd} macd value to macd list")
         print(f"{interval_time_simple} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
         tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
+        send_telegram_message()
       elif rsi > 65 and len(macd_list) >= 3:
         if macd_list[-3] > macd_list[-2] > macd_list[-1]:
           print(f"{interval_time_simple} {asset_pair}: MACD in downward trend for 3 iterations: {macd_list[-3:]}, selling {asset_pair}")
