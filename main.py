@@ -148,6 +148,15 @@ def get_ohlcdata_macd():
       tg_message = f"Error requesting {asset_pair} OHLC data {ohlc_data_raw.json()['error']}"
       send_telegram_message()
 
+def get_orderinfo():
+    time.sleep(2)
+    resp = kraken_request('/0/private/QueryOrders', {
+        "nonce": str(int(1000*time.time())),
+        "txid": transaction_id,
+        "trades": True
+         }, api_key, api_sec)
+    return resp
+
 def buy_asset():
     print("Buying the following amount of", asset_pair, ":", volume_to_buy)
     buy_order = kraken_request('/0/private/AddOrder', {
@@ -291,7 +300,10 @@ while True:
             send_telegram_message()        
             macd_list.clear()
             rsi_list.clear()
-            holdings_list.append(float(volume_to_buy))
+            transaction_id = order_output.json()['result']['txid'][0]
+            order_info = get_orderinfo()
+            executed_size = order_info.json()['result'][transaction_id]['vol_exec']
+            holdings_list.append(float(executed_size))
             asset_dict[asset_pair]["macd"] = macd_list
             asset_dict[asset_pair]["rsi"] = rsi_list
             asset_dict[asset_pair]["holdings"] = holdings_list
@@ -347,8 +359,8 @@ while True:
                 send_telegram_message()        
               else:
                 print(f"Current date/time: {datetime.datetime.now()}")
-                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
-                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
+                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
+                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
                 send_telegram_message()
             else:
               macd_list.clear()
@@ -461,7 +473,10 @@ while True:
             send_telegram_message()        
             macd_list.clear()
             rsi_list.clear()
-            holdings_list.append(float(volume_to_buy))
+            transaction_id = order_output.json()['result']['txid'][0]
+            order_info = get_orderinfo()
+            executed_size = order_info.json()['result'][transaction_id]['vol_exec']
+            holdings_list.append(float(executed_size))
             asset_dict[asset_pair]["macd"] = macd_list
             asset_dict[asset_pair]["rsi"] = rsi_list
             asset_dict[asset_pair]["holdings"] = holdings_list
@@ -507,8 +522,8 @@ while True:
                 tg_message = order_output.json()['result']
                 send_telegram_message()        
               else:
-                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
-                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
+                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
+                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
                 send_telegram_message()
             else:
               macd_list.clear()
@@ -611,7 +626,10 @@ while True:
             send_telegram_message()        
             macd_list.clear()
             rsi_list.clear()
-            holdings_list.append(float(volume_to_buy))
+            transaction_id = order_output.json()['result']['txid'][0]
+            order_info = get_orderinfo()
+            executed_size = order_info.json()['result'][transaction_id]['vol_exec']
+            holdings_list.append(float(executed_size))
             asset_dict[asset_pair]["macd"] = macd_list
             asset_dict[asset_pair]["rsi"] = rsi_list
             asset_dict[asset_pair]["holdings"] = holdings_list
@@ -657,8 +675,8 @@ while True:
                 tg_message = order_output.json()['result']
                 send_telegram_message()        
               else:
-                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
-                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
+                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
+                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
                 send_telegram_message()
             else:
               macd_list.clear()

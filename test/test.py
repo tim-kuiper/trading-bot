@@ -110,11 +110,31 @@ while True:
           tg_message = "Error requesting", asset_pair, "OHLC data", ohlc_data_raw.json()['error']
           send_telegram_message()
 
-    close = get_ohlcdata()
-    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
-    macd_dict = macd.to_dict()
-    macd_values = list(macd_dict.values())
-    order_size = float(0.05 * float(get_holdings().json()['result']['ZUSD']))
-    print(f"MACD value: {macd_values[-1]}")
-    print(f"Order Size: {order_size}")
-    time.sleep(60)
+    def buy_asset():
+        print("Buying the following amount of", asset_pair, ":", volume_to_buy)
+        buy_order = kraken_request('/0/private/AddOrder', {
+            "nonce": str(int(1000*time.time())),
+            "ordertype": "market",
+            "type": "buy",
+            "volume": volume_to_buy,
+            "pair": asset_pair
+        }, api_key, api_sec)
+        return buy_order
+
+    def get_orderinfo():
+        time.sleep(2)
+        resp = kraken_request('/0/private/QueryOrders', {
+            "nonce": str(int(1000*time.time())),
+            "txid": transaction_id,
+            "trades": True
+             }, api_key, api_sec)
+        return resp
+
+    volume_to_buy = min_order_size()
+    order_output = buy_asset()
+    print(order_output.json())
+    transaction_id = order_output.json()['result']['txid'][0]
+    order_info  = get_orderinfo()
+    executed_size = float(order_info.json()['result'][transaction_id]['vol_exec'])
+    print(f"Executed size: {executed_size}")
+    time.sleep(3600)
