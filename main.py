@@ -34,7 +34,7 @@ Flow:
 # set vars
 ## general vars
 asset_dict = {}
-asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'AVAXUSD', 'MATICUSD', 'XETHZUSD']
+asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'XETHZUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
@@ -63,14 +63,6 @@ def get_asset_vars():
       asset_code = "SOL"
       api_sec = os.environ['api_sec_env_sol']
       api_key = os.environ['api_key_env_sol']
-    if asset_pair == "AVAXUSD":
-      asset_code = "AVAX"
-      api_sec = os.environ['api_sec_env_avax']
-      api_key = os.environ['api_key_env_avax']
-    if asset_pair == "MATICUSD":
-      asset_code = "MATIC"
-      api_sec = os.environ['api_sec_env_matic']
-      api_key = os.environ['api_key_env_matic']
     if asset_pair == "XETHZUSD":
       asset_code = "XETH"
       api_sec = os.environ['api_sec_env_eth']
