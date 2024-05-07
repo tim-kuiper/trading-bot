@@ -92,84 +92,98 @@ def kraken_request(uri_path, data, api_key, api_sec):
     return req
 
 def get_holdings():
-    holdings = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
-    return holdings
+    try:
+        holdings = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
+        return holdings
+    except json.JSONDecodeError as e:
+        print(f"Syntax error while parsing request: {e}")
 
 def min_order_size():
     time.sleep(2)
-    resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
-    minimum_order_size = float(resp.json()['result'][asset_pair]['ordermin'])
-    return minimum_order_size
+    try:
+        resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
+        minimum_order_size = float(resp.json()['result'][asset_pair]['ordermin'])
+        return minimum_order_size
+    except json.JSONDecodeError as e:
+        print(f"Syntax error while parsing request: {e}")
 
 def get_asset_close():
     time.sleep(2)
-    payload = {'pair': asset_pair}
-    resp = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-    close_value = resp.json()['result'][asset_pair]['c'][0]
-    return close_value
+    try:
+        payload = {'pair': asset_pair}
+        resp = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
+        close_value = resp.json()['result'][asset_pair]['c'][0]
+        return close_value
+    except json.JSONDecodeError as e:
+        print(f"Syntax error while parsing request: {e}")
 
 def get_ohlcdata():
     time.sleep(2)
-    payload = {'pair': asset_pair, 'interval': interval_time_minutes}
-    ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
-    if not ohlc_data_raw.json()['error']:
-      # construct a dataframe and assign columns using asset ohlc data
-      df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
-      df.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
-      # we are only interested in asset close data, so create var for close data columns and set var type as float
-      close_data = df['close'].astype(float) # set close data to float
-      return close_data
-    else:
-      print(f"Error requesting {asset_pair} OHLC data: {ohlc_data_raw.json()['error']}")
-      tg_message = f"Error requesting {asset_pair} OHLC data {ohlc_data_raw.json()['error']}"
-      send_telegram_message()
+    try:
+        payload = {'pair': asset_pair, 'interval': interval_time_minutes}
+        ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
+        # construct a dataframe and assign columns using asset ohlc data
+        df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
+        df.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
+        # we are only interested in asset close data, so create var for close data columns and set var type as float
+        close_data = df['close'].astype(float) # set close data to float
+        return close_data
+    except json.JSONDecodeError as e:
+        print(f"Syntax error while parsing request: {e}")
 
 def get_ohlcdata_macd():
     time.sleep(2)
-    payload = {'pair': asset_pair, 'interval': interval_time_minutes}
-    ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
-    if not ohlc_data_raw.json()['error']:
-      # construct a dataframe and assign columns using asset ohlc data
-      df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
-      df.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
-      # we are only interested in asset close data, so create var for close data columns and set var type as float
-      close_data = df['close']
-      return close_data
-    else:
-      print(f"Error requesting {asset_pair} OHLC data: {ohlc_data_raw.json()['error']}")
-      tg_message = f"Error requesting {asset_pair} OHLC data {ohlc_data_raw.json()['error']}"
-      send_telegram_message()
+    try:
+        payload = {'pair': asset_pair, 'interval': interval_time_minutes}
+        ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
+        # construct a dataframe and assign columns using asset ohlc data
+        df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
+        df.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
+        # we are only interested in asset close data, so create var for close data columns and set var type as float
+        close_data = df['close']
+        return close_data
+    except json.JSONDecodeError as e:
+        print(f"Syntax error while parsing request: {e}")
 
 def get_orderinfo():
     time.sleep(2)
-    resp = kraken_request('/0/private/QueryOrders', {
-        "nonce": str(int(1000*time.time())),
-        "txid": transaction_id,
-        "trades": True
-         }, api_key, api_sec)
-    return resp
+    try:
+        resp = kraken_request('/0/private/QueryOrders', {
+            "nonce": str(int(1000*time.time())),
+            "txid": transaction_id,
+            "trades": True
+        }, api_key, api_sec)
+        return resp
+    except json.JSONDecodeError as e:
+        print(f"Syntax error while parsing request: {e}")
 
 def buy_asset():
-    print("Buying the following amount of", asset_pair, ":", volume_to_buy)
-    buy_order = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "buy",
-        "volume": volume_to_buy,
-        "pair": asset_pair
-    }, api_key, api_sec)
-    return buy_order
+    try:
+        print("Buying the following amount of", asset_pair, ":", volume_to_buy)
+        buy_order = kraken_request('/0/private/AddOrder', {
+            "nonce": str(int(1000*time.time())),
+            "ordertype": "market",
+            "type": "buy",
+            "volume": volume_to_buy,
+            "pair": asset_pair
+        }, api_key, api_sec)
+        return buy_order
+    except json.JSONDecodeError as e:
+        print(f"Syntax error while parsing request: {e}")
 
 def sell_asset():
-    print("Selling the following amount of", asset_pair, ":", volume_to_sell)
-    sell_order = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "sell",
-        "volume": volume_to_sell,
-        "pair": asset_pair
-    }, api_key, api_sec)
-    return sell_order
+    try:
+        print("Selling the following amount of", asset_pair, ":", volume_to_sell)
+        sell_order = kraken_request('/0/private/AddOrder', {
+            "nonce": str(int(1000*time.time())),
+            "ordertype": "market",
+            "type": "sell",
+            "volume": volume_to_sell,
+            "pair": asset_pair
+        }, api_key, api_sec)
+        return sell_order
+    except json.JSONDecodeError as e:
+        print(f"Syntax error while parsing request: {e}")
 
 def rsi_tradingview(period: int = 14, round_rsi: bool = True):
     # RSI tradingview calculation
@@ -208,15 +222,21 @@ def check_create_asset_file():
         print(f"Appended {asset_pair} to {asset_file}")
 
 def write_to_asset_file():
-    f = open(asset_file, "w")
-    f.write(json.dumps(asset_dict))
-    f.close()
+    try:
+        f = open(asset_file, "w")
+        f.write(json.dumps(asset_dict))
+        f.close()
+    except OSError as e:
+        print(f"Error opening asset file: {e}")
 
 def read_asset_file():
-    f = open(asset_file, "r")
-    asset_json = f.read()
-    f.close()
-    return asset_json
+    try:
+        f = open(asset_file, "r")
+        asset_json = f.read()
+        f.close()
+        return asset_json
+    except OSError as e:
+        print(f"Error opening asset file: {e}")
 
 # main loop
 while True:
