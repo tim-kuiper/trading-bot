@@ -43,8 +43,8 @@ list_1h = []
 list_4h = []
 list_24h = []
 loop_time_seconds = 14400
-rsi_lower_boundary = 40
-rsi_upper_boundary = 70
+rsi_lower_boundary = 35
+rsi_upper_boundary = 65
 
 # functions
 def get_asset_vars():
