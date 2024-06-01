@@ -208,20 +208,26 @@ def get_macd():
     return macd_values[-1]
 
 def check_create_asset_file():
+    global asset_dict
     asset_file_exists = os.path.exists(asset_file_path)
     # create file if it doesnt exist, add dictionary per asset to it
     if not asset_file_exists:
       print(f"Asset file {asset_file} doesnt exist , creating one")
-      asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": []}})
+      asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": []}})
       write_to_asset_file()
     else:
       print(f"Asset file {asset_file} exists, reading")
       asset_dict = json.loads(read_asset_file())
       if asset_pair not in asset_dict.keys():
         print(f"Asset pair {asset_pair} not present in asset file {asset_file}, updating file")
-        asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": []}})
+        asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": []}})
         write_to_asset_file()
         print(f"Appended {asset_pair} to {asset_file}")
+      if "price_bought" not in asset_dict[asset_pair].keys():
+        print(f"price bought not present in asset dict, appending")
+        y = {"price_bought": []} 
+        asset_dict[asset_pair].update(y)
+        write_to_asset_file()
 
 def write_to_asset_file():
     try:
@@ -269,6 +275,7 @@ while True:
       macd_list = asset_dict[asset_pair]["macd"] 
       rsi_list = asset_dict[asset_pair]["rsi"]
       holdings_list = asset_dict[asset_pair]["holdings"]
+      price_list = asset_dict[asset_pair]["price_bought"]
       if len(rsi_list) == 1:
         if rsi_list[0] < rsi_lower_boundary:
           print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
@@ -319,9 +326,11 @@ while True:
             order_info = get_orderinfo()
             executed_size = order_info.json()['result'][transaction_id]['vol_exec']
             holdings_list.append(float(executed_size))
+            price_list.append(asset_close)
             asset_dict[asset_pair]["macd"] = macd_list
             asset_dict[asset_pair]["rsi"] = rsi_list
             asset_dict[asset_pair]["holdings"] = holdings_list
+            asset_dict[asset_pair]["price_bought"] = price_list
             write_to_asset_file()
           else:
             print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
@@ -351,22 +360,36 @@ while True:
           if float(sum(holdings_list)) > 0: # check if we have some in our holdings
             volume_to_sell = str(sum(holdings_list))
             if min_order_size() < float(volume_to_sell):
-              order_output = sell_asset()
-              if not order_output.json()['error']:
+              asset_close = float(get_asset_close())
+              price_list_avg = sum(price_list) / len(price_list)
+              if asset_close > price_list_avg:
+                order_output = sell_asset()
+                if not order_output.json()['error']:
+                  macd_list.clear()
+                  rsi_list.clear()
+                  holdings_list.clear()
+                  price_list.clear()
+                  asset_dict[asset_pair]["macd"] = macd_list
+                  asset_dict[asset_pair]["rsi"] = rsi_list
+                  asset_dict[asset_pair]["holdings"] = holdings_list
+                  asset_dict[asset_pair]["price_bought"] = price_list
+                  write_to_asset_file()
+                  print(f"{interval_time_simple} {asset_pair}: Sold {volume_to_sell}")
+                  tg_message = order_output.json()['result']
+                  send_telegram_message()        
+                else:
+                  print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
+                  tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
+                  send_telegram_message()
+              else:
+                print(f"Asset pair {asset_pair} close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing RSI and MACD list and continuing")
+                tg_message = f"Asset pair {asset_pair} close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing     RSI and MACD list and continuing"
+                send_telegram_message()
                 macd_list.clear()
                 rsi_list.clear()
-                holdings_list.clear()
                 asset_dict[asset_pair]["macd"] = macd_list
                 asset_dict[asset_pair]["rsi"] = rsi_list
-                asset_dict[asset_pair]["holdings"] = holdings_list
                 write_to_asset_file()
-                print(f"{interval_time_simple} {asset_pair}: Sold {volume_to_sell}")
-                tg_message = order_output.json()['result']
-                send_telegram_message()        
-              else:
-                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
-                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
-                send_telegram_message()
             else:
               macd_list.clear()
               rsi_list.clear()
@@ -424,6 +447,7 @@ while True:
       macd_list = asset_dict[asset_pair]["macd"] 
       rsi_list = asset_dict[asset_pair]["rsi"]
       holdings_list = asset_dict[asset_pair]["holdings"]
+      price_list = asset_dict[asset_pair]["price_bought"]
       if len(rsi_list) == 1:
         if rsi_list[0] < rsi_lower_boundary:
           print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
@@ -474,9 +498,11 @@ while True:
             order_info = get_orderinfo()
             executed_size = order_info.json()['result'][transaction_id]['vol_exec']
             holdings_list.append(float(executed_size))
+            price_list.append(asset_close)
             asset_dict[asset_pair]["macd"] = macd_list
             asset_dict[asset_pair]["rsi"] = rsi_list
             asset_dict[asset_pair]["holdings"] = holdings_list
+            asset_dict[asset_pair]["price_bought"] = holdings_list
             write_to_asset_file()
           else:
             print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
@@ -506,22 +532,36 @@ while True:
           if float(sum(holdings_list)) > 0: # check if we have some in our holdings
             volume_to_sell = str(sum(holdings_list))
             if min_order_size() < float(volume_to_sell):
-              order_output = sell_asset()
-              if not order_output.json()['error']:
+              asset_close = float(get_asset_close())
+              price_list_avg = sum(price_list) / len(price_list)
+              if asset_close > price_list_avg:
+                order_output = sell_asset()
+                if not order_output.json()['error']:
+                  macd_list.clear()
+                  rsi_list.clear()
+                  holdings_list.clear()
+                  price_list.clear()
+                  asset_dict[asset_pair]["macd"] = macd_list
+                  asset_dict[asset_pair]["rsi"] = rsi_list
+                  asset_dict[asset_pair]["holdings"] = holdings_list
+                  asset_dict[asset_pair]["price_bought"] = price_list
+                  write_to_asset_file()
+                  print(f"{interval_time_simple} {asset_pair}: Sold {volume_to_sell}")
+                  tg_message = order_output.json()['result']
+                  send_telegram_message()        
+                else:
+                  print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
+                  tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
+                  send_telegram_message()
+              else:
+                print(f"Asset pair {asset_pair} close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing RSI and MACD list and continuing")
+                tg_message = f"Asset pair {asset_pair} close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing     RSI and MACD list and continuing"
+                send_telegram_message()
                 macd_list.clear()
                 rsi_list.clear()
-                holdings_list.clear()
                 asset_dict[asset_pair]["macd"] = macd_list
                 asset_dict[asset_pair]["rsi"] = rsi_list
-                asset_dict[asset_pair]["holdings"] = holdings_list
                 write_to_asset_file()
-                print(f"{interval_time_simple} {asset_pair}: Sold {volume_to_sell}")
-                tg_message = order_output.json()['result']
-                send_telegram_message()        
-              else:
-                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
-                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
-                send_telegram_message()
             else:
               macd_list.clear()
               rsi_list.clear()
