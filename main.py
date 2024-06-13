@@ -43,6 +43,7 @@ tg_token = os.environ['telegram_token']
 list_1h = []
 list_4h = []
 list_24h = []
+start_list_24h = [] # use this list in combination with the regular 24h list in order to execute the 24h block without waiting a full day
 loop_time_seconds = 14400
 rsi_lower_boundary = 35
 rsi_upper_boundary = 65
@@ -229,6 +230,7 @@ def read_asset_file():
 
 # main loop
 while True:
+  start_list_24h.append(24)
   list_4h.append(4)
   list_24h.append(24)
   if len(list_4h) == 1:
@@ -403,7 +405,7 @@ while True:
         send_telegram_message()
       time.sleep(3) # sleep 3 seconds between asset pair
     list_4h.clear()
-  if len(list_24h) == 6:
+  if len(list_24h) == 6 or len(start_list_24h) == 1:
     timeframe = "1d"
     file_extension = '.json'
     asset_file = timeframe + file_extension 
