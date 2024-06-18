@@ -45,8 +45,8 @@ list_4h = []
 list_24h = []
 start_list_24h = [] # use this list in combination with the regular 24h list in order to execute the 24h block without waiting a full day
 loop_time_seconds = 14400
-rsi_lower_boundary = 35
-rsi_upper_boundary = 65
+rsi_lower_boundary = 31
+rsi_upper_boundary = 69
 
 # functions
 def get_asset_vars():
