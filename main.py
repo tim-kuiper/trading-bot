@@ -485,7 +485,7 @@ while True:
             asset_dict[asset_pair]["macd"] = macd_list
             asset_dict[asset_pair]["rsi"] = rsi_list
             asset_dict[asset_pair]["holdings"] = holdings_list
-            asset_dict[asset_pair]["price_bought"] = holdings_list
+            asset_dict[asset_pair]["price_bought"] = price_list
             write_to_asset_file()
           else:
             print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
