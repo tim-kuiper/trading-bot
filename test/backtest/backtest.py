@@ -30,6 +30,7 @@ rsi_lower_boundary = 35
 rsi_upper_boundary = 65
 interval_time_minutes = 240 # 4h timeframe
 data_dict = {}
+balance_usd = 5000
 
 # functions
 def get_asset_vars():
@@ -145,15 +146,61 @@ for asset_pair in asset_pairs:
   rsi_list = get_rsi().tolist()
   close_list = get_close().tolist()
   amount_list = get_asset_amount()
-  rsi_list_filtered = []
-  macd_list_filtered = []
-  amount_list_filtered = []
+  rsi_list_temp = []
+  macd_list_temp = []
+  amount_list_temp = []
+  holdings_list = []
+  price_bought_list = []
   for (time, macd, rsi, close, amount) in zip(time_list, macd_list, rsi_list, close_list, amount_list):
-    print(f"{time}, {macd}, {rsi}, {close}, {amount}")
-    if rsi < 30:
-      rsi_list_filtered.append(rsi)
-      macd_list_filtered.append(macd)
-      amount_list_filtered.append(amount)
-      #print(f"RSI:{rsi}, MACD: {macd}")
-  for (rsi, macd, amount) in zip(rsi_list_filtered, macd_list_filtered, amount_list_filtered):
-    print(f"{rsi}, {macd}, {amount}")
+    #print(f"{time}, {macd}, {rsi}, {close}, {amount}")
+    # print(f"Balance USD: {balance_usd}")
+    is_macd_float = isinstance(macd,float)
+    if 0 < rsi < 100 and is_macd_float:
+      print(f"rsi {rsi} and macd {macd}")
+      if len(rsi_list_temp) == 1:
+        if rsi_list_temp[0] < rsi_lower_boundary:
+          rsi = rsi_list_temp[0]
+        elif rsi_list_temp[0] > rsi_upper_boundary:
+          rsi = rsi_list_temp[0]
+        else:
+          rsi_list_temp.clear()
+          rsi_list_temp.append(rsi)
+      elif len(rsi_list_temp) == 0:
+        rsi_list_temp.append(rsi)
+      if rsi < rsi_lower_boundary and len(macd_list_temp) < 3:
+        macd_list_temp.append(macd)
+      if rsi < rsi_lower_boundary and len(macd_list_temp) >= 3:
+        if macd_list_temp[-3] < macd_list_temp[-2] < macd_list_temp[-1]:
+          print(f"Buy asset")
+          holdings_list.append(amount)
+          print(f"Holdings list: {holdings_list}")
+          price_bought_list.append(close)
+          macd_list_temp.clear()
+          rsi_list_temp.clear()
+        else:
+          macd_list_temp.append(macd)
+      elif rsi > rsi_upper_boundary and len(macd_list_temp) < 3:
+        macd_list_temp.append(macd)
+      elif rsi > rsi_upper_boundary and len(macd_list_temp) >= 3:
+        if macd_list_temp[-3] > macd_list_temp[-2] > macd_list_temp[-1]:
+          if float(sum(holdings_list)) > 0:
+            price_bought_avg = sum(price_bought_list) / len(price_bought_list)
+            if close > price_bought_avg:
+              usd_sold = sum(holdings_list) * close
+              balance_usd = balance_usd + usd_sold
+              print(f"Balance USD: {balance_usd}")
+              macd_list_temp.clear()
+              rsi_list_temp.clear()
+              price_bought_list.clear()
+            else:
+              print(f"Avg too low")
+              macd_list_temp.clear()
+              rsi_list_temp.clear()
+        else:
+          macd_list_temp.clear()
+          rsi_list_temp.clear()
+      else:
+        macd_list_temp.clear()
+        rsi_list_temp.clear()
+    else:
+      print(f"Incorrect test for macd {macd} and rsi {rsi}") 
