@@ -22,16 +22,18 @@ pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
 loop_time_seconds = 14400
-rsi_lower_boundary = 25
-rsi_upper_boundary = 75
-interval_time_minutes = 240 # 4h timeframe
+rsi_lower_boundary = 49
+rsi_upper_boundary = 51
+# interval_time_minutes = 240 # 4h timeframe
 # interval_time_minutes = 1440 # 1d timeframe
 # interval_time_minutes = 10080 # 1w timeframe
-# interval_time_minutes = 60 # 1h timeframe
-#interval_time_minutes = 15 # 15m timeframe
+interval_time_minutes = 60 # 1h timeframe
+# interval_time_minutes = 15 # 15m timeframe
+# interval_time_minutes = 30 # 30m timeframe
 data_dict = {}
 balance_usd = 5000
-order_size = 400
+order_size = 20
+intervals = ['1', '5', '15', '30', '60', '240', '720', '1440']
 
 # functions
 def get_asset_vars():
@@ -74,12 +76,14 @@ def kraken_request(uri_path, data, api_key, api_sec):
     return req 
 
 def get_ohlc():
-    time.sleep(2)
-    payload = {'pair': asset_pair, 'interval': interval_time_minutes}
-    ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
+    # time.sleep(2)
+    # payload = {'pair': asset_pair, 'interval': interval_time_minutes}
+    # ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
     # construct a dataframe and assign columns using asset ohlc data
-    df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
-    df.columns = ['unixtimestamp', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
+    # df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
+    df = pd.read_csv('XBTUSD_' + str(interval_time_minutes) + '.csv')
+    # df.columns = ['unixtimestamp', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
+    df.columns = ['unixtimestamp', 'open', 'high', 'low', 'close', 'volume', 'count']
     # we are only interested in asset close data, so create var for close data columns and set var type as float
     # close_data = df['close']
     # return close_data
@@ -135,95 +139,98 @@ def get_asset_amount():
     return asset_amount_list
 
 for asset_pair in asset_pairs:
-  holdings = []
-  api_key = get_asset_vars()[2]
-  api_sec = get_asset_vars()[1]
-  # data_dict = dict({"Time": get_time(), "MACD": get_macd(), "RSI": get_rsi()})
-  time_list = get_time()
-  macd_list = get_macd()
-  rsi_list = get_rsi().tolist()
-  close_list = get_close().tolist()
-  amount_list = get_asset_amount()
-  rsi_list_temp = []
-  macd_list_temp = []
-  amount_list_temp = []
-  holdings_list = []
-  price_bought_list = []
-  for (times, macd, rsi, close, amount) in zip(time_list, macd_list, rsi_list, close_list, amount_list):
-    #print(f"{times}, {macd}, {rsi}, {close}, {amount}")
-    # print(f"Balance USD: {balance_usd}")
-    is_macd_float = isinstance(macd,float)
-    if 0 < rsi < 100 and macd == macd: # NaN type is always not equal, also to itself
-      # print(f"rsi {rsi} and macd is a float: {macd}")
-      if len(rsi_list_temp) == 1:
-        #print(f"Length RSI temp list: {rsi_list_temp}")
-        if rsi_list_temp[0] < rsi_lower_boundary:
-          #print(f"RSI in RSI temp list is lower than RSI lower boundary {rsi_lower_boundary}: {rsi_list_temp[0]}, keeping value in list")
-          rsi = rsi_list_temp[0]
-        elif rsi_list_temp[0] > rsi_upper_boundary:
-          #print(f"RSI in RSI temp list is higher than RSI upper boundary {rsi_upper_boundary}: {rsi_list_temp[0]}, keeping value in list")
-          rsi = rsi_list_temp[0]
-        else:
-          #print(f"RSI is between {rsi_lower_boundary} and {rsi_upper_boundary}: {rsi} so we're clearing it from the RSI temp list")
-          rsi_list_temp.clear()
+  for interval_time_minutes in intervals:
+    holdings = []
+    api_key = get_asset_vars()[2]
+    api_sec = get_asset_vars()[1]
+    # data_dict = dict({"Time": get_time(), "MACD": get_macd(), "RSI": get_rsi()})
+    time_list = get_time()
+    macd_list = get_macd()
+    rsi_list = get_rsi().tolist()
+    close_list = get_close().tolist()
+    amount_list = get_asset_amount()
+    rsi_list_temp = []
+    macd_list_temp = []
+    amount_list_temp = []
+    holdings_list = []
+    price_bought_list = []
+    print(f"Starting balance: {balance_usd}")
+    for (times, macd, rsi, close, amount) in zip(time_list, macd_list, rsi_list, close_list, amount_list):
+      #print(f"{times}, {macd}, {rsi}, {close}, {amount}")
+      # print(f"Balance USD: {balance_usd}")
+      is_macd_float = isinstance(macd,float)
+      if 0 < rsi < 100 and macd == macd: # NaN type is always not equal, also to itself
+        # print(f"rsi {rsi} and macd is a float: {macd}")
+        if len(rsi_list_temp) == 1:
+          #print(f"Length RSI temp list: {rsi_list_temp}")
+          if rsi_list_temp[0] < rsi_lower_boundary:
+            #print(f"RSI in RSI temp list is lower than RSI lower boundary {rsi_lower_boundary}: {rsi_list_temp[0]}, keeping value in list")
+            rsi = rsi_list_temp[0]
+          elif rsi_list_temp[0] > rsi_upper_boundary:
+            #print(f"RSI in RSI temp list is higher than RSI upper boundary {rsi_upper_boundary}: {rsi_list_temp[0]}, keeping value in list")
+            rsi = rsi_list_temp[0]
+          else:
+            #print(f"RSI is between {rsi_lower_boundary} and {rsi_upper_boundary}: {rsi} so we're clearing it from the RSI temp list")
+            rsi_list_temp.clear()
+            rsi_list_temp.append(rsi)
+        elif len(rsi_list_temp) == 0:
+          #print(f"RSI temp list empty: {rsi_list_temp}, appending rsi {rsi} to list")
           rsi_list_temp.append(rsi)
-      elif len(rsi_list_temp) == 0:
-        #print(f"RSI temp list empty: {rsi_list_temp}, appending rsi {rsi} to list")
-        rsi_list_temp.append(rsi)
-      if rsi < rsi_lower_boundary and len(macd_list_temp) < 3:
-        #print(f"RSI: {rsi} and length of macd list temp lower than 3: {macd_list_temp}")
-        macd_list_temp.append(macd)
-      if rsi < rsi_lower_boundary and len(macd_list_temp) >= 3:
-        #print(f"RSI: {rsi} and macd list temp: {macd_list_temp}")
-        if macd_list_temp[-3] < macd_list_temp[-2] < macd_list_temp[-1]:
-          #print(f"MACD in upward trend, buying asset")
-          holdings_list.append(amount)
-          # usd_bought = sum(holdings_list) * close
-          balance_usd = balance_usd - order_size
-          print(f"USD balance after buy: {balance_usd}")
-          #print(f"Holdings list: {holdings_list}")
-          price_bought_list.append(close)
-          #print(f"Price bought list: {price_bought_list}")
-          macd_list_temp.clear()
-          rsi_list_temp.clear()
-        else:
-          #print(f"MACD list temp not in upward trend, appending {macd} to macd list temp")
+        if rsi < rsi_lower_boundary and len(macd_list_temp) < 3:
+          #print(f"RSI: {rsi} and length of macd list temp lower than 3: {macd_list_temp}")
           macd_list_temp.append(macd)
-          #print(f"Appended macd {macd} to macd list temp: {macd_list_temp}")
-      elif rsi > rsi_upper_boundary and len(macd_list_temp) < 3:
-        #print(f"RSI {rsi} but macd list temp has not enough length: {macd_list_temp}")
-        macd_list_temp.append(macd)
-        #print(f"Appended {macd} to macd list temp, macd list temp: {macd_list_temp}")
-      elif rsi > rsi_upper_boundary and len(macd_list_temp) >= 3:
-        #print(f"RSI {rsi} and macd list temp > 3: {macd_list_temp}")
-        if macd_list_temp[-3] > macd_list_temp[-2] > macd_list_temp[-1]:
-          #print(f"Downward macd trend for macd_list_temp: {macd_list_temp}, selling asset if we have any")
-          if float(sum(holdings_list)) > 0:
-            #print(f"Holdings greater than 0: {sum(holdings_list)}")
-            price_bought_avg = sum(price_bought_list) / len(price_bought_list)
-            #print(f"Avg price bought: {price_bought_avg}")
-            if close > price_bought_avg:
-              usd_sold = sum(holdings_list) * close
-              balance_usd = balance_usd + usd_sold
-              print(f"USD balance after sell: {balance_usd}")
-              macd_list_temp.clear()
-              rsi_list_temp.clear()
-              price_bought_list.clear()
-              holdings_list.clear()
+        if rsi < rsi_lower_boundary and len(macd_list_temp) >= 3:
+          #print(f"RSI: {rsi} and macd list temp: {macd_list_temp}")
+          if macd_list_temp[-3] < macd_list_temp[-2] < macd_list_temp[-1]:
+            #print(f"MACD in upward trend, buying asset")
+            holdings_list.append(amount)
+            # usd_bought = sum(holdings_list) * close
+            balance_usd = balance_usd - order_size
+            #print(f"USD balance after buy: {balance_usd}")
+            #print(f"Holdings list: {holdings_list}")
+            price_bought_list.append(close)
+            #print(f"Price bought list: {price_bought_list}")
+            macd_list_temp.clear()
+            rsi_list_temp.clear()
+          else:
+            #print(f"MACD list temp not in upward trend, appending {macd} to macd list temp")
+            macd_list_temp.append(macd)
+            #print(f"Appended macd {macd} to macd list temp: {macd_list_temp}")
+        elif rsi > rsi_upper_boundary and len(macd_list_temp) < 3:
+          #print(f"RSI {rsi} but macd list temp has not enough length: {macd_list_temp}")
+          macd_list_temp.append(macd)
+          #print(f"Appended {macd} to macd list temp, macd list temp: {macd_list_temp}")
+        elif rsi > rsi_upper_boundary and len(macd_list_temp) >= 3:
+          #print(f"RSI {rsi} and macd list temp > 3: {macd_list_temp}")
+          if macd_list_temp[-3] > macd_list_temp[-2] > macd_list_temp[-1]:
+            #print(f"Downward macd trend for macd_list_temp: {macd_list_temp}, selling asset if we have any")
+            if float(sum(holdings_list)) > 0:
+              #print(f"Holdings greater than 0: {sum(holdings_list)}")
+              price_bought_avg = sum(price_bought_list) / len(price_bought_list)
+              #print(f"Avg price bought: {price_bought_avg}")
+              if close > price_bought_avg:
+                usd_sold = sum(holdings_list) * close
+                balance_usd = balance_usd + usd_sold
+                #print(f"USD balance after sell: {balance_usd}")
+                macd_list_temp.clear()
+                rsi_list_temp.clear()
+                price_bought_list.clear()
+                holdings_list.clear()
+              else:
+                #print(f"Avg too low")
+                macd_list_temp.clear()
+                rsi_list_temp.clear()
             else:
-              #print(f"Avg too low")
+              #print(f"Nothing in our holdings, clearing rsi and macd temp list")
               macd_list_temp.clear()
               rsi_list_temp.clear()
           else:
-            #print(f"Nothing in our holdings, clearing rsi and macd temp list")
-            macd_list_temp.clear()
-            rsi_list_temp.clear()
-        else:
-          #print(f"No downward MACD trend yet, keeping rsi and appending macd {macd} to macd list")
-          macd_list_temp.append(macd)
-          #rsi_list_temp.clear()
+            #print(f"No downward MACD trend yet, keeping rsi and appending macd {macd} to macd list")
+            macd_list_temp.append(macd)
+            #rsi_list_temp.clear()
+        #else:
+          #print(f"Nothing to do")
       #else:
-        #print(f"Nothing to do")
-    #else:
-      #print(f"Incorrect test for macd {macd} and rsi {rsi}") 
-  time.sleep(2)
+        #print(f"Incorrect test for macd {macd} and rsi {rsi}") 
+    print(f"Ending balance for {interval_time_minutes}m {asset_pair} with RSI < {rsi_lower_boundary} and RSI > {rsi_upper_boundary}: {balance_usd}")
+    time.sleep(2)
