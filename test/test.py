@@ -1,120 +1,142 @@
 import urllib.parse
 import hashlib
 import hmac
-import base64
+import base64 
 import time
 import os
 import requests
 import json
-import io
 import pandas as pd
 import numpy as np
-import statistics
 import talib
-
-'''
-Trading script utilizing the Kraken API to buy/sell asset pairs based on RSI for DCA
-'''
-
+import datetime 
+from tenacity import *
 # set vars
+## general vars
+
+asset_dict = {}
+asset_pairs = ['XXBTZUSD', 'ADAUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
-api_sec = os.environ['api_sec_env_btc']
-api_key = os.environ['api_key_env_btc']
 api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
+list_1h = []
+list_4h = []
+list_24h = []
+start_list_24h = [] # use this list in combination with the regular 24h list in order to execute the 24h block without waiting a full day
+loop_time_seconds = 14400
+rsi_lower_boundary = 35
+rsi_upper_boundary = 65
+interval_time_minutes = 5 # 4h timeframe
 
-while True:
-  def get_kraken_signature(urlpath, data, secret):
-      postdata = urllib.parse.urlencode(data)
-      encoded = (str(data['nonce']) + postdata).encode()
-      message = urlpath.encode() + hashlib.sha256(encoded).digest()
-      mac = hmac.new(base64.b64decode(secret), message, hashlib.sha512)
-      sigdigest = base64.b64encode(mac.digest())
-      return sigdigest.decode()
-
-  def kraken_request(uri_path, data, api_key, api_sec):
-      headers = {}
-      headers['API-Key'] = api_key
-      headers['API-Sign'] = get_kraken_signature(uri_path, data, api_sec)
-      req = requests.post((api_url + uri_path), headers=headers, data=data)
-      return req
-
-  # returns our holdings
-  def get_holdings():
-      holdings = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
-      return holdings
-
-  # send message to our telegram bot
-  def send_telegram_message():
-      token = tg_token
-      chat_id = "481520678"
-      message = tg_message
-      url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
-      requests.get(url) # send message
-
-  # extract balance and print/send to telegram
-  usd_holdings = get_holdings()
-  if not usd_holdings.json()['error']:
-    balance = float(usd_holdings.json()['result']['ZUSD'])
-    print("Current USD balance: ", balance)
-  else:
-    print("An error occured trying to get USD balance:", usd_holdings.json()['error'])
-
-  # set asset pairs and start looping over them
-
-  # asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD']
-  asset_pairs = ['XXBTZUSD']
-
-  for asset_pair in asset_pairs:
-
-    # set asset code since Kraken asset codes are not consistent
+# functions
+def get_asset_vars():
+    ## asset pair specific vars
     if asset_pair == "XXBTZUSD":
       asset_code = "XXBT"
+      api_sec = os.environ['api_sec_env_btc']
+      api_key = os.environ['api_key_env_btc']
     if asset_pair == "XXRPZUSD":
       asset_code = "XXRP"
+      api_sec = os.environ['api_sec_env_xrp']
+      api_key = os.environ['api_key_env_xrp']
     if asset_pair == "ADAUSD":
       asset_code = "ADA"
+      api_sec = os.environ['api_sec_env_ada']
+      api_key = os.environ['api_key_env_ada']
     if asset_pair == "SOLUSD":
       asset_code = "SOL"
+      api_sec = os.environ['api_sec_env_sol']
+      api_key = os.environ['api_key_env_sol']
+    if asset_pair == "XETHZUSD":
+      asset_code = "XETH"
+      api_sec = os.environ['api_sec_env_eth']
+      api_key = os.environ['api_key_env_eth']
+    return [asset_code, api_sec, api_key]
 
-    # get min order size for asset_pair
-    def min_order_size():
-        time.sleep(2)
-        resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
-        minimum_order_size = float(resp.json()['result'][asset_pair]['ordermin'])
-        return minimum_order_size
+def get_kraken_signature(urlpath, data, secret):
+    postdata = urllib.parse.urlencode(data)
+    encoded = (str(data['nonce']) + postdata).encode()
+    message = urlpath.encode() + hashlib.sha256(encoded).digest()
+    mac = hmac.new(base64.b64decode(secret), message, hashlib.sha512)
+    sigdigest = base64.b64encode(mac.digest())
+    return sigdigest.decode()
 
-    def get_asset_close():
-        time.sleep(2)
-        payload = {'pair': asset_pair}
-        resp = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
-        close_value = resp.json()['result'][asset_pair]['c'][0]
-        return close_value
+def kraken_request(uri_path, data, api_key, api_sec):
+    headers = {}
+    headers['API-Key'] = api_key
+    headers['API-Sign'] = get_kraken_signature(uri_path, data, api_sec)
+    req = requests.post((api_url + uri_path), headers=headers, data=data)
+    return req 
 
-    # function for obtaining OHLC data and getting the close value, interval in minutes
-    def get_ohlcdata():
-        time.sleep(2)
-        payload = {'pair': asset_pair, 'interval': 60}
-        ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
-        if not ohlc_data_raw.json()['error']:
-          # construct a dataframe and assign columns using asset ohlc data
-          df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
-          df.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
-          # we are only interested in asset close data, so create var for close data columns and set var type as float
-          # close_data = df['close'].astype(float) # set close data to float
-          close_data = df['close']
-          return close_data
-        else:
-          print("Error requesting", asset_pair, "OHLC data:", ohlc_data_raw.json()['error'])
-          tg_message = "Error requesting", asset_pair, "OHLC data", ohlc_data_raw.json()['error']
-          send_telegram_message()
+def get_ohlcdata_macd():
+    time.sleep(2)
+    payload = {'pair': asset_pair, 'interval': interval_time_minutes}
+    ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
+    # construct a dataframe and assign columns using asset ohlc data
+    df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
+    df.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
+    # we are only interested in asset close data, so create var for close data columns and set var type as float
+    close_data = df['close']
+    return close_data
 
-    close = get_ohlcdata()
+def get_macd():
+    close = get_ohlcdata_macd()
     macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
     macd_dict = macd.to_dict()
     macd_values = list(macd_dict.values())
-    order_size = float(0.05 * float(get_holdings().json()['result']['ZUSD']))
-    print(f"MACD value: {macd_values[-1]}")
-    print(f"Order Size: {order_size}")
-    time.sleep(60)
+    return macd_values[-1]
+
+def get_macdsignal():
+    close = get_ohlcdata_macd()
+    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+    macd_dict = macdsignal.to_dict()
+    macd_values = list(macd_dict.values())
+    return macd_values[-1]
+
+macd_list = []
+macd_signal_list = []
+testlist = [1,2]
+
+# create asset pair lists
+macd_asset_pair_dict = {}
+macd_signal_asset_pair_dict = {}
+for asset_pair in asset_pairs:
+  macd_asset_pair_dict[asset_pair] = []
+  macd_signal_asset_pair_dict[asset_pair] = []
+
+print(f"macd asset pair dict: {macd_asset_pair_dict}")
+  
+while True:
+  for asset_pair in asset_pairs:
+    api_key = get_asset_vars()[2]
+    api_sec = get_asset_vars()[1]
+    while len(macd_asset_pair_dict[asset_pair]) < 2:
+      macd_asset_pair_dict[asset_pair].append(get_macd())
+      time.sleep(1)
+    while len(macd_signal_asset_pair_dict[asset_pair]) < 2:
+      macd_signal_asset_pair_dict[asset_pair].append(get_macdsignal())
+      time.sleep(1)
+    print(f"{asset_pair} macd list: {macd_asset_pair_dict[asset_pair]}")
+    print(f"{asset_pair} macd signal list: {macd_signal_asset_pair_dict[asset_pair]}")
+    if macd_asset_pair_dict[asset_pair][-2] < macd_signal_asset_pair_dict[asset_pair][-2]:
+      print(f"Watching to buy asset")
+      if macd_asset_pair_dict[asset_pair][-1] < macd_signal_asset_pair_dict[asset_pair][-1]:
+        print(f"MACD not overlapping, clearing first element (oldest) in both lists and continuing")
+        macd_asset_pair_dict[asset_pair].pop(0)
+        macd_signal_asset_pair_dict[asset_pair].pop(0)
+      elif macd_asset_pair_dict[asset_pair][-1] > macd_signal_asset_pair_dict[asset_pair][-1]:
+        print(f"MACD higher than MACD signal, buying asset and clearing lists")
+        macd_asset_pair_dict[asset_pair].clear()
+        macd_signal_asset_pair_dict[asset_pair].clear()
+    elif macd_asset_pair_dict[asset_pair][-2] > macd_signal_asset_pair_dict[asset_pair][-2]:
+      print(f"Watching to sell asset")
+      if macd_asset_pair_dict[asset_pair][-1] > macd_signal_asset_pair_dict[asset_pair][-1]:
+        print(f"MACD not overlapping, clearing first element (oldest) in both lists and continuing")
+        macd_asset_pair_dict[asset_pair].pop(0)
+        macd_signal_asset_pair_dict[asset_pair].pop(0)
+      elif macd_asset_pair_dict[asset_pair][-1] < macd_signal_asset_pair_dict[asset_pair][-1]:
+        print(f"MACD lower than MACD signal, selling asset and clearing lists")
+        macd_asset_pair_dict[asset_pair].clear()
+        macd_signal_asset_pair_dict[asset_pair].clear()
+  time.sleep(1)

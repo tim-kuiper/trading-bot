@@ -17,6 +17,7 @@ Flow:
   - Keep appending MACD value to macd list
   - If MACD list values from asset_pair is in an downwards trend for 3 iterations, sell asset and clear asset_pair holding, rsi and macd list
 
-Usage:
 
-
+Todo: 
+- Merge timeframes into  1 python program
+- 
