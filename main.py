@@ -240,7 +240,7 @@ while True:
     asset_file_path = './' + asset_file
     interval_time_minutes = 240
     interval_time_simple = '4h'
-    order_size = 200
+    order_size = 100
     for asset_pair in asset_pairs:
       api_key = get_asset_vars()[2]
       api_sec = get_asset_vars()[1]
@@ -412,7 +412,7 @@ while True:
     asset_file_path = './' + asset_file
     interval_time_minutes = 1440
     interval_time_simple = '1d'
-    order_size = 400
+    order_size = 200
     for asset_pair in asset_pairs:
       api_key = get_asset_vars()[2]
       api_sec = get_asset_vars()[1]
