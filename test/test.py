@@ -101,18 +101,59 @@ def get_macdhist():
     macd_values = list(macd_dict.values())
     return macd_values[-1]
 
-macd_list = []
-macd_signal_list = []
-testlist = [1,2]
+asset_pair_positions =  {}
 
-# create asset pair lists
-macd_asset_pair_dict = {}
-macd_signal_asset_pair_dict = {}
-for asset_pair in asset_pairs:
-  macd_asset_pair_dict[asset_pair] = []
-  macd_signal_asset_pair_dict[asset_pair] = []
-  
+# get open positions for asset pair
+def get_asset_pair_positions():
+    # get positions for asset pair
+    time.sleep(2)
+    # first get all positions
+    response = kraken_request('/0/private/OpenPositions', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
+    # loop through positions and get positions for asset pair
+    open_positions = response.json()['result']
+    for k,v in open_positions.items():
+      # print(f"key: {k}, value: {v}")
+      if v['pair'] == asset_pair:
+        asset_pair_positions.update({k:v})
+    return asset_pair_positions
+    
+#def create_long_position():
+def create_asset_pair_long_position():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "buy",
+        "reduce_only": False,
+        "volume": "0.0001",
+        "leverage": "5:1",
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
+
+# close long positions for asset pair
+def close_asset_pair_long_position():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "sell",
+        "reduce_only": false,
+        "volume": "0.0001",
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
+    
+          
+#def create_short_position():
+#def close_short_position():
+
+
 while True:
   for asset_pair in asset_pairs:
-    print(f"macd hist: {get_macdhist()}")
-    sleep(2)
+    api_key = get_asset_vars()[2]
+    api_sec = get_asset_vars()[1]
+    print(f"Open positions: {get_asset_pair_positions()}")
+    # print(f"Sell long pos for {asset_pair}: {close_asset_pair_long_position().json()}")
+    print(f"Create long pos for {asset_pair}: {create_asset_pair_long_position().json()}")
+    time.sleep(30)
