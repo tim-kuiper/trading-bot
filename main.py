@@ -12,6 +12,35 @@ import talib
 import datetime
 from tenacity import *
 
+
+'''
+Based on https://www.tradingview.com/script/zR9yW6nn-MACD-Crossover-Backtest
+
+Program flow for each asset:
+- When MACD hist crosses 0 upwards (-1, 1):
+  - Close short position if any (market order)
+    - Check if we have any positions (get positions)
+      - If we have positions, check if we have a short position (get short position type)
+        - If we have a short position, close it with market order type (close short pos)
+  - Open long position
+    - Open long position using market order type
+- When MACD hist crosses 0 downwards (1, -1):
+  - Close long position if any (market order)
+    - Check if we have any positions (get positions)
+      - If we have positions, check if we have a long position (get long position type)
+        - If we have a long position, close it with market order type (close long pos)
+  - Open short position 
+    - Open short pos using market order type
+
+
+Pyramiding: Adding long/short order in delayed fashion after macd crossover, so we need ordered long/short lists per asset. 
+Flow when using pyramiding:
+- When MACD hist crosses 0 upwards (-1, 1):
+  - 
+'''
+
+
+
 # set vars
 ## general vars
 asset_dict = {}

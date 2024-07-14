@@ -15,7 +15,7 @@ from tenacity import *
 ## general vars
 
 asset_dict = {}
-asset_pairs = ['XXBTZUSD', 'ADAUSD']
+asset_pairs = ['XXBTZUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
@@ -27,7 +27,7 @@ start_list_24h = [] # use this list in combination with the regular 24h list in 
 loop_time_seconds = 14400
 rsi_lower_boundary = 35
 rsi_upper_boundary = 65
-interval_time_minutes = 240 # 4h timeframe
+interval_time_minutes = 60 # ohlc timeframe
 
 # functions
 def get_asset_vars():
@@ -114,43 +114,5 @@ for asset_pair in asset_pairs:
   
 while True:
   for asset_pair in asset_pairs:
-    api_key = get_asset_vars()[2]
-    api_sec = get_asset_vars()[1]
-    print(f"{asset_pair} MACD: {get_macd()}")
-    print(f"{asset_pair} MACD signal: {get_macdsignal()}")
-    print(f"{asset_pair} MACD hist: {get_macdhist()}")
-    time.sleep(1)
-  time.sleep(2)
-#while True:
-#  for asset_pair in asset_pairs:
-#    api_key = get_asset_vars()[2]
-#    api_sec = get_asset_vars()[1]
-#    while len(macd_asset_pair_dict[asset_pair]) < 2:
-#      macd_asset_pair_dict[asset_pair].append(get_macd())
-#      time.sleep(1)
-#    while len(macd_signal_asset_pair_dict[asset_pair]) < 2:
-#      macd_signal_asset_pair_dict[asset_pair].append(get_macdsignal())
-#      time.sleep(1)
-#    print(f"{asset_pair} macd list: {macd_asset_pair_dict[asset_pair]}")
-#    print(f"{asset_pair} macd signal list: {macd_signal_asset_pair_dict[asset_pair]}")
-#    if macd_asset_pair_dict[asset_pair][-2] < macd_signal_asset_pair_dict[asset_pair][-2]:
-#      print(f"Watching to buy asset")
-#      if macd_asset_pair_dict[asset_pair][-1] < macd_signal_asset_pair_dict[asset_pair][-1]:
-#        print(f"MACD not overlapping, clearing first element (oldest) in both lists and continuing")
-#        macd_asset_pair_dict[asset_pair].pop(0)
-#        macd_signal_asset_pair_dict[asset_pair].pop(0)
-#      elif macd_asset_pair_dict[asset_pair][-1] > macd_signal_asset_pair_dict[asset_pair][-1]:
-#        print(f"MACD higher than MACD signal, buying asset and clearing lists")
-#        macd_asset_pair_dict[asset_pair].clear()
-#        macd_signal_asset_pair_dict[asset_pair].clear()
-#    elif macd_asset_pair_dict[asset_pair][-2] > macd_signal_asset_pair_dict[asset_pair][-2]:
-#      print(f"Watching to sell asset")
-#      if macd_asset_pair_dict[asset_pair][-1] > macd_signal_asset_pair_dict[asset_pair][-1]:
-#        print(f"MACD not overlapping, clearing first element (oldest) in both lists and continuing")
-#        macd_asset_pair_dict[asset_pair].pop(0)
-#        macd_signal_asset_pair_dict[asset_pair].pop(0)
-#      elif macd_asset_pair_dict[asset_pair][-1] < macd_signal_asset_pair_dict[asset_pair][-1]:
-#        print(f"MACD lower than MACD signal, selling asset and clearing lists")
-#        macd_asset_pair_dict[asset_pair].clear()
-#        macd_signal_asset_pair_dict[asset_pair].clear()
-#  time.sleep(1)
+    print(f"macd hist: {get_macdhist()}")
+    sleep(2)
