@@ -117,8 +117,7 @@ def get_asset_pair_positions():
         asset_pair_positions.update({k:v})
     return asset_pair_positions
     
-#def create_long_position():
-def create_asset_pair_long_position():
+def open_asset_pair_long_position():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
@@ -131,20 +130,45 @@ def create_asset_pair_long_position():
     }, api_key, api_sec)
     return response
 
-# close long positions for asset pair
+def open_asset_pair_short_position():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "sell",
+        "reduce_only": False,
+        "volume": "0.0001",
+        "leverage": "5:1",
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
+
 def close_asset_pair_long_position():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "sell",
-        "reduce_only": false,
-        "volume": "0.0001",
+        "reduce_only": False,
+        "volume": "0", # closes long pos
+        "leverage": "5:1",
         "pair": asset_pair
     }, api_key, api_sec)
     return response
     
           
+def close_asset_pair_short_position():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "buy",
+        "reduce_only": False,
+        "volume": "0", # closes short pos
+        "leverage": "5:1",
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
 #def create_short_position():
 #def close_short_position():
 
@@ -153,7 +177,10 @@ while True:
   for asset_pair in asset_pairs:
     api_key = get_asset_vars()[2]
     api_sec = get_asset_vars()[1]
-    print(f"Open positions: {get_asset_pair_positions()}")
+    # print(f"Open positions: {get_asset_pair_positions()}")
     # print(f"Sell long pos for {asset_pair}: {close_asset_pair_long_position().json()}")
-    print(f"Create long pos for {asset_pair}: {create_asset_pair_long_position().json()}")
-    time.sleep(30)
+    # print(f"Close short pos for {asset_pair}: {close_asset_pair_short_position().json()}")
+    # print(f"Open short pos for {asset_pair}: {open_asset_pair_short_position().json()}")
+    print(f"Open long pos for {asset_pair}: {open_asset_pair_long_position().json()}")
+    # print(f"Create long pos for {asset_pair}: {create_asset_pair_long_position().json()}")
+    time.sleep(5)
