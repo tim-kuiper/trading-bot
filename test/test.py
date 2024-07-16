@@ -36,6 +36,7 @@ def get_asset_vars():
       asset_code = "XXBT"
       api_sec = os.environ['api_sec_env_btc']
       api_key = os.environ['api_key_env_btc']
+      leverage = "5:1"
     if asset_pair == "XXRPZUSD":
       asset_code = "XXRP"
       api_sec = os.environ['api_sec_env_xrp']
@@ -52,7 +53,7 @@ def get_asset_vars():
       asset_code = "XETH"
       api_sec = os.environ['api_sec_env_eth']
       api_key = os.environ['api_key_env_eth']
-    return [asset_code, api_sec, api_key]
+    return [asset_code, api_sec, api_key, leverage]
 
 def get_kraken_signature(urlpath, data, secret):
     postdata = urllib.parse.urlencode(data)
@@ -125,7 +126,7 @@ def open_asset_pair_long_position():
         "type": "buy",
         "reduce_only": False,
         "volume": "0.0001",
-        "leverage": "5:1",
+        "leverage": leverage,
         "pair": asset_pair
     }, api_key, api_sec)
     return response
@@ -138,34 +139,33 @@ def open_asset_pair_short_position():
         "type": "sell",
         "reduce_only": False,
         "volume": "0.0001",
-        "leverage": "5:1",
+        "leverage": leverage,
         "pair": asset_pair
     }, api_key, api_sec)
     return response
 
-def close_asset_pair_long_position():
+def close_asset_pair_long_positions():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "sell",
         "reduce_only": False,
-        "volume": "0", # closes long pos
-        "leverage": "5:1",
+        "volume": "0", # closes all long positions
+        "leverage": leverage, # for btc, construct a dict for asset pair and leverage lvls
         "pair": asset_pair
     }, api_key, api_sec)
     return response
     
-          
-def close_asset_pair_short_position():
+def close_asset_pair_short_positions():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "buy",
         "reduce_only": False,
-        "volume": "0", # closes short pos
-        "leverage": "5:1",
+        "volume": "0", # closes all short pos
+        "leverage": leverage,
         "pair": asset_pair
     }, api_key, api_sec)
     return response
@@ -177,10 +177,11 @@ while True:
   for asset_pair in asset_pairs:
     api_key = get_asset_vars()[2]
     api_sec = get_asset_vars()[1]
+    leverage = get_asset_vars()[3]
     # print(f"Open positions: {get_asset_pair_positions()}")
-    # print(f"Sell long pos for {asset_pair}: {close_asset_pair_long_position().json()}")
-    # print(f"Close short pos for {asset_pair}: {close_asset_pair_short_position().json()}")
-    # print(f"Open short pos for {asset_pair}: {open_asset_pair_short_position().json()}")
-    print(f"Open long pos for {asset_pair}: {open_asset_pair_long_position().json()}")
+    # print(f"Close all long pos for {asset_pair}: {close_asset_pair_long_positions().json()}")
+    print(f"Close all short pos for {asset_pair}: {close_asset_pair_short_positions().json()}")
+    # print(f"Open 1 short pos for {asset_pair}: {open_asset_pair_short_position().json()}")
+    # print(f"Open 1 long pos for {asset_pair}: {open_asset_pair_long_position().json()}")
     # print(f"Create long pos for {asset_pair}: {create_asset_pair_long_position().json()}")
     time.sleep(5)

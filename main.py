@@ -49,29 +49,29 @@ pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
-list_1h = []
-list_4h = []
 list_24h = []
 start_list_24h = [] # use this list in combination with the regular 24h list in order to execute the 24h block without waiting 24 hours
-start_list_4h = [] # use this list in combination with the regular 4h list in order to execute the 4h block without waiting 4 hours
-loop_time_seconds = 3600 # iteration time for main loop
+loop_time_seconds = 86400 # 1d - iteration time for main loop
 
 # functions
 def get_asset_vars():
     ## asset pair specific vars
     if asset_pair == "XXBTZUSD":
       asset_code = "XXBT"
+      leverage = "5:1"
       api_sec = os.environ['api_sec_env_btc']
       api_key = os.environ['api_key_env_btc']
     if asset_pair == "SOLUSD":
       asset_code = "SOL"
+      leverage = "4:1"
       api_sec = os.environ['api_sec_env_sol']
       api_key = os.environ['api_key_env_sol']
     if asset_pair == "XETHZUSD":
       asset_code = "XETH"
+      leverage = "5:1"
       api_sec = os.environ['api_sec_env_eth']
       api_key = os.environ['api_key_env_eth']
-    return [asset_code, api_sec, api_key]
+    return [asset_code, api_sec, api_key, leverage]
     
 def send_telegram_message():
     token = tg_token
@@ -139,15 +139,15 @@ def get_ohlcdata_macd():
     close_data = df['close']
     return close_data
 
-@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
-def get_orderinfo():
-    time.sleep(2)
-    resp = kraken_request('/0/private/QueryOrders', {
-        "nonce": str(int(1000*time.time())),
-        "txid": transaction_id,
-        "trades": True
-    }, api_key, api_sec)
-    return resp
+#@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
+#def get_orderinfo():
+#    time.sleep(2)
+#    resp = kraken_request('/0/private/QueryOrders', {
+#        "nonce": str(int(1000*time.time())),
+#        "txid": transaction_id,
+#        "trades": True
+#    }, api_key, api_sec)
+#    return resp
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def buy_asset():
@@ -224,7 +224,7 @@ def check_create_asset_file():
       print(f"Asset dict before: {asset_dict}")
       print(f"Asset file {asset_file} doesnt exist , creating one")
       print(f"Asset dict after: {asset_dict}")
-      asset_dict.update({asset_pair: {"macd_hist": [], "holdings": [], "price_bought": []}})
+      asset_dict.update({asset_pair: {"macd_hist": []}})
       write_to_asset_file()
     else:
       print(f"Asset file {asset_file} exists, reading")
@@ -232,7 +232,7 @@ def check_create_asset_file():
       if asset_pair not in asset_dict.keys():
         print(f"Asset dict before: {asset_dict}")
         print(f"Asset pair {asset_pair} not present in asset file {asset_file}, updating file")
-        asset_dict.update({asset_pair: {"macd_hist": [], "holdings": [], "price_bought": []}})
+        asset_dict.update({asset_pair: {"macd_hist": []}})
         print(f"Asset dict after: {asset_dict}")
         write_to_asset_file()
         print(f"Appended {asset_pair} to {asset_file}")
@@ -250,437 +250,164 @@ def read_asset_file():
     f.close()
     return asset_json
 
+def open_asset_pair_long_position():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "buy",
+        "reduce_only": False,
+        "volume": volume_to_buy,
+        "leverage": leverage,
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
+
+def open_asset_pair_short_position():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "sell",
+        "reduce_only": False,
+        "volume": volume_to_sell,
+        "leverage": leverage,
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
+
+def close_asset_pair_long_positions():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "sell",
+        "reduce_only": False,
+        "volume": "0", # closes all long positions
+        "leverage": leverage, # for btc, construct a dict for asset pair and leverage lvls
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
+    
+def close_asset_pair_short_positions():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "buy",
+        "reduce_only": False,
+        "volume": "0", # closes all short pos
+        "leverage": leverage,
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
+
 # main loop
 while True:
-  start_list_4h.append(4)
-  start_list_24h.append(24)
-  list_1h.append(1)
-  list_4h.append(4)
-  list_24h.append(24)
-  if len(list_1h) == 1:
-    timeframe = "1h"
-    file_extension = '.json'
-    asset_file = timeframe + file_extension 
-    asset_file_path = './' + asset_file
-    interval_time_minutes = 60
-    interval_time_simple = '1h'
-    order_size = 50
-    for asset_pair in asset_pairs:
-      api_key = get_asset_vars()[2]
-      api_sec = get_asset_vars()[1]
-      check_create_asset_file()
-      print(f"Opening asset file {asset_file}")
-      asset_dict = json.loads(read_asset_file())
-      macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-      holdings_list = asset_dict[asset_pair]["holdings"]
-      price_list = asset_dict[asset_pair]["price_bought"]
+ # start_list_24h.append(24)
+ # list_24h.append(24)
+ # if len(list_24h) == 24 or len(start_list_24h) == 1:
+  timeframe = "1d"
+  file_extension = '.json'
+  asset_file = timeframe + file_extension 
+  asset_file_path = './' + asset_file
+  interval_time_minutes = 1440
+  interval_time_simple = '1d'
+  order_size = 1000
+  for asset_pair in asset_pairs:
+    api_key = get_asset_vars()[2]
+    api_sec = get_asset_vars()[1]
+    leverage = get_asset_vars()[3]
+    check_create_asset_file()
+    print(f"Opening asset file {asset_file}")
+    asset_dict = json.loads(read_asset_file())
+    macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
+    # when macd list is empty
+    if len(macd_hist_list) == 0:
+      print(f"{interval_time_simple} {asset_pair}: MACD hist list length: {len(asset_dict[asset_pair]['macd_hist'])}, appending 2 MACD hist values")
+      macd_hist_tmp = get_macdhist_start()
+      macd_hist_list.append(macd_hist_tmp[-2])
+      macd_hist_list.append(macd_hist_tmp[-1])
+      asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+      write_to_asset_file()
+      time.sleep(1)
+      print(f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}")
+      tg_message = f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}"
+      send_telegram_message()
+    if len(macd_hist_list) == 1:
+      print(f"{interval_time_simple} {asset_pair}: {macd_hist_list}, appending 1 MACD hist value")
+      print(f"{interval_time_simple} {asset_pair}: MACD hist list length: {len(asset_dict[asset_pair]['macd_hist'])}, appending 1 MACD hist value")
+      macd_hist_list.append(get_macdhist())
+      asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+      write_to_asset_file()
+      time.sleep(1)
+      print(f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}")
+      tg_message = f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}"
+      send_telegram_message()
 
-      # when macd list is empty
-      if len(macd_hist_list) == 0:
-        print(f"{interval_time_simple} {asset_pair}: MACD hist list length: {len(asset_dict[asset_pair]['macd_hist'])}, appending 2 MACD hist values")
-        macd_hist_tmp = get_macdhist_start()
-        macd_hist_list.append(macd_hist_tmp[-2])
-        macd_hist_list.append(macd_hist_tmp[-1])
+    # reread asset json
+    asset_dict = json.loads(read_asset_file())
+    macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
+
+    print(f"{interval_time_simple} {asset_pair} MACD hist list: {macd_hist_list}")
+    if macd_hist_list[-2] < 0:
+      print(f"{interval_time_simple} {asset_pair}: Watching to buy asset when MACD hist crosses 0")
+      if macd_hist_list[-1] < 0:
+        print(f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
+        macd_hist_list.pop(0)
         asset_dict[asset_pair]["macd_hist"] = macd_hist_list
         write_to_asset_file()
-        time.sleep(1)
-        print(f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}")
-        tg_message = f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}"
+        tg_message = f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
         send_telegram_message()
-      elif len(macd_hist_list) == 1:
-        print(f"{interval_time_simple} {asset_pair}: {macd_hist_list}, appending 1 MACD hist value")
-        print(f"{interval_time_simple} {asset_pair}: MACD hist list length: {len(asset_dict[asset_pair]['macd_hist'])}, appending 1 MACD hist value")
-        macd_hist_list.append(get_macdhist())
-        asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-        write_to_asset_file()
-        time.sleep(1)
-        print(f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}")
-        tg_message = f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}"
+      elif macd_hist_list[-1] > 0:
+        print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing short position if any and opening long")
+        tg_message = f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing short position if any and opening long"
         send_telegram_message()
-
-      # reread asset json
-      asset_dict = json.loads(read_asset_file())
-      macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-      holdings_list = asset_dict[asset_pair]["holdings"]
-      price_list = asset_dict[asset_pair]["price_bought"]
-
-      print(f"{interval_time_simple} {asset_pair} MACD hist list: {macd_hist_list}")
-      if macd_hist_list[-2] < 0:
-        print(f"{interval_time_simple} {asset_pair}: Watching to buy asset when MACD hist crosses 0")
-        if macd_hist_list[-1] < 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
+        close_asset_pair_short_positions() # closes all short positions
+        asset_close = float(get_asset_close())
+        usd_order_size = order_size
+        volume_to_buy = str(float(usd_order_size / asset_close))
+        order_output = open_asset_pair_long_position() # executes long order
+        if not order_output.json()['error']:
+          print(f"{interval_time_simple} {asset_pair}: Bought {volume_to_buy}")
+          tg_message = order_output.json()['result']
+          send_telegram_message()        
           macd_hist_list.pop(0)
           asset_dict[asset_pair]["macd_hist"] = macd_hist_list
           write_to_asset_file()
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
+        else:
+          print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a long order: {order_output.json()['error']}")
+          tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a long order: {order_output.json()['error']}"
           send_telegram_message()
-        elif macd_hist_list[-1] > 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, buying asset")
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, buying asset"
-          send_telegram_message()
-          asset_close = float(get_asset_close())
-          usd_order_size = order_size
-          volume_to_buy = str(float(usd_order_size / asset_close))
-          order_output = buy_asset() # executes buy order and assigns output to var
-          if not order_output.json()['error']:
-            print(f"{interval_time_simple} {asset_pair}: Bought {volume_to_buy}")
-            tg_message = order_output.json()['result']
-            send_telegram_message()        
-            transaction_id = order_output.json()['result']['txid'][0]
-            order_info = get_orderinfo()
-            executed_size = order_info.json()['result'][transaction_id]['vol_exec']
-            holdings_list.append(float(executed_size))
-            price_list.append(asset_close)
-            macd_hist_list.pop(0)
-            asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-            asset_dict[asset_pair]["holdings"] = holdings_list
-            asset_dict[asset_pair]["price_bought"] = price_list
-            write_to_asset_file()
-          else:
-            print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
-            tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
-            send_telegram_message()
-      elif macd_hist_list[-2] > 0:
-        print(f"{interval_time_simple} {asset_pair}: Watching to sell asset when MACD hist crosses 0")
-        if macd_hist_list[-1] > 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
-          macd_hist_list.pop(0)
-          asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-          write_to_asset_file()
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
-          send_telegram_message()
-        elif macd_hist_list[-1] < 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, selling asset")
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD crossed 0, selling asset"
-          send_telegram_message()
-          # First check if we actually have something in our holdings
-          if float(sum(holdings_list)) > 0: # check if we have some in our holdings
-            volume_to_sell = str(sum(holdings_list))
-            if min_order_size() < float(volume_to_sell):
-              asset_close = float(get_asset_close())
-              price_list_avg = sum(price_list) / len(price_list)
-              if asset_close > price_list_avg:
-                order_output = sell_asset()
-                if not order_output.json()['error']:
-                  macd_hist_list.pop(0)
-                  holdings_list.clear()
-                  price_list.clear()
-                  asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-                  asset_dict[asset_pair]["holdings"] = holdings_list
-                  asset_dict[asset_pair]["price_bought"] = price_list
-                  write_to_asset_file()
-                  print(f"{interval_time_simple} {asset_pair}: Sold {volume_to_sell}")
-                  tg_message = order_output.json()['result']
-                  send_telegram_message()        
-                else:
-                  print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
-                  tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
-                  send_telegram_message()
-              else:
-                print(f"{interval_time_simple} {asset_pair}: Close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing first element (oldest) in MACD hist list and continuing")
-                tg_message = f"{interval_time_simple} {asset_pair}: Close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing first element (    oldest) in MACD hist list and continuing"
-                send_telegram_message()
-                macd_hist_list.pop(0)
-                asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-                write_to_asset_file()
-            else:
-              print(f"{interval_time_simple} {asset_pair}: Not enough left to sell")
-              tg_message = f"{interval_time_simple} {asset_pair}: Not enough left to sell"
-              send_telegram_message()
-              macd_hist_list.pop(0)
-              asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-              write_to_asset_file()
-          else:
-            print(f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it")  
-            tg_message = f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it"
-            send_telegram_message()
-            macd_hist_list.pop(0)
-            asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-            write_to_asset_file()
-      time.sleep(3) # sleep 3 seconds between asset pair
-    list_1h.clear()
-
-  if len(list_4h) == 4 or len(start_list_4h) == 1:
-    timeframe = "4h"
-    file_extension = '.json'
-    asset_file = timeframe + file_extension 
-    asset_file_path = './' + asset_file
-    interval_time_minutes = 240
-    interval_time_simple = '4h'
-    order_size = 100
-    for asset_pair in asset_pairs:
-      api_key = get_asset_vars()[2]
-      api_sec = get_asset_vars()[1]
-      check_create_asset_file()
-      print(f"Opening asset file {asset_file}")
-      asset_dict = json.loads(read_asset_file())
-      macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-      holdings_list = asset_dict[asset_pair]["holdings"]
-      price_list = asset_dict[asset_pair]["price_bought"]
-      # when macd list is empty
-      if len(macd_hist_list) == 0:
-        print(f"{interval_time_simple} {asset_pair}: MACD hist list length: {len(asset_dict[asset_pair]['macd_hist'])}, appending 2 MACD hist values")
-        macd_hist_tmp = get_macdhist_start()
-        macd_hist_list.append(macd_hist_tmp[-2])
-        macd_hist_list.append(macd_hist_tmp[-1])
+    elif macd_hist_list[-2] > 0:
+      print(f"{interval_time_simple} {asset_pair}: Watching to close long position(sell) when MACD hist crosses 0 and opening a short position")
+      if macd_hist_list[-1] > 0:
+        print(f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
+        macd_hist_list.pop(0)
         asset_dict[asset_pair]["macd_hist"] = macd_hist_list
         write_to_asset_file()
-        time.sleep(1)
-        print(f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}")
-        tg_message = f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}"
+        tg_message = f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
         send_telegram_message()
-      elif len(macd_hist_list) == 1:
-        print(f"{interval_time_simple} {asset_pair}: {macd_hist_list}, appending 1 MACD hist value")
-        print(f"{interval_time_simple} {asset_pair}: MACD hist list length: {len(asset_dict[asset_pair]['macd_hist'])}, appending 1 MACD hist value")
-        macd_hist_list.append(get_macdhist())
-        asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-        write_to_asset_file()
-        time.sleep(1)
-        print(f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}")
-        tg_message = f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}"
+      elif macd_hist_list[-1] < 0:
+        print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing long position and opening a short one")
+        tg_message = f"{interval_time_simple} {asset_pair}: MACD crossed 0 downwards, closing long position and opening a short one"
         send_telegram_message()
-
-      # reread asset json
-      asset_dict = json.loads(read_asset_file())
-      macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-      holdings_list = asset_dict[asset_pair]["holdings"]
-      price_list = asset_dict[asset_pair]["price_bought"]
-
-      print(f"{interval_time_simple} {asset_pair} MACD hist list: {macd_hist_list}")
-      if macd_hist_list[-2] < 0:
-        print(f"{interval_time_simple} {asset_pair}: Watching to buy asset when MACD hist crosses 0")
-        if macd_hist_list[-1] < 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
+        close_asset_pair_long_positions()
+        asset_close = float(get_asset_close())
+        usd_order_size = order_size
+        volume_to_sell = str(float(usd_order_size / asset_close))
+        order_output = open_asset_pair_short_position()
+        if not order_output.json()['error']:
           macd_hist_list.pop(0)
           asset_dict[asset_pair]["macd_hist"] = macd_hist_list
           write_to_asset_file()
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
+          print(f"{interval_time_simple} {asset_pair}: Closes long position {order_output.json()['result']}")
+          tg_message = order_output.json()['result']
+          send_telegram_message()        
+        else:
+          print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
+          tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
           send_telegram_message()
-        elif macd_hist_list[-1] > 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, buying asset")
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, buying asset"
-          send_telegram_message()
-          asset_close = float(get_asset_close())
-          usd_order_size = order_size
-          volume_to_buy = str(float(usd_order_size / asset_close))
-          order_output = buy_asset() # executes buy order and assigns output to var
-          if not order_output.json()['error']:
-            print(f"{interval_time_simple} {asset_pair}: Bought {volume_to_buy}")
-            tg_message = order_output.json()['result']
-            send_telegram_message()        
-            transaction_id = order_output.json()['result']['txid'][0]
-            order_info = get_orderinfo()
-            executed_size = order_info.json()['result'][transaction_id]['vol_exec']
-            holdings_list.append(float(executed_size))
-            price_list.append(asset_close)
-            macd_hist_list.pop(0)
-            asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-            asset_dict[asset_pair]["holdings"] = holdings_list
-            asset_dict[asset_pair]["price_bought"] = price_list
-            write_to_asset_file()
-          else:
-            print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
-            tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
-            send_telegram_message()
-      elif macd_hist_list[-2] > 0:
-        print(f"{interval_time_simple} {asset_pair}: Watching to sell asset when MACD hist crosses 0")
-        if macd_hist_list[-1] > 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
-          macd_hist_list.pop(0)
-          asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-          write_to_asset_file()
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
-          send_telegram_message()
-        elif macd_hist_list[-1] < 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, selling asset")
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD crossed 0, selling asset"
-          send_telegram_message()
-          # First check if we actually have something in our holdings
-          if float(sum(holdings_list)) > 0: # check if we have some in our holdings
-            volume_to_sell = str(sum(holdings_list))
-            if min_order_size() < float(volume_to_sell):
-              asset_close = float(get_asset_close())
-              price_list_avg = sum(price_list) / len(price_list)
-              if asset_close > price_list_avg:
-                order_output = sell_asset()
-                if not order_output.json()['error']:
-                  macd_hist_list.pop(0)
-                  holdings_list.clear()
-                  price_list.clear()
-                  asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-                  asset_dict[asset_pair]["holdings"] = holdings_list
-                  asset_dict[asset_pair]["price_bought"] = price_list
-                  write_to_asset_file()
-                  print(f"{interval_time_simple} {asset_pair}: Sold {volume_to_sell}")
-                  tg_message = order_output.json()['result']
-                  send_telegram_message()        
-                else:
-                  print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
-                  tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
-                  send_telegram_message()
-              else:
-                print(f"{interval_time_simple} {asset_pair}: Close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing first element (oldest) in MACD hist list and continuing")
-                tg_message = f"{interval_time_simple} {asset_pair}: Close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing first element (    oldest) in MACD hist list and continuing"
-                send_telegram_message()
-                macd_hist_list.pop(0)
-                asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-                write_to_asset_file()
-            else:
-              print(f"{interval_time_simple} {asset_pair}: Not enough left to sell")
-              tg_message = f"{interval_time_simple} {asset_pair}: Not enough left to sell"
-              send_telegram_message()
-              macd_hist_list.pop(0)
-              asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-              write_to_asset_file()
-          else:
-            print(f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it")  
-            tg_message = f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it"
-            send_telegram_message()
-            macd_hist_list.pop(0)
-            asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-            write_to_asset_file()
-      time.sleep(3) # sleep 3 seconds between asset pair
-    list_4h.clear()
-
-  if len(list_24h) == 24 or len(start_list_24h) == 1:
-    timeframe = "1d"
-    file_extension = '.json'
-    asset_file = timeframe + file_extension 
-    asset_file_path = './' + asset_file
-    interval_time_minutes = 1440
-    interval_time_simple = '1d'
-    order_size = 300
-    for asset_pair in asset_pairs:
-      api_key = get_asset_vars()[2]
-      api_sec = get_asset_vars()[1]
-      check_create_asset_file()
-      print(f"Opening asset file {asset_file}")
-      asset_dict = json.loads(read_asset_file())
-      macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-      holdings_list = asset_dict[asset_pair]["holdings"]
-      price_list = asset_dict[asset_pair]["price_bought"]
-      # when macd list is empty
-      if len(macd_hist_list) == 0:
-        print(f"{interval_time_simple} {asset_pair}: MACD hist list length: {len(asset_dict[asset_pair]['macd_hist'])}, appending 2 MACD hist values")
-        macd_hist_tmp = get_macdhist_start()
-        macd_hist_list.append(macd_hist_tmp[-2])
-        macd_hist_list.append(macd_hist_tmp[-1])
-        asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-        write_to_asset_file()
-        time.sleep(1)
-        print(f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}")
-        tg_message = f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}"
-        send_telegram_message()
-      if len(macd_hist_list) == 1:
-        print(f"{interval_time_simple} {asset_pair}: {macd_hist_list}, appending 1 MACD hist value")
-        print(f"{interval_time_simple} {asset_pair}: MACD hist list length: {len(asset_dict[asset_pair]['macd_hist'])}, appending 1 MACD hist value")
-        macd_hist_list.append(get_macdhist())
-        asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-        write_to_asset_file()
-        time.sleep(1)
-        print(f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}")
-        tg_message = f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}"
-        send_telegram_message()
-
-      # reread asset json
-      asset_dict = json.loads(read_asset_file())
-      macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-      holdings_list = asset_dict[asset_pair]["holdings"]
-      price_list = asset_dict[asset_pair]["price_bought"]
-
-      print(f"{interval_time_simple} {asset_pair} MACD hist list: {macd_hist_list}")
-      if macd_hist_list[-2] < 0:
-        print(f"{interval_time_simple} {asset_pair}: Watching to buy asset when MACD hist crosses 0")
-        if macd_hist_list[-1] < 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
-          macd_hist_list.pop(0)
-          asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-          write_to_asset_file()
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
-          send_telegram_message()
-        elif macd_hist_list[-1] > 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, buying asset")
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, buying asset"
-          send_telegram_message()
-          asset_close = float(get_asset_close())
-          usd_order_size = order_size
-          volume_to_buy = str(float(usd_order_size / asset_close))
-          order_output = buy_asset() # executes buy order and assigns output to var
-          if not order_output.json()['error']:
-            print(f"{interval_time_simple} {asset_pair}: Bought {volume_to_buy}")
-            tg_message = order_output.json()['result']
-            send_telegram_message()        
-            transaction_id = order_output.json()['result']['txid'][0]
-            order_info = get_orderinfo()
-            executed_size = order_info.json()['result'][transaction_id]['vol_exec']
-            holdings_list.append(float(executed_size))
-            price_list.append(asset_close)
-            macd_hist_list.pop(0)
-            asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-            asset_dict[asset_pair]["holdings"] = holdings_list
-            asset_dict[asset_pair]["price_bought"] = price_list
-            write_to_asset_file()
-          else:
-            print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
-            tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
-            send_telegram_message()
-      elif macd_hist_list[-2] > 0:
-        print(f"{interval_time_simple} {asset_pair}: Watching to sell asset when MACD hist crosses 0")
-        if macd_hist_list[-1] > 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
-          macd_hist_list.pop(0)
-          asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-          write_to_asset_file()
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
-          send_telegram_message()
-        elif macd_hist_list[-1] < 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, selling asset")
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD crossed 0, selling asset"
-          send_telegram_message()
-          # First check if we actually have something in our holdings
-          if float(sum(holdings_list)) > 0: # check if we have some in our holdings
-            volume_to_sell = str(sum(holdings_list))
-            if min_order_size() < float(volume_to_sell):
-              asset_close = float(get_asset_close())
-              price_list_avg = sum(price_list) / len(price_list)
-              if asset_close > price_list_avg:
-                order_output = sell_asset()
-                if not order_output.json()['error']:
-                  macd_hist_list.pop(0)
-                  holdings_list.clear()
-                  price_list.clear()
-                  asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-                  asset_dict[asset_pair]["holdings"] = holdings_list
-                  asset_dict[asset_pair]["price_bought"] = price_list
-                  write_to_asset_file()
-                  print(f"{interval_time_simple} {asset_pair}: Sold {volume_to_sell}")
-                  tg_message = order_output.json()['result']
-                  send_telegram_message()        
-                else:
-                  print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
-                  tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
-                  send_telegram_message()
-              else:
-                print(f"{interval_time_simple} {asset_pair}: Close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing first element (oldest) in MACD hist list and continuing")
-                tg_message = f"{interval_time_simple} {asset_pair}: Close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing first element (    oldest) in MACD hist list and continuing"
-                send_telegram_message()
-                macd_hist_list.pop(0)
-                asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-                write_to_asset_file()
-            else:
-              print(f"{interval_time_simple} {asset_pair}: Not enough left to sell")
-              tg_message = f"{interval_time_simple} {asset_pair}: Not enough left to sell"
-              send_telegram_message()
-              macd_hist_list.pop(0)
-              asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-              write_to_asset_file()
-          else:
-            print(f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it")  
-            tg_message = f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it"
-            send_telegram_message()
-            macd_hist_list.pop(0)
-            asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-            write_to_asset_file()
-      time.sleep(3) # sleep 3 seconds between asset pair
-    list_24h.clear()
+    time.sleep(3) # sleep 3 seconds between asset pair
+  #list_24h.clear()
   time.sleep(loop_time_seconds)
