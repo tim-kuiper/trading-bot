@@ -137,9 +137,12 @@ def open_asset_pair_short_position():
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "sell",
-        "reduce_only": False,
+        "reduce_only": True,
         "volume": "0.0001",
         "leverage": leverage,
+        "close[ordertype]": "stop-loss-limit",
+        "close[price]": "67000",
+        "close[price2]": "67500",
         "pair": asset_pair
     }, api_key, api_sec)
     return response
@@ -169,8 +172,13 @@ def close_asset_pair_short_positions():
         "pair": asset_pair
     }, api_key, api_sec)
     return response
-#def create_short_position():
-#def close_short_position():
+
+def cancel_order():
+   response = kraken_request('/0/private/CancelOrder', {
+       "nonce": str(int(1000*time.time())), 
+       "txid": "OSYA6J-JPWFZ-PREAID"
+   }, api_key, api_sec)
+   return response
 
 
 while True:
@@ -182,6 +190,7 @@ while True:
     # print(f"Close all long pos for {asset_pair}: {close_asset_pair_long_positions().json()}")
     print(f"Close all short pos for {asset_pair}: {close_asset_pair_short_positions().json()}")
     # print(f"Open 1 short pos for {asset_pair}: {open_asset_pair_short_position().json()}")
+    # print(f"Cancellng order for {asset_pair}: {cancel_order().json()}")
     # print(f"Open 1 long pos for {asset_pair}: {open_asset_pair_long_position().json()}")
     # print(f"Create long pos for {asset_pair}: {create_asset_pair_long_position().json()}")
     time.sleep(5)
