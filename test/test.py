@@ -137,12 +137,12 @@ def open_asset_pair_short_position():
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "sell",
-        "reduce_only": True,
+        "reduce_only": False,
         "volume": "0.0001",
         "leverage": leverage,
         "close[ordertype]": "stop-loss-limit",
-        "close[price]": "67000",
-        "close[price2]": "67500",
+        "close[price]": "70000",
+        "close[price2]": "72000",
         "pair": asset_pair
     }, api_key, api_sec)
     return response
@@ -176,10 +176,22 @@ def close_asset_pair_short_positions():
 def cancel_order():
    response = kraken_request('/0/private/CancelOrder', {
        "nonce": str(int(1000*time.time())), 
+       "txid": "OWF53A-HNVC7-TWDTAG"
+   }, api_key, api_sec)
+   return response
+
+def query_order_txid():
+   response = kraken_request('/0/private/QueryOrders', {
+       "nonce": str(int(1000*time.time())), 
        "txid": "OSYA6J-JPWFZ-PREAID"
    }, api_key, api_sec)
    return response
 
+def query_open_orders():
+   response = kraken_request('/0/private/OpenOrders', {
+       "nonce": str(int(1000*time.time()))
+   }, api_key, api_sec)
+   return response
 
 while True:
   for asset_pair in asset_pairs:
@@ -188,9 +200,10 @@ while True:
     leverage = get_asset_vars()[3]
     # print(f"Open positions: {get_asset_pair_positions()}")
     # print(f"Close all long pos for {asset_pair}: {close_asset_pair_long_positions().json()}")
-    print(f"Close all short pos for {asset_pair}: {close_asset_pair_short_positions().json()}")
-    # print(f"Open 1 short pos for {asset_pair}: {open_asset_pair_short_position().json()}")
-    # print(f"Cancellng order for {asset_pair}: {cancel_order().json()}")
+    # print(f"Close all short pos for {asset_pair}: {close_asset_pair_short_positions().json()}")
+    #  print(f"Open 1 short pos for {asset_pair}: {open_asset_pair_short_position().json()}")
+    print(f"Cancellng order for {asset_pair}: {cancel_order().json()}")
     # print(f"Open 1 long pos for {asset_pair}: {open_asset_pair_long_position().json()}")
     # print(f"Create long pos for {asset_pair}: {create_asset_pair_long_position().json()}")
+    # print(f"Query open orders: {query_open_orders().json()}")
     time.sleep(5)
