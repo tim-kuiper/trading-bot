@@ -102,22 +102,6 @@ def get_macdhist():
     macd_values = list(macd_dict.values())
     return macd_values[-1]
 
-asset_pair_positions =  {}
-
-# get open positions for asset pair
-def get_asset_pair_positions():
-    # get positions for asset pair
-    time.sleep(2)
-    # first get all positions
-    response = kraken_request('/0/private/OpenPositions', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
-    # loop through positions and get positions for asset pair
-    open_positions = response.json()['result']
-    for k,v in open_positions.items():
-      # print(f"key: {k}, value: {v}")
-      if v['pair'] == asset_pair:
-        asset_pair_positions.update({k:v})
-    return asset_pair_positions
-    
 def open_asset_pair_long_position():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
@@ -202,8 +186,8 @@ while True:
     # print(f"Close all long pos for {asset_pair}: {close_asset_pair_long_positions().json()}")
     # print(f"Close all short pos for {asset_pair}: {close_asset_pair_short_positions().json()}")
     #  print(f"Open 1 short pos for {asset_pair}: {open_asset_pair_short_position().json()}")
-    print(f"Cancellng order for {asset_pair}: {cancel_order().json()}")
+    # print(f"Cancellng order for {asset_pair}: {cancel_order().json()}")
     # print(f"Open 1 long pos for {asset_pair}: {open_asset_pair_long_position().json()}")
     # print(f"Create long pos for {asset_pair}: {create_asset_pair_long_position().json()}")
-    # print(f"Query open orders: {query_open_orders().json()}")
-    time.sleep(5)
+    print(f"Query open orders: {query_open_orders().json()}")
+    time.sleep(10)

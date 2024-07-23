@@ -1,0 +1,20 @@
+Strategy:
+
+Long/Short on MACD crossover on 8H / 1D / 1W timeframes
+
+Margin call formulas on Kraken:
+- Long: 
+    - Equity = Trade Balance + Profit/Loss
+    - Profit/Loss = % of profit or loss on already open position
+    - Margin Call Price = Entry Price - ((Equity - (Used Margin x 0.8)) / Open Volume*)
+    - Liquidation Price = Entry Price - ((Equity - (Used Margin x 0.4)) / Open Volume*)
+
+- Short:
+    - Margin Call Price = Leverage x (Trade Balance + (Entry Price x Open Volume)) / (Open Volume x (0.8 + Leverage))
+    - Liquidation Price = Leverage x (Trade Balance + (Entry Price x Open Volume)) / (Open Volume x (0.4 + Leverage))
+
+Stop-Loss-Limit for each long/short position:
+- 8H: +- 5% from current price
+- 1D: +- 10% from current price
+- 1W: +- 15% from current price
+
