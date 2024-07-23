@@ -111,6 +111,9 @@ def open_asset_pair_long_position():
         "reduce_only": False,
         "volume": "0.0001",
         "leverage": leverage,
+        "close[ordertype]": "stop-loss-limit",
+        "close[price]": "65000",
+        "close[price2]": "63000",
         "pair": asset_pair
     }, api_key, api_sec)
     return response

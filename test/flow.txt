@@ -1,6 +1,10 @@
 Strategy:
 
-Long/Short on MACD crossover on 8H / 1D / 1W timeframes
+Since we cant do hedging (multiple long/short positions on the same asset pair), we only go short when trend is downwards. So:
+
+When MACD hist crossing 0 upwards:
+- Buy asset
+
 
 Margin call formulas on Kraken:
 - Long: 
@@ -18,3 +22,7 @@ Stop-Loss-Limit for each long/short position:
 - 1D: +- 10% from current price
 - 1W: +- 15% from current price
 
+If MACD hist crosses upwards:
+- Open / Add long position
+  - Save order TXID and corresponding SLL TXID together (the SLL needs to be closed first in order to close/reduce the position)
+  - Save amount bought
