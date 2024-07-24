@@ -210,7 +210,7 @@ while True:
     # print(f"Close all long pos for {asset_pair}: {close_asset_pair_long_positions().json()}")
     print(f"Close short pos for {asset_pair}: {close_asset_pair_short_position().json()}")
     # print(f"Open 1 short pos for {asset_pair}: {open_asset_pair_short_position().json()['result']['txid']}")
-    # short_txid = open_asset_pair_short_position().json()['result']['txid'][0]
+    #short_txid = open_asset_pair_short_position().json()['result']['txid'][0]
     # print(f"short txid: {short_txid}")
     # print(f"Cancelling order for {asset_pair}: {cancel_order().json()}")
     # print(f"Query open orders: {query_open_orders().json()}")
@@ -219,8 +219,8 @@ while True:
     # print(open_orders['result']['open'])
     #for key, value in open_orders['result']['open'].items():
     #   print(f"Key: {key}, Value: {value['refid']}")
-    #   if short_txid == value['refid']:
-    #      print(f"Found a match")
+    #  if short_txid == value['refid']:
+    #     print(f"Found a match")
     #      conditional_order_txid = key
     #print(f"Short txid: {short_txid} with with condtional order txid: {conditional_order_txid}")
     #short_pos_txid_list.append(short_txid)

@@ -19,11 +19,9 @@ Stop-Loss-Limit for each short position:
 - 1W: +- 15% from current price
 
 If MACD hist crosses upwards:
-- Buy asset (no SLL)
-  - Reduce or close short position
-    - In order to do this, first cancel the corresponding SLL order
-  - Buy asset and save amount bought in asset json 
+  - Reduce/close short position with corresponding SLL order if any
+  - Buy asset
 
 If MACD hist crosses downwards:
-  - Sell asset (regular sell) with the amount present in asset json
+  - Sell asset
   - Create / Increase a short position with corresponding SLL order 
