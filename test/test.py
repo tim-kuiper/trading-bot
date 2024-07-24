@@ -102,22 +102,6 @@ def get_macdhist():
     macd_values = list(macd_dict.values())
     return macd_values[-1]
 
-def open_asset_pair_long_position():
-    time.sleep(2)
-    response = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "buy",
-        "reduce_only": False,
-        "volume": "0.0001",
-        "leverage": leverage,
-        "close[ordertype]": "stop-loss-limit",
-        "close[price]": "65000",
-        "close[price2]": "63000",
-        "pair": asset_pair
-    }, api_key, api_sec)
-    return response
-
 def open_asset_pair_short_position():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
@@ -125,36 +109,23 @@ def open_asset_pair_short_position():
         "ordertype": "market",
         "type": "sell",
         "reduce_only": False,
-        "volume": "0.0001",
+        "volume": "0.0001", # calculate from balance
         "leverage": leverage,
         "close[ordertype]": "stop-loss-limit",
-        "close[price]": "70000",
-        "close[price2]": "72000",
+        "close[price]": "70000", # calculate from % distance from current price
+        "close[price2]": "72000", # calculate from % distance from current price
         "pair": asset_pair
     }, api_key, api_sec)
     return response
 
-def close_asset_pair_long_positions():
-    time.sleep(2)
-    response = kraken_request('/0/private/AddOrder', {
-        "nonce": str(int(1000*time.time())),
-        "ordertype": "market",
-        "type": "sell",
-        "reduce_only": False,
-        "volume": "0", # closes all long positions
-        "leverage": leverage, # for btc, construct a dict for asset pair and leverage lvls
-        "pair": asset_pair
-    }, api_key, api_sec)
-    return response
-    
-def close_asset_pair_short_positions():
+def close_asset_pair_short_position():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "buy",
         "reduce_only": False,
-        "volume": "0", # closes all short pos
+        "volume": "0.0001",
         "leverage": leverage,
         "pair": asset_pair
     }, api_key, api_sec)
@@ -163,14 +134,17 @@ def close_asset_pair_short_positions():
 def cancel_order():
    response = kraken_request('/0/private/CancelOrder', {
        "nonce": str(int(1000*time.time())), 
-       "txid": "OWF53A-HNVC7-TWDTAG"
+       "txid": "OWSSYT-5UOPV-6SWBJV"
    }, api_key, api_sec)
    return response
 
 def query_order_txid():
    response = kraken_request('/0/private/QueryOrders', {
        "nonce": str(int(1000*time.time())), 
-       "txid": "OSYA6J-JPWFZ-PREAID"
+       # "txid": "O27YQ4-CGA2H-Y7IVAS"
+       # "txid": "OHSRAR-7QOWR-4ZDXVP"
+       "txid": "OMUMJJ-43ZWI-QV5HIS"
+       # "txid": "OI57ZL-WG3N2-UBV7YZ"
    }, api_key, api_sec)
    return response
 
@@ -180,17 +154,77 @@ def query_open_orders():
    }, api_key, api_sec)
    return response
 
+def check_create_asset_file():
+    global asset_dict
+    asset_dict.clear()
+    asset_file_exists = os.path.exists(asset_file_path)
+    # create file if it doesnt exist, add dictionary per asset to it
+    if not asset_file_exists:
+      print(f"Asset dict before: {asset_dict}")
+      print(f"Asset file {asset_file} doesnt exist , creating one")
+      print(f"Asset dict after: {asset_dict}")
+      asset_dict.update({asset_pair: {"macd_hist": [], "holdings": [], "short_pos_txid": [], "conditional_order_txid": []}})
+      write_to_asset_file()
+    else:
+      print(f"Asset file {asset_file} exists, reading")
+      asset_dict = json.loads(read_asset_file())
+      if asset_pair not in asset_dict.keys():
+        print(f"Asset dict before: {asset_dict}")
+        print(f"Asset pair {asset_pair} not present in asset file {asset_file}, updating file")
+        asset_dict.update({asset_pair: {"macd_hist": [], "holdings": [], "short_pos_txid": [], "conditional_order_txid": []}})
+        print(f"Asset dict after: {asset_dict}")
+        write_to_asset_file()
+        print(f"Appended {asset_pair} to {asset_file}")
+
+@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
+def write_to_asset_file():
+    f = open(asset_file, "w")
+    f.write(json.dumps(asset_dict))
+    f.close()
+
+@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
+def read_asset_file():
+    f = open(asset_file, "r")
+    asset_json = f.read()
+    f.close()
+    return asset_json
+
 while True:
+  timeframe = "1d-test"
+  file_extension = '.json'
+  asset_file = timeframe + file_extension 
+  asset_file_path = './' + asset_file
+  interval_time_minutes = 1440
+  interval_time_simple = '1d'
   for asset_pair in asset_pairs:
     api_key = get_asset_vars()[2]
     api_sec = get_asset_vars()[1]
     leverage = get_asset_vars()[3]
+    check_create_asset_file()
+    asset_dict = json.loads(read_asset_file())
+    macd_hist_list = asset_dict[asset_pair]["macd_hist"]
+    holdings_list = asset_dict[asset_pair]["holdings"]
+    short_pos_txid_list = asset_dict[asset_pair]["short_pos_txid"]
+    conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
     # print(f"Open positions: {get_asset_pair_positions()}")
     # print(f"Close all long pos for {asset_pair}: {close_asset_pair_long_positions().json()}")
-    # print(f"Close all short pos for {asset_pair}: {close_asset_pair_short_positions().json()}")
-    #  print(f"Open 1 short pos for {asset_pair}: {open_asset_pair_short_position().json()}")
-    # print(f"Cancellng order for {asset_pair}: {cancel_order().json()}")
-    # print(f"Open 1 long pos for {asset_pair}: {open_asset_pair_long_position().json()}")
-    # print(f"Create long pos for {asset_pair}: {create_asset_pair_long_position().json()}")
-    print(f"Query open orders: {query_open_orders().json()}")
-    time.sleep(10)
+    print(f"Close short pos for {asset_pair}: {close_asset_pair_short_position().json()}")
+    # print(f"Open 1 short pos for {asset_pair}: {open_asset_pair_short_position().json()['result']['txid']}")
+    # short_txid = open_asset_pair_short_position().json()['result']['txid'][0]
+    # print(f"short txid: {short_txid}")
+    # print(f"Cancelling order for {asset_pair}: {cancel_order().json()}")
+    # print(f"Query open orders: {query_open_orders().json()}")
+    # time.sleep(5)
+    # open_orders = query_open_orders().json()
+    # print(open_orders['result']['open'])
+    #for key, value in open_orders['result']['open'].items():
+    #   print(f"Key: {key}, Value: {value['refid']}")
+    #   if short_txid == value['refid']:
+    #      print(f"Found a match")
+    #      conditional_order_txid = key
+    #print(f"Short txid: {short_txid} with with condtional order txid: {conditional_order_txid}")
+    #short_pos_txid_list.append(short_txid)
+    #conditional_order_txid_list.append(conditional_order_txid)
+    #write_to_asset_file()
+    # print(f"Query order by txid: {query_order_txid().json()}")
+    time.sleep(30)
