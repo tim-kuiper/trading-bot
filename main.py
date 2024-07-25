@@ -26,8 +26,7 @@ list_360h = [] # 15d
 start_list_24h = [] # use this list in combination with the regular 24h list in order to execute the 24h block without waiting 24 hours
 start_list_168h = [] # use this list in combination with the regular 168h list in order to execute the 168h block without waiting 168 hours
 start_list_360h = [] # use this list in combination with the regular 360h list in order to execute the 360h block without waiting 360 hours
-# loop_time_seconds = 86400 # 1d - iteration time for main loop
-loop_time_seconds = 30 # 1d - iteration time for main loop
+loop_time_seconds = 86400 # 1d - iteration time for main loop
 
 # functions
 def get_asset_vars():
