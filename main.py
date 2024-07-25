@@ -248,9 +248,17 @@ def close_reduce_short_position():
     return response
 
 def cancel_order():
+   time.sleep(1)
    response = kraken_request('/0/private/CancelOrder', {
        "nonce": str(int(1000*time.time())), 
        "txid": order_txid
+   }, api_key, api_sec)
+   return response
+
+def query_open_orders():
+   time.sleep(1)
+   response = kraken_request('/0/private/OpenOrders', {
+       "nonce": str(int(1000*time.time()))
    }, api_key, api_sec)
    return response
 
@@ -479,8 +487,24 @@ while True:
               print(f"{interval_time_simple} {asset_pair}: Sucessfully created created/increased short position with SLL: {order_output.json()}")
               tg_message = f"{interval_time_simple} {asset_pair}: Sucessfully created created/increased short position with SLL: {order_output.json()}"
               send_telegram_message()
+              asset_dict = json.loads(read_asset_file())
+              macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
+              holdings_list = asset_dict[asset_pair]["holdings"]
+              holdings_short_list = asset_dict[asset_pair]["holdings_short"]
+              short_pos_txid_list = asset_dict[asset_pair]["short_pos_txid"]
+              conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
+              # add short txid and sll txid to asset dict lists
+              short_txid = order_output.json()['result']['txid'][0]
+              open_orders = query_open_orders().json()
+              for key, value in open_orders['result']['open'].items():
+                print(f"Key: {key}, Value: {value['refid']}")
+                if short_txid == value['refid']:
+                  print(f"Found a match")
+                  conditional_order_txid = key
+              short_pos_txid_list.append(short_txid)
+              conditional_order_txid_list.append(conditional_order_txid)
+              write_to_asset_file()
               # CONT HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
           else:
             print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
             tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
