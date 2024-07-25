@@ -503,8 +503,13 @@ while True:
                   conditional_order_txid = key
               short_pos_txid_list.append(short_txid)
               conditional_order_txid_list.append(conditional_order_txid)
+              macd_hist_list.pop(0)
+              asset_dict[asset_pair]["macd_hist"] = macd_hist_list
               write_to_asset_file()
-              # CONT HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            else:
+              print(f"{interval_time_simple} {asset_pair}: An error occured when trying to create/increase a short position with SLL: {order_output.json()['error']}")
+              tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to create/increase a short position with SLL: {order_output.json()['error']}"
+              send_telegram_message()
           else:
             print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
             tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
@@ -512,21 +517,6 @@ while True:
         else:
           print(f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it")
           tg_message = f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it"
-          send_telegram_message()
-          # create/increase short position
-
-        volume_to_sell = str(float(holdings_list))
-        order_output = open_increase_short_position()
-        if not order_output.json()['error']:
-          macd_hist_list.pop(0)
-          asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-          write_to_asset_file()
-          print(f"{interval_time_simple} {asset_pair}: Closes long position {order_output.json()['result']}")
-          tg_message = order_output.json()['result']
-          send_telegram_message()        
-        else:
-          print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
-          tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
           send_telegram_message()
     time.sleep(3) # sleep 3 seconds between asset pair
   #list_24h.clear()
