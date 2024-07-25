@@ -22,7 +22,8 @@ api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
 list_24h = []
 start_list_24h = [] # use this list in combination with the regular 24h list in order to execute the 24h block without waiting 24 hours
-loop_time_seconds = 86400 # 1d - iteration time for main loop
+# loop_time_seconds = 86400 # 1d - iteration time for main loop
+loop_time_seconds = 30 # 1d - iteration time for main loop
 
 # functions
 def get_asset_vars():
@@ -122,6 +123,7 @@ def get_orderinfo():
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def buy_asset():
+    time.sleep(2)
     print("Buying the following amount of", asset_pair, ":", volume_to_buy)
     buy_order = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
@@ -134,6 +136,7 @@ def buy_asset():
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def sell_asset():
+    time.sleep(2)
     print("Selling the following amount of", asset_pair, ":", volume_to_sell)
     sell_order = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
@@ -230,6 +233,9 @@ def open_increase_short_position():
         "reduce_only": False,
         "volume": volume_to_sell,
         "leverage": leverage,
+        "close[ordertype]": "stop-loss-limit",
+        "close[price]": sll_trigger, # sll trigger price
+        "close[price2]": sll_limit, # sll limit price
         "pair": asset_pair
     }, api_key, api_sec)
     return response
@@ -248,7 +254,7 @@ def close_reduce_short_position():
     return response
 
 def cancel_order():
-   time.sleep(1)
+   time.sleep(2)
    response = kraken_request('/0/private/CancelOrder', {
        "nonce": str(int(1000*time.time())), 
        "txid": order_txid
@@ -256,7 +262,7 @@ def cancel_order():
    return response
 
 def query_open_orders():
-   time.sleep(1)
+   time.sleep(2)
    response = kraken_request('/0/private/OpenOrders', {
        "nonce": str(int(1000*time.time()))
    }, api_key, api_sec)
@@ -273,7 +279,9 @@ while True:
   asset_file_path = './' + asset_file
   interval_time_minutes = 1440
   interval_time_simple = '1d'
-  order_size = 20
+  order_size = 10
+  sll_trigger_pct = 1.08 # trigger pct from current price
+  sll_limit_pct = 1.10 # limit pct from current price
   for asset_pair in asset_pairs:
     api_key = get_asset_vars()[2]
     api_sec = get_asset_vars()[1]
@@ -316,6 +324,9 @@ while True:
     short_pos_txid_list = asset_dict[asset_pair]["short_pos_txid"]
     conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
     print(f"{interval_time_simple} {asset_pair} MACD hist list: {macd_hist_list}")
+    # for testing purposes
+    # macd_hist_list = [-1, 1] # buy
+    # macd_hist_list = [1, -1] # sell
     if macd_hist_list[-2] < 0:
       print(f"{interval_time_simple} {asset_pair}: Watching to buy asset when MACD hist crosses 0")
       if macd_hist_list[-1] < 0:
@@ -387,14 +398,23 @@ while True:
                   print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
                   tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
                   send_telegram_message()
+                  macd_hist_list.pop(0)
+                  asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+                  write_to_asset_file()
               else:
                 print(f"{interval_time_simple} {asset_pair}: An error occured when trying to cancel a SLL order: {order_output.json()['error']}")
                 tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to cancel a SLL order: {order_output.json()['error']}"
                 send_telegram_message()
+                macd_hist_list.pop(0)
+                asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+                write_to_asset_file()
             else:
               print(f"{interval_time_simple} {asset_pair}: An error occured when trying to reduce/close a short position: {order_output.json()['error']}")
               tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to reduce/close a short position: {order_output.json()['error']}"
               send_telegram_message()
+              macd_hist_list.pop(0)
+              asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+              write_to_asset_file()
           else:
             print(f"{interval_time_simple} {asset_pair}: short holdings short list is 0, cannot close or reduce short position with this amount so buying asset")
             tg_message = f"{interval_time_simple} {asset_pair}: short holdings short list is 0, cannot close or reduce short position with this amount so buying asset"
@@ -425,6 +445,9 @@ while True:
               print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
               tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
               send_telegram_message()
+              macd_hist_list.pop(0)
+              asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+              write_to_asset_file()
         else:
           print(f"{interval_time_simple} {asset_pair}: No short txid or SLL txid present, buying asset")
           tg_message = f"{interval_time_simple} {asset_pair}: No short txid or SLL txid present, buying asset"
@@ -455,6 +478,9 @@ while True:
             print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
             tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
             send_telegram_message()
+            macd_hist_list.pop(0)
+            asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+            write_to_asset_file()
     elif macd_hist_list[-2] > 0:
       print(f"{interval_time_simple} {asset_pair}: Watching to sell asset when MACD hist crosses 0 and opening a short position")
       if macd_hist_list[-1] > 0:
@@ -482,6 +508,8 @@ while True:
             asset_close = float(get_asset_close())
             usd_order_size = order_size
             volume_to_sell = str(float(usd_order_size / asset_close))
+            sll_trigger = str(round(float(asset_close * sll_trigger_pct), 1))
+            sll_limit = str(round(float(asset_close * sll_limit_pct), 1))
             order_output = open_increase_short_position()
             if not order_output.json()['error']:
               print(f"{interval_time_simple} {asset_pair}: Sucessfully created created/increased short position with SLL: {order_output.json()}")
@@ -503,21 +531,66 @@ while True:
                   conditional_order_txid = key
               short_pos_txid_list.append(short_txid)
               conditional_order_txid_list.append(conditional_order_txid)
+              holdings_short_list.append(float(volume_to_sell))
               macd_hist_list.pop(0)
               asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+              asset_dict[asset_pair]["short_pos_txid"] = short_pos_txid_list
+              asset_dict[asset_pair]["conditional_order_txid"] = conditional_order_txid_list
+              asset_dict[asset_pair]["holdings_short"] = holdings_short_list
               write_to_asset_file()
             else:
               print(f"{interval_time_simple} {asset_pair}: An error occured when trying to create/increase a short position with SLL: {order_output.json()['error']}")
               tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to create/increase a short position with SLL: {order_output.json()['error']}"
               send_telegram_message()
+              macd_hist_list.pop(0)
+              asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+              write_to_asset_file()
           else:
             print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
             tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
             send_telegram_message()
+            macd_hist_list.pop(0)
+            asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+            write_to_asset_file()
         else:
-          print(f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it")
-          tg_message = f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it"
+          print(f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it, so just create a short position")
+          tg_message = f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it, so just create a short position"
           send_telegram_message()
+          # create/increase short position
+          asset_close = float(get_asset_close())
+          usd_order_size = order_size
+          volume_to_sell = str(float(usd_order_size / asset_close))
+          sll_trigger = str(round(float(asset_close * sll_trigger_pct), 1))
+          sll_limit = str(round(float(asset_close * sll_limit_pct), 1))
+          order_output = open_increase_short_position()
+          if not order_output.json()['error']:
+            print(f"{interval_time_simple} {asset_pair}: Sucessfully created created/increased short position with SLL: {order_output.json()}")
+            tg_message = f"{interval_time_simple} {asset_pair}: Sucessfully created created/increased short position with SLL: {order_output.json()}"
+            send_telegram_message()
+            # add short txid and sll txid to asset dict lists
+            short_txid = order_output.json()['result']['txid'][0]
+            open_orders = query_open_orders().json()
+            for key, value in open_orders['result']['open'].items():
+              print(f"Key: {key}, Value: {value['refid']}")
+              if short_txid == value['refid']:
+                print(f"Found a match")
+                conditional_order_txid = key
+            short_pos_txid_list.append(short_txid)
+            conditional_order_txid_list.append(conditional_order_txid)
+            holdings_short_list.append(float(volume_to_sell))
+            macd_hist_list.pop(0)
+            asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+            asset_dict[asset_pair]["short_pos_txid"] = short_pos_txid_list
+            asset_dict[asset_pair]["conditional_order_txid"] = conditional_order_txid_list
+            asset_dict[asset_pair]["holdings_short"] = holdings_short_list
+            write_to_asset_file()
+          else:
+            print(f"{interval_time_simple} {asset_pair}: An error occured when trying to create/increase a short position with SLL: {order_output.json()['error']}")
+            tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to create/increase a short position with SLL: {order_output.json()['error']}"
+            send_telegram_message()
+            macd_hist_list.pop(0)
+            asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+            write_to_asset_file()
     time.sleep(3) # sleep 3 seconds between asset pair
   #list_24h.clear()
   time.sleep(loop_time_seconds)
