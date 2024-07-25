@@ -17,6 +17,7 @@ Stop-Loss-Limit for each short position:
 - 8H: +- 5% from current price
 - 1D: +- 10% from current price
 - 1W: +- 15% from current price
+- 15d: +- 25% from current price
 
 If MACD hist crosses upwards:
   - Reduce/close short position with corresponding SLL order if any
