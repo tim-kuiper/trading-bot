@@ -380,10 +380,9 @@ while True:
           tg_message = f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing short pos if any and opening long pos"
           send_telegram_message()
           # check if short txid list and conditional txid list arent empty
-          if len(margin_pos_txid_list) != 0 and len(conditional_order_txid_list) != 0:
+          if not margin_pos_txid_list and not conditional_order_txid_list:
             # close or reduce short pos with amount in holdings short list
-            if sum(holdings_short_list) > 0:
-              order_output = close_reduce_short_position()
+              order_output = close_short_pos()
               if not order_output.json()['error']:
                 holdings_short_list.clear()
                 short_pos_txid_list.clear()
