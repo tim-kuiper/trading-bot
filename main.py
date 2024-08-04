@@ -201,7 +201,7 @@ def check_create_asset_file():
       print(f"Asset dict before: {asset_dict}")
       print(f"Asset file {asset_file} doesnt exist , creating one")
       print(f"Asset dict after: {asset_dict}")
-      asset_dict.update({asset_pair: {"macd_hist": [], "holdings": [], "holdings_short": [],"short_pos_txid": [], "conditional_order_txid": []}})
+      asset_dict.update({asset_pair: {"macd_hist": [],"margin_pos_txid": [], "conditional_order_txid": []}})
       write_to_asset_file()
     else:
       print(f"Asset file {asset_file} exists, reading")
@@ -209,7 +209,7 @@ def check_create_asset_file():
       if asset_pair not in asset_dict.keys():
         print(f"Asset dict before: {asset_dict}")
         print(f"Asset pair {asset_pair} not present in asset file {asset_file}, updating file")
-        asset_dict.update({asset_pair: {"macd_hist": [], "holdings": [], "holdings_short": [], "short_pos_txid": [], "conditional_order_txid": []}})
+        asset_dict.update({asset_pair: {"macd_hist": [], "margin_pos_txid": [], "conditional_order_txid": []}})
         print(f"Asset dict after: {asset_dict}")
         write_to_asset_file()
         print(f"Appended {asset_pair} to {asset_file}")
@@ -227,14 +227,15 @@ def read_asset_file():
     f.close()
     return asset_json
 
-def open_increase_long_position():
+def open_increase_long_pos():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "buy",
         "reduce_only": False,
-        "volume": volume_to_buy,
+        # "volume": volume_to_buy,
+        "volume": order_volume,
         "leverage": leverage,
         "close[ordertype]": "stop-loss-limit",
         "close[price]": sll_trigger, # sll trigger price
@@ -243,14 +244,14 @@ def open_increase_long_position():
     }, api_key, api_sec)
     return response
 
-def open_increase_short_position():
+def open_increase_short_pos():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "sell",
         "reduce_only": False,
-        "volume": volume_to_sell,
+        "volume": order_volume,
         "leverage": leverage,
         "close[ordertype]": "stop-loss-limit",
         "close[price]": sll_trigger, # sll trigger price
@@ -259,18 +260,30 @@ def open_increase_short_position():
     }, api_key, api_sec)
     return response
 
-def close_reduce_short_position():
+def close_short_pos():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "buy",
         "reduce_only": False,
-        "volume": str(sum(holdings_short_list)),
+        "volume": "0",
         "leverage": leverage,
         "pair": asset_pair
     }, api_key, api_sec)
     return response
+
+def close_long_pos():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "sell",
+        "reduce_only": False,
+        "volume": "0",
+        "leverage": leverage,
+        "pair": asset_pair
+    }, api_key, api_sec)
 
 def cancel_order():
    time.sleep(2)
@@ -283,6 +296,12 @@ def cancel_order():
 def query_open_orders():
    time.sleep(2)
    response = kraken_request('/0/private/OpenOrders', {
+       "nonce": str(int(1000*time.time()))
+   }, api_key, api_sec)
+   return response
+
+def query_open_pos():
+   response = kraken_request('/0/private/OpenPositions', {
        "nonce": str(int(1000*time.time()))
    }, api_key, api_sec)
    return response
@@ -314,9 +333,7 @@ while True:
       print(f"Opening asset file {asset_file}")
       asset_dict = json.loads(read_asset_file())
       macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-      holdings_list = asset_dict[asset_pair]["holdings"]
-      holdings_short_list = asset_dict[asset_pair]["holdings_short"]
-      short_pos_txid_list = asset_dict[asset_pair]["short_pos_txid"]
+      margin_pos_txid_list = asset_dict[asset_pair]["margin_pos_txid"]
       conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
       # when macd hist list is empty
       if len(macd_hist_list) == 0:
@@ -343,9 +360,7 @@ while True:
       # reread asset json
       asset_dict = json.loads(read_asset_file())
       macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-      holdings_list = asset_dict[asset_pair]["holdings"]
-      holdings_short_list = asset_dict[asset_pair]["holdings_short"]
-      short_pos_txid_list = asset_dict[asset_pair]["short_pos_txid"]
+      margin_pos_txid_list = asset_dict[asset_pair]["margin_pos_txid"]
       conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
       print(f"{interval_time_simple} {asset_pair} MACD hist list: {macd_hist_list}")
       # for testing purposes
@@ -361,11 +376,11 @@ while True:
           tg_message = f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
           send_telegram_message()
         elif macd_hist_list[-1] > 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing/reducing short position if any and buying {asset_pair}")
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing/reducing short position if any and buying {asset_pair}"
+          print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing short pos if any and opening long pos")
+          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing short pos if any and opening long pos"
           send_telegram_message()
           # check if short txid list and conditional txid list arent empty
-          if len(short_pos_txid_list) != 0 and len(conditional_order_txid_list) != 0:
+          if len(margin_pos_txid_list) != 0 and len(conditional_order_txid_list) != 0:
             # close or reduce short pos with amount in holdings short list
             if sum(holdings_short_list) > 0:
               order_output = close_reduce_short_position()
