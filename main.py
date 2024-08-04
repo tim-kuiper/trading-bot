@@ -227,6 +227,22 @@ def read_asset_file():
     f.close()
     return asset_json
 
+def open_increase_long_position():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "buy",
+        "reduce_only": False,
+        "volume": volume_to_buy,
+        "leverage": leverage,
+        "close[ordertype]": "stop-loss-limit",
+        "close[price]": sll_trigger, # sll trigger price
+        "close[price2]": sll_limit, # sll limit price
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
+
 def open_increase_short_position():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
@@ -286,8 +302,10 @@ while True:
     interval_time_minutes = 1440
     interval_time_simple = '1d'
     order_size = 1200
-    sll_trigger_pct = 1.09 # trigger pct from current price
-    sll_limit_pct = 1.10 # limit pct from current price
+    sll_short_trigger_pct = 1.09 # trigger pct from current price
+    sll_short_limit_pct = 1.10 # limit pct from current price
+    sll_long_trigger_pct = 0.91 # trigger pct from current price
+    sll_long_limit_pct = 0.90 # limit pct from current price
     for asset_pair in asset_pairs:
       api_key = get_asset_vars()[2]
       api_sec = get_asset_vars()[1]
@@ -514,8 +532,8 @@ while True:
               asset_close = float(get_asset_close())
               usd_order_size = order_size
               volume_to_sell = str(float(usd_order_size / asset_close))
-              sll_trigger = str(round(float(asset_close * sll_trigger_pct), 1))
-              sll_limit = str(round(float(asset_close * sll_limit_pct), 1))
+              sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
+              sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
               order_output = open_increase_short_position()
               if not order_output.json()['error']:
                 print(f"{interval_time_simple} {asset_pair}: Sucessfully created created/increased short position with SLL: {order_output.json()}")
