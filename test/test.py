@@ -102,30 +102,27 @@ def get_macdhist():
     macd_values = list(macd_dict.values())
     return macd_values[-1]
 
-def open_asset_pair_short_position():
+def close_long_pos():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "sell",
         "reduce_only": False,
-        "volume": "0.0001", # calculate from balance
+        "volume": "0",
         "leverage": leverage,
-        "close[ordertype]": "stop-loss-limit",
-        "close[price]": "70000", # calculate from % distance from current price
-        "close[price2]": "72000", # calculate from % distance from current price
         "pair": asset_pair
     }, api_key, api_sec)
     return response
 
-def close_asset_pair_short_position():
+def close_short_pos():
     time.sleep(2)
     response = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "buy",
         "reduce_only": False,
-        "volume": "0.0001",
+        "volume": "0",
         "leverage": leverage,
         "pair": asset_pair
     }, api_key, api_sec)
@@ -134,7 +131,7 @@ def close_asset_pair_short_position():
 def cancel_order():
    response = kraken_request('/0/private/CancelOrder', {
        "nonce": str(int(1000*time.time())), 
-       "txid": "OWSSYT-5UOPV-6SWBJV"
+       "txid": "OZ2PT5-6NZXY-IPIIVE"
    }, api_key, api_sec)
    return response
 
@@ -165,5 +162,11 @@ while True:
     api_key = get_asset_vars()[2]
     api_sec = get_asset_vars()[1]
     leverage = get_asset_vars()[3]
-    print(f"Open positions: {query_open_pos().json()}")
+    # print(f"Open positions: {query_open_pos().json()}")
+    open_orders = query_open_orders().json()['result']
+    print(f"Open orders: {open_orders}")
+    for key, value in open_orders['open'].items():
+      print(f"Order txid: {key}, Margin order txid: {value['refid']}, Pair: {value['refid']['descr']['pair']}")
+    # print(f"Close pos : {close_short_pos().json()}")
+    # print(f"cancel order : {cancel_order().json()}")
     time.sleep(30)

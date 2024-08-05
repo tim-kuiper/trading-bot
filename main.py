@@ -320,7 +320,8 @@ while True:
     asset_file_path = './' + asset_file
     interval_time_minutes = 1440
     interval_time_simple = '1d'
-    order_size = 1200
+    # order_size = 1200
+    order_size = 10
     sll_short_trigger_pct = 1.09 # trigger pct from current price
     sll_short_limit_pct = 1.10 # limit pct from current price
     sll_long_trigger_pct = 0.91 # trigger pct from current price
@@ -364,7 +365,7 @@ while True:
       conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
       print(f"{interval_time_simple} {asset_pair} MACD hist list: {macd_hist_list}")
       # for testing purposes
-      # macd_hist_list = [-1, 1] # buy
+      macd_hist_list = [-1, 1] # buy
       # macd_hist_list = [1, -1] # sell
       if macd_hist_list[-2] < 0:
         print(f"{interval_time_simple} {asset_pair}: Watching to buy asset when MACD hist crosses 0")
@@ -382,139 +383,107 @@ while True:
           # check if short txid list and conditional txid list arent empty
           if not margin_pos_txid_list and not conditional_order_txid_list:
             # close or reduce short pos with amount in holdings short list
-              order_output = close_short_pos()
+            order_output = close_short_pos()
+            if not order_output.json()['error']:
+              margin_pos_txid_list.clear()
+              write_to_asset_file()
+              print(f"Succesfully closed {asset_pair} short position: {order_output.json()}")
+              tg_message = f"Succesfully closed {asset_pair} short position: {order_output.json()}"
+              send_telegram_message()
+              # cancel corresponding SLL order
+              asset_dict = json.loads(read_asset_file())
+              macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
+              margin_pos_txid_list = asset_dict[asset_pair]["margin_pos_txid"]
+              conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
+              order_txid = conditional_order_txid_list[0]
+              order_output = cancel_order()
               if not order_output.json()['error']:
-                holdings_short_list.clear()
-                short_pos_txid_list.clear()
-                asset_dict[asset_pair]['holdings_short'] = holdings_short_list
-                asset_dict[asset_pair]['holdings'] = holdings_list
+                conditional_order_txid_list.clear() 
+                asset_dict[asset_pair]['conditional_order_txid'] = conditional_order_txid_list
                 write_to_asset_file()
-                print(f"Succesfully reduced/closed {asset_pair} short position: {order_output.json()}")
-                tg_message = f"Succesfully reduced/closed {asset_pair} short position: {order_output.json()}"
+                print(f"Succesfully cleared {asset_pair} SLL order: {order_output.json()}")
+                tg_message = f"Succesfully cleared {asset_pair} SLL order: {order_output.json()}"
                 send_telegram_message()
-                # cancel corresponding SLL order
-                asset_dict = json.loads(read_asset_file())
-                macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-                holdings_list = asset_dict[asset_pair]["holdings"]
-                holdings_short_list = asset_dict[asset_pair]["holdings_short"]
-                short_pos_txid_list = asset_dict[asset_pair]["short_pos_txid"]
-                conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
-                order_txid = conditional_order_txid_list[0]
-                order_output = cancel_order()
+                # Going long on asset
+                print(f"Opening long pos for {asset_pair}")
+                asset_close = float(get_asset_close())
+                usd_order_size = order_size
+                order_volume = str(float(usd_order_size / asset_close))
+                sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
+                sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
+                order_output = open_increase_long_pos()
                 if not order_output.json()['error']:
-                  conditional_order_txid_list.clear() 
-                  asset_dict[asset_pair]['conditional_order_txid'] = conditional_order_txid_list
-                  write_to_asset_file()
-                  print(f"Succesfully cleared {asset_pair} SLL order: {order_output.json()}")
-                  tg_message = f"Succesfully cleared {asset_pair} SLL order: {order_output.json()}"
+                  print(f"{interval_time_simple} {asset_pair}: Opened long pos: {order_output.json()['result']}")
+                  tg_message = f"{interval_time_simple} {asset_pair}: Opened long pos: {order_output.json()['result']}"
                   send_telegram_message()
-                  # buy asset
-                  print(f"Buying {asset_pair}")
-                  asset_close = float(get_asset_close())
-                  usd_order_size = order_size
-                  volume_to_buy = str(float(usd_order_size / asset_close))
-                  order_output = buy_asset() # executes buy order and assigns output to var
-                  if not order_output.json()['error']:
-                    print(f"{interval_time_simple} {asset_pair}: Bought {volume_to_buy}")
-                    tg_message = order_output.json()['result']
-                    send_telegram_message()
-                    transaction_id = order_output.json()['result']['txid'][0]
-                    order_info = get_orderinfo()
-                    executed_size = order_info.json()['result'][transaction_id]['vol_exec']
-                    asset_dict = json.loads(read_asset_file())
-                    macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-                    holdings_list = asset_dict[asset_pair]["holdings"]
-                    holdings_short_list = asset_dict[asset_pair]["holdings_short"]
-                    short_pos_txid_list = asset_dict[asset_pair]["short_pos_txid"]
-                    conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
-                    holdings_list.append(float(executed_size))
-                    macd_hist_list.pop(0)
-                    asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-                    asset_dict[asset_pair]["holdings_list"] = holdings_list
-                    write_to_asset_file()
-                  else:
-                    print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
-                    tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
-                    send_telegram_message()
-                    macd_hist_list.pop(0)
-                    asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-                    write_to_asset_file()
+                  transaction_id = order_output.json()['result']['txid'][0]
+                  order_info = get_orderinfo()
+                  asset_dict = json.loads(read_asset_file())
+                  macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
+                  margin_pos_txid_list = asset_dict[asset_pair]["margin_pos_txid"]
+                  conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
+                  macd_hist_list.pop(0)
+                  asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+                  write_to_asset_file()
                 else:
-                  print(f"{interval_time_simple} {asset_pair}: An error occured when trying to cancel a SLL order: {order_output.json()['error']}")
-                  tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to cancel a SLL order: {order_output.json()['error']}"
+                  print(f"{interval_time_simple} {asset_pair}: An error occured when trying to open a long pos: {order_output.json()['error']}")
+                  tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to open a long pos: {order_output.json()['error']}"
                   send_telegram_message()
                   macd_hist_list.pop(0)
                   asset_dict[asset_pair]["macd_hist"] = macd_hist_list
                   write_to_asset_file()
               else:
-                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to reduce/close a short position: {order_output.json()['error']}")
-                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to reduce/close a short position: {order_output.json()['error']}"
+                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to cancel a SLL order: {order_output.json()['error']}")
+                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to cancel a SLL order: {order_output.json()['error']}"
                 send_telegram_message()
                 macd_hist_list.pop(0)
                 asset_dict[asset_pair]["macd_hist"] = macd_hist_list
                 write_to_asset_file()
             else:
-              print(f"{interval_time_simple} {asset_pair}: short holdings short list is 0, cannot close or reduce short position with this amount so buying asset")
-              tg_message = f"{interval_time_simple} {asset_pair}: short holdings short list is 0, cannot close or reduce short position with this amount so buying asset"
+              print(f"{interval_time_simple} {asset_pair}: An error occured when trying to reduce/close a short position: {order_output.json()['error']}")
+              tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to reduce/close a short position: {order_output.json()['error']}"
               send_telegram_message()
-              asset_close = float(get_asset_close())
-              usd_order_size = order_size
-              volume_to_buy = str(float(usd_order_size / asset_close))
-              order_output = buy_asset() # executes buy order and assigns output to var
-              if not order_output.json()['error']:
-                print(f"{interval_time_simple} {asset_pair}: Bought {volume_to_buy}")
-                tg_message = order_output.json()['result']
-                send_telegram_message()
-                transaction_id = order_output.json()['result']['txid'][0]
-                order_info = get_orderinfo()
-                executed_size = order_info.json()['result'][transaction_id]['vol_exec']
-                asset_dict = json.loads(read_asset_file())
-                macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-                holdings_list = asset_dict[asset_pair]["holdings"]
-                holdings_short_list = asset_dict[asset_pair]["holdings_short"]
-                short_pos_txid_list = asset_dict[asset_pair]["short_pos_txid"]
-                conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
-                holdings_list.append(float(executed_size))
-                macd_hist_list.pop(0)
-                asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-                asset_dict[asset_pair]["holdings_list"] = holdings_list
-                write_to_asset_file()
-              else:
-                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
-                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
-                send_telegram_message()
-                macd_hist_list.pop(0)
-                asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-                write_to_asset_file()
+              macd_hist_list.pop(0)
+              asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+              write_to_asset_file()
           else:
-            print(f"{interval_time_simple} {asset_pair}: No short txid or SLL txid present, buying asset")
-            tg_message = f"{interval_time_simple} {asset_pair}: No short txid or SLL txid present, buying asset"
+            print(f"{interval_time_simple} {asset_pair}: No margin txid or SLL txid present, opening long pos")
+            tg_message = f"{interval_time_simple} {asset_pair}: No margin txid or SLL txid present, opening long pos"
             send_telegram_message()
             asset_close = float(get_asset_close())
             usd_order_size = order_size
-            volume_to_buy = str(float(usd_order_size / asset_close))
-            order_output = buy_asset() # executes buy order and assigns output to var
+            order_volume = str(float(usd_order_size / asset_close))
+            sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
+            sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
+            order_output = open_increase_long_pos()
             if not order_output.json()['error']:
-              print(f"{interval_time_simple} {asset_pair}: Bought {volume_to_buy}")
-              tg_message = order_output.json()['result']
+              print(f"{interval_time_simple} {asset_pair}: Opened long pos: {order_output.json()['result']}")
+              tg_message = f"{interval_time_simple} {asset_pair}: Opened long pos: {order_output.json()['result']}"
               send_telegram_message()
               transaction_id = order_output.json()['result']['txid'][0]
               order_info = get_orderinfo()
-              executed_size = order_info.json()['result'][transaction_id]['vol_exec']
               asset_dict = json.loads(read_asset_file())
               macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-              holdings_list = asset_dict[asset_pair]["holdings"]
-              holdings_short_list = asset_dict[asset_pair]["holdings_short"]
-              short_pos_txid_list = asset_dict[asset_pair]["short_pos_txid"]
+              margin_pos_txid_list = asset_dict[asset_pair]["margin_pos_txid"]
               conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
-              holdings_list.append(float(executed_size))
+              # add margin txid and sll txid to asset dict lists
+              margin_txid = order_output.json()['result']['txid'][0]
+              open_orders = query_open_orders().json()
+              for key, value in open_orders['result']['open'].items():
+                print(f"Key: {key}, Value: {value['refid']}")
+                if margin_txid == value['refid']:
+                  print(f"Found a match")
+                  conditional_order_txid = key
+              margin_pos_txid_list.append(margin_txid)
+              conditional_order_txid_list.append(conditional_order_txid)
               macd_hist_list.pop(0)
               asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-              asset_dict[asset_pair]["holdings_list"] = holdings_list
+              asset_dict[asset_pair]["margin_pos_txid"] = margin_pos_txid_list
+              asset_dict[asset_pair]["conditional_order_txid"] = conditional_order_txid_list
               write_to_asset_file()
             else:
-              print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
-              tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
+              print(f"{interval_time_simple} {asset_pair}: An error occured when trying to open a long pos: {order_output.json()['error']}")
+              tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to open a long pos: {order_output.json()['error']}"
               send_telegram_message()
               macd_hist_list.pop(0)
               asset_dict[asset_pair]["macd_hist"] = macd_hist_list
@@ -529,63 +498,78 @@ while True:
           tg_message = f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
           send_telegram_message()
         elif macd_hist_list[-1] < 0:
-          print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0 downwards, selling asset if we have any and create a short position")
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist crossed 0 downwards, selling asset if we have any and create a short position"
+          print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing long pos if any and opening short pos")
+          tg_message = f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing long pos if any and opening short pos"
           send_telegram_message()
-          if float(sum(holdings_list)) > 0: # check if we have some in our holdings
-            volume_to_sell = str(sum(holdings_list))
-            order_output = sell_asset()
+          if not margin_pos_txid_list and not conditional_order_txid_list:
+            order_output = close_long_pos()
             if not order_output.json()['error']:
-              holdings_list.clear()
-              asset_dict[asset_pair]["holdings"] = holdings_list
+              margin_pos_txid_list.clear()
               write_to_asset_file()
-              print(f"{interval_time_simple} {asset_pair}: Sold {volume_to_sell}")
-              tg_message = order_output.json()['result']
+              print(f"Succesfully closed {asset_pair} long pos: {order_output.json()}")
+              tg_message = f"Succesfully closed {asset_pair} long pos: {order_output.json()}"
               send_telegram_message()        
-              # create/increase short position
-              asset_close = float(get_asset_close())
-              usd_order_size = order_size
-              volume_to_sell = str(float(usd_order_size / asset_close))
-              sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
-              sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
-              order_output = open_increase_short_position()
+              # cancel corresponding SLL order
+              asset_dict = json.loads(read_asset_file())
+              macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
+              margin_pos_txid_list = asset_dict[asset_pair]["margin_pos_txid"]
+              conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
+              order_txid = conditional_order_txid_list[0]
+              order_output = cancel_order()
               if not order_output.json()['error']:
-                print(f"{interval_time_simple} {asset_pair}: Sucessfully created created/increased short position with SLL: {order_output.json()}")
-                tg_message = f"{interval_time_simple} {asset_pair}: Sucessfully created created/increased short position with SLL: {order_output.json()}"
-                send_telegram_message()
-                asset_dict = json.loads(read_asset_file())
-                macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-                holdings_list = asset_dict[asset_pair]["holdings"]
-                holdings_short_list = asset_dict[asset_pair]["holdings_short"]
-                short_pos_txid_list = asset_dict[asset_pair]["short_pos_txid"]
-                conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
-                # add short txid and sll txid to asset dict lists
-                short_txid = order_output.json()['result']['txid'][0]
-                open_orders = query_open_orders().json()
-                for key, value in open_orders['result']['open'].items():
-                  print(f"Key: {key}, Value: {value['refid']}")
-                  if short_txid == value['refid']:
-                    print(f"Found a match")
-                    conditional_order_txid = key
-                short_pos_txid_list.append(short_txid)
-                conditional_order_txid_list.append(conditional_order_txid)
-                holdings_short_list.append(float(volume_to_sell))
-                macd_hist_list.pop(0)
-                asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-                asset_dict[asset_pair]["short_pos_txid"] = short_pos_txid_list
-                asset_dict[asset_pair]["conditional_order_txid"] = conditional_order_txid_list
-                asset_dict[asset_pair]["holdings_short"] = holdings_short_list
+                conditional_order_txid_list.clear() 
+                asset_dict[asset_pair]['conditional_order_txid'] = conditional_order_txid_list
                 write_to_asset_file()
+                print(f"Succesfully cleared {asset_pair} SLL order: {order_output.json()}")
+                tg_message = f"Succesfully cleared {asset_pair} SLL order: {order_output.json()}"
+                send_telegram_message()
+                # create/increase short position
+                asset_close = float(get_asset_close())
+                usd_order_size = order_size
+                order_volume = str(float(usd_order_size / asset_close))
+                sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
+                sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
+                order_output = open_increase_short_pos()
+                if not order_output.json()['error']:
+                  print(f"{interval_time_simple} {asset_pair}: Sucessfully created created/increased short position with SLL: {order_output.json()}")
+                  tg_message = f"{interval_time_simple} {asset_pair}: Sucessfully created created/increased short position with SLL: {order_output.json()}"
+                  send_telegram_message()
+                  asset_dict = json.loads(read_asset_file())
+                  macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
+                  margin_pos_txid_list = asset_dict[asset_pair]["margin_pos_txid"]
+                  conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
+                  # add short txid and sll txid to asset dict lists
+                  margin_txid = order_output.json()['result']['txid'][0]
+                  open_orders = query_open_orders().json()
+                  for key, value in open_orders['result']['open'].items():
+                    print(f"Key: {key}, Value: {value['refid']}")
+                    if margin_txid == value['refid']:
+                      print(f"Found a match")
+                      conditional_order_txid = key
+                  margin_pos_txid_list.append(margin_txid)
+                  conditional_order_txid_list.append(conditional_order_txid)
+                  macd_hist_list.pop(0)
+                  asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+                  asset_dict[asset_pair]["margin_pos_txid"] = margin_pos_txid_list
+                  asset_dict[asset_pair]["conditional_order_txid"] = conditional_order_txid_list
+                  write_to_asset_file()
+                else:
+                  print(f"{interval_time_simple} {asset_pair}: An error occured when trying to create/increase a short position with SLL: {order_output.json()['error']}")
+                  tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to create/increase a short position with SLL: {order_output.json()['error']}"
+                  send_telegram_message()
+                  macd_hist_list.pop(0)
+                  asset_dict[asset_pair]["macd_hist"] = macd_hist_list
+                  write_to_asset_file()
               else:
-                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to create/increase a short position with SLL: {order_output.json()['error']}")
-                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to create/increase a short position with SLL: {order_output.json()['error']}"
+                print(f"{interval_time_simple} {asset_pair}: An error occured when trying to cancel a SLL order: {order_output.json()['error']}")
+                tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to cancel a SLL order: {order_output.json()['error']}"
                 send_telegram_message()
                 macd_hist_list.pop(0)
                 asset_dict[asset_pair]["macd_hist"] = macd_hist_list
                 write_to_asset_file()
             else:
-              print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
-              tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
+              print(f"{interval_time_simple} {asset_pair}: An error occured when trying to reduce/close a long pos: {order_output.json()['error']}")
+              tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to reduce/close a long pos: {order_output.json()['error']}"
               send_telegram_message()
               macd_hist_list.pop(0)
               asset_dict[asset_pair]["macd_hist"] = macd_hist_list
