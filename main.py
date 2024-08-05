@@ -36,6 +36,7 @@ def get_asset_vars():
       leverage = "5:1"
       api_sec = os.environ['api_sec_env_btc']
       api_key = os.environ['api_key_env_btc']
+      asset_pair_short = "XBTUSD"
     if asset_pair == "SOLUSD":
       asset_code = "SOL"
       leverage = "4:1"
@@ -46,7 +47,7 @@ def get_asset_vars():
       leverage = "5:1"
       api_sec = os.environ['api_sec_env_eth']
       api_key = os.environ['api_key_env_eth']
-    return [asset_code, api_sec, api_key, leverage]
+    return [asset_code, api_sec, api_key, leverage, asset_pair_short]
     
 def send_telegram_message():
     token = tg_token
@@ -192,28 +193,6 @@ def get_macdhist_start():
     macd_hist_values = list(macd_dict.values())
     return [macd_hist_values[-2], macd_hist_values[-1]]
 
-def check_create_asset_file():
-    global asset_dict
-    asset_dict.clear()
-    asset_file_exists = os.path.exists(asset_file_path)
-    # create file if it doesnt exist, add dictionary per asset to it
-    if not asset_file_exists:
-      print(f"Asset dict before: {asset_dict}")
-      print(f"Asset file {asset_file} doesnt exist , creating one")
-      print(f"Asset dict after: {asset_dict}")
-      asset_dict.update({asset_pair: {"macd_hist": [],"margin_pos_txid": [], "conditional_order_txid": []}})
-      write_to_asset_file()
-    else:
-      print(f"Asset file {asset_file} exists, reading")
-      asset_dict = json.loads(read_asset_file())
-      if asset_pair not in asset_dict.keys():
-        print(f"Asset dict before: {asset_dict}")
-        print(f"Asset pair {asset_pair} not present in asset file {asset_file}, updating file")
-        asset_dict.update({asset_pair: {"macd_hist": [], "margin_pos_txid": [], "conditional_order_txid": []}})
-        print(f"Asset dict after: {asset_dict}")
-        write_to_asset_file()
-        print(f"Appended {asset_pair} to {asset_file}")
-
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def write_to_asset_file():
     f = open(asset_file, "w")
@@ -234,7 +213,6 @@ def open_increase_long_pos():
         "ordertype": "market",
         "type": "buy",
         "reduce_only": False,
-        # "volume": volume_to_buy,
         "volume": order_volume,
         "leverage": leverage,
         "close[ordertype]": "stop-loss-limit",
@@ -315,9 +293,6 @@ while True:
   #list_360h.append(360)
   if len(list_24h) == 1:
     timeframe = "1d"
-    file_extension = '.json'
-    asset_file = timeframe + file_extension 
-    asset_file_path = './' + asset_file
     interval_time_minutes = 1440
     interval_time_simple = '1d'
     # order_size = 1200
@@ -330,20 +305,13 @@ while True:
       api_key = get_asset_vars()[2]
       api_sec = get_asset_vars()[1]
       leverage = get_asset_vars()[3]
-      check_create_asset_file()
-      print(f"Opening asset file {asset_file}")
-      asset_dict = json.loads(read_asset_file())
-      macd_hist_list = asset_dict[asset_pair]["macd_hist"] 
-      margin_pos_txid_list = asset_dict[asset_pair]["margin_pos_txid"]
-      conditional_order_txid_list = asset_dict[asset_pair]["conditional_order_txid"]
-      # when macd hist list is empty
+      asset_pair_short = get_asset_vars()[4]
       if len(macd_hist_list) == 0:
         print(f"{interval_time_simple} {asset_pair}: MACD hist list length: {len(asset_dict[asset_pair]['macd_hist'])}, appending 2 MACD hist values")
         macd_hist_tmp = get_macdhist_start()
         macd_hist_list.append(macd_hist_tmp[-2])
         macd_hist_list.append(macd_hist_tmp[-1])
         asset_dict[asset_pair]["macd_hist"] = macd_hist_list
-        write_to_asset_file()
         time.sleep(1)
         print(f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}")
         tg_message = f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}"

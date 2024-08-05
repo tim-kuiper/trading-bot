@@ -37,6 +37,7 @@ def get_asset_vars():
       api_sec = os.environ['api_sec_env_btc']
       api_key = os.environ['api_key_env_btc']
       leverage = "5:1"
+      asset_pair_short = "XBTUSD"
     if asset_pair == "XXRPZUSD":
       asset_code = "XXRP"
       api_sec = os.environ['api_sec_env_xrp']
@@ -53,7 +54,7 @@ def get_asset_vars():
       asset_code = "XETH"
       api_sec = os.environ['api_sec_env_eth']
       api_key = os.environ['api_key_env_eth']
-    return [asset_code, api_sec, api_key, leverage]
+    return [asset_code, api_sec, api_key, leverage, asset_pair_short]
 
 def get_kraken_signature(urlpath, data, secret):
     postdata = urllib.parse.urlencode(data)
@@ -128,20 +129,17 @@ def close_short_pos():
     }, api_key, api_sec)
     return response
 
-def cancel_order():
+def cancel_order(order_txid):
    response = kraken_request('/0/private/CancelOrder', {
        "nonce": str(int(1000*time.time())), 
-       "txid": "OZ2PT5-6NZXY-IPIIVE"
+       "txid": order_txid
    }, api_key, api_sec)
    return response
 
-def query_order_txid():
+def query_order_txid(order_txid):
    response = kraken_request('/0/private/QueryOrders', {
        "nonce": str(int(1000*time.time())), 
-       # "txid": "O27YQ4-CGA2H-Y7IVAS"
-       # "txid": "OHSRAR-7QOWR-4ZDXVP"
-       "txid": "OMUMJJ-43ZWI-QV5HIS"
-       # "txid": "OI57ZL-WG3N2-UBV7YZ"
+       "txid": order_txid
    }, api_key, api_sec)
    return response
 
@@ -157,16 +155,35 @@ def query_open_pos():
    }, api_key, api_sec)
    return response
 
+mydict = {}
+
 while True:
   for asset_pair in asset_pairs:
     api_key = get_asset_vars()[2]
     api_sec = get_asset_vars()[1]
     leverage = get_asset_vars()[3]
+    asset_pair_short = get_asset_vars()[4]
     # print(f"Open positions: {query_open_pos().json()}")
     open_orders = query_open_orders().json()['result']
     print(f"Open orders: {open_orders}")
-    for key, value in open_orders['open'].items():
-      print(f"Order txid: {key}, Margin order txid: {value['refid']}, Pair: {value['refid']['descr']['pair']}")
+    if not open_orders['open']:
+       print(f"No open orders")
+    else:
+       print(f"There are open orders")
+       print(f"Check if there are open order for {asset_pair}")
+       for key, value in open_orders['open'].items():
+         if asset_pair_short == value['descr']['pair']:
+            print(f"{asset_pair} present in open orders, appending to dict")
+            mydict[key] = value['refid']
+            for key, value in mydict.items():
+              order_txid = key
+            print(f"Cancel order for {asset_pair}")
+            cancel_order(order_txid)
+            print(f"Close pos for {asset_pair}")
+            close_short_pos()
+         else:
+           print(f"{asset_pair} not present in the orders")
+    #  print(f"Order txid: {key}, Margin txid: {value['refid']}, Pair: {value['descr']['pair']}")
     # print(f"Close pos : {close_short_pos().json()}")
     # print(f"cancel order : {cancel_order().json()}")
     time.sleep(30)
