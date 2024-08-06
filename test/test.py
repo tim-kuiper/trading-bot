@@ -15,7 +15,7 @@ from tenacity import *
 ## general vars
 
 asset_dict = {}
-asset_pairs = ['XXBTZUSD']
+asset_pairs = ['XXBTZUSD', 'SOLUSD', 'XETHZUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
@@ -38,22 +38,18 @@ def get_asset_vars():
       api_key = os.environ['api_key_env_btc']
       leverage = "5:1"
       asset_pair_short = "XBTUSD"
-    if asset_pair == "XXRPZUSD":
-      asset_code = "XXRP"
-      api_sec = os.environ['api_sec_env_xrp']
-      api_key = os.environ['api_key_env_xrp']
-    if asset_pair == "ADAUSD":
-      asset_code = "ADA"
-      api_sec = os.environ['api_sec_env_ada']
-      api_key = os.environ['api_key_env_ada']
     if asset_pair == "SOLUSD":
       asset_code = "SOL"
       api_sec = os.environ['api_sec_env_sol']
       api_key = os.environ['api_key_env_sol']
+      leverage = "4:1"
+      asset_pair_short = "SOLUSD"
     if asset_pair == "XETHZUSD":
       asset_code = "XETH"
       api_sec = os.environ['api_sec_env_eth']
       api_key = os.environ['api_key_env_eth']
+      leverage = "5:1"
+      asset_pair_short = "ETHUSD"
     return [asset_code, api_sec, api_key, leverage, asset_pair_short]
 
 def get_kraken_signature(urlpath, data, secret):
@@ -163,27 +159,10 @@ while True:
     api_sec = get_asset_vars()[1]
     leverage = get_asset_vars()[3]
     asset_pair_short = get_asset_vars()[4]
-    # print(f"Open positions: {query_open_pos().json()}")
     open_orders = query_open_orders().json()['result']
+    print(f"Open positions: {query_open_pos().json()}")
     print(f"Open orders: {open_orders}")
-    if not open_orders['open']:
-       print(f"No open orders")
-    else:
-       print(f"There are open orders")
-       print(f"Check if there are open order for {asset_pair}")
-       for key, value in open_orders['open'].items():
-         if asset_pair_short == value['descr']['pair']:
-            print(f"{asset_pair} present in open orders, appending to dict")
-            mydict[key] = value['refid']
-            for key, value in mydict.items():
-              order_txid = key
-            print(f"Cancel order for {asset_pair}")
-            cancel_order(order_txid)
-            print(f"Close pos for {asset_pair}")
-            close_short_pos()
-         else:
-           print(f"{asset_pair} not present in the orders")
-    #  print(f"Order txid: {key}, Margin txid: {value['refid']}, Pair: {value['descr']['pair']}")
-    # print(f"Close pos : {close_short_pos().json()}")
-    # print(f"cancel order : {cancel_order().json()}")
-    time.sleep(30)
+     #print(f"Order txid: {key}, Margin txid: {value['refid']}, Pair: {value['descr']['pair']}")
+     #print(f"Close pos : {close_short_pos().json()}")
+     #print(f"cancel order : {cancel_order().json()}")
+    time.sleep(5)
