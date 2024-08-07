@@ -1,28 +1,4 @@
-Strategy:
-
-Since we cant do hedging (multiple long/short positions on the same asset pair), we only go short when trend is downwards. So:
-
-Margin call formulas on Kraken:
-- Long: 
-    - Equity = Trade Balance + Profit/Loss
-    - Profit/Loss = % of profit or loss on already open position
-    - Margin Call Price = Entry Price - ((Equity - (Used Margin x 0.8)) / Open Volume*)
-    - Liquidation Price = Entry Price - ((Equity - (Used Margin x 0.4)) / Open Volume*)
-
-- Short:
-    - Margin Call Price = Leverage x (Trade Balance + (Entry Price x Open Volume)) / (Open Volume x (0.8 + Leverage))
-    - Liquidation Price = Leverage x (Trade Balance + (Entry Price x Open Volume)) / (Open Volume x (0.4 + Leverage))
-
-Stop-Loss-Limit for each short position:
-- 8H: +- 5% from current price
-- 1D: +- 10% from current price
-- 1W: +- 15% from current price
-- 15d: +- 25% from current price
-
-If MACD hist crosses upwards:
-  - Reduce/close short position with corresponding SLL order if any
-  - Buy asset
-
-If MACD hist crosses downwards:
-  - Sell asset
-  - Create / Increase a short position with corresponding SLL order 
+- Start program
+- If asset pair macd crosses 0 upwards
+  - Check if there are open orders for asset pair
+    - If there are check the margin order 

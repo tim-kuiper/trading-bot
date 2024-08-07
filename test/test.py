@@ -160,8 +160,12 @@ while True:
     leverage = get_asset_vars()[3]
     asset_pair_short = get_asset_vars()[4]
     open_orders = query_open_orders().json()['result']
-    print(f"Open positions: {query_open_pos().json()}")
-    print(f"Open orders: {open_orders}")
+    #print(f"Open positions: {query_open_pos().json()}")
+    #print(f"Open orders: {open_orders}")
+    testdict = {}
+    for key, value in open_orders['open'].items():
+      print(f"Open Order Key: {key}, Open Order Value: {value['descr']['pair']}")
+
      #print(f"Order txid: {key}, Margin txid: {value['refid']}, Pair: {value['descr']['pair']}")
      #print(f"Close pos : {close_short_pos().json()}")
      #print(f"cancel order : {cancel_order().json()}")
