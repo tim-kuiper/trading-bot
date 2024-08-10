@@ -226,8 +226,8 @@ print(f"Asset dict: {asset_dict}")
 while True:
   interval_time_minutes = 1440
   interval_time_simple = '1d'
-  # order_size = 1200
-  order_size = 10
+  order_size = 1200
+  # order_size = 10
   sll_short_trigger_pct = 1.09 # trigger pct from current price
   sll_short_limit_pct = 1.10 # limit pct from current price
   sll_long_trigger_pct = 0.91 # trigger pct from current price
