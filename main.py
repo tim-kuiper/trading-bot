@@ -14,7 +14,7 @@ from tenacity import *
 
 # set vars
 ## general vars
-asset_pairs = ['XXBTZUSD', 'SOLUSD', 'XETHZUSD']
+asset_pairs = ['XXBTZUSD', 'SOLUSD', 'XETHZUSD', 'XXRPZUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
@@ -42,6 +42,12 @@ def get_asset_vars():
       api_sec = os.environ['api_sec_env_eth']
       api_key = os.environ['api_key_env_eth']
       asset_pair_short = "ETHUSD"
+    if asset_pair == "XXRPZUSD":
+      asset_code = "XXRP"
+      leverage = "5:1"
+      api_sec = os.environ['api_sec_env_xrp']
+      api_key = os.environ['api_key_env_xrp']
+      asset_pair_short = "XRPUSD"
     return [asset_code, api_sec, api_key, leverage, asset_pair_short]
     
 def send_telegram_message():
