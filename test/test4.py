@@ -1,8 +1,12 @@
-def test_func1():
-    asset_code = "asset_code_val"
-    api_sec = "api_sec_val"
-    api_key = "api_key_val"
-    return [asset_code, api_sec, api_key]
+import requests
 
+url = "https://api.kraken.com/0/public/AssetPairs"
 
-print(test_func1()[1])
+payload = {}
+headers = {
+  'Accept': 'application/json'
+}
+
+response = requests.request("GET", url, headers=headers, data=payload)
+
+print(response.text)

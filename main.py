@@ -12,66 +12,43 @@ import talib
 import datetime
 from tenacity import *
 
-'''
-- Buy RSI < 35 and MACD upwards trend 3 iterations
-- Sell RSI > 65 and MACD downwards trend 3 iterations
-
-Flow:
-- Create dict to store asset_pair dict with rsi list, macd list and holdings list
-- If RSI 35> and <65, dont do anything
-- If RSI < 35, append value to asset_pair rsi and append macd value to asset_pair macd. At next iteration:
-  - Keep RSI < 35 value in rsi list
-  - Append MACD value to macd list
-  - Keep appending MACD value to macd list
-  - If MACD list values from asset_pair is in an upward trend for 3 iterations, buy asset append bought amount to asset_pair holding list. Clear asset_pair rsi and macd list
-- If RSI > 65, append value to asset_pair rsi and append macd value to asset_pair macd. At next iteration:
-  - Keep RSI > 65 value in rsi list
-  - Append MACD value to macd list
-  - Keep appending MACD value to macd list
-  - If MACD list values from asset_pair is in an downwards trend for 3 iterations, sell asset and clear asset_pair holding, rsi and macd list
-
-'''
-
 # set vars
 ## general vars
-asset_dict = {}
-asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'XETHZUSD']
+asset_pairs = ['XXBTZUSD', 'SOLUSD', 'XETHZUSD', 'XXRPZUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
-list_1h = []
-list_4h = []
-list_24h = []
-start_list_24h = [] # use this list in combination with the regular 24h list in order to execute the 24h block without waiting a full day
-loop_time_seconds = 14400
-rsi_lower_boundary = 31
-rsi_upper_boundary = 69
+loop_time_seconds = 86400 # 1d - iteration time for main loop
 
 # functions
 def get_asset_vars():
     ## asset pair specific vars
     if asset_pair == "XXBTZUSD":
       asset_code = "XXBT"
+      leverage = "5:1"
       api_sec = os.environ['api_sec_env_btc']
       api_key = os.environ['api_key_env_btc']
-    if asset_pair == "XXRPZUSD":
-      asset_code = "XXRP"
-      api_sec = os.environ['api_sec_env_xrp']
-      api_key = os.environ['api_key_env_xrp']
-    if asset_pair == "ADAUSD":
-      asset_code = "ADA"
-      api_sec = os.environ['api_sec_env_ada']
-      api_key = os.environ['api_key_env_ada']
+      asset_pair_short = "XBTUSD"
     if asset_pair == "SOLUSD":
       asset_code = "SOL"
+      leverage = "4:1"
       api_sec = os.environ['api_sec_env_sol']
       api_key = os.environ['api_key_env_sol']
+      asset_pair_short = "SOLUSD"
     if asset_pair == "XETHZUSD":
       asset_code = "XETH"
+      leverage = "5:1"
       api_sec = os.environ['api_sec_env_eth']
       api_key = os.environ['api_key_env_eth']
-    return [asset_code, api_sec, api_key]
+      asset_pair_short = "ETHUSD"
+    if asset_pair == "XXRPZUSD":
+      asset_code = "XXRP"
+      leverage = "5:1"
+      api_sec = os.environ['api_sec_env_xrp']
+      api_key = os.environ['api_key_env_xrp']
+      asset_pair_short = "XRPUSD"
+    return [asset_code, api_sec, api_key, leverage, asset_pair_short]
     
 def send_telegram_message():
     token = tg_token
@@ -139,442 +116,391 @@ def get_ohlcdata_macd():
     close_data = df['close']
     return close_data
 
-@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
-def get_orderinfo():
-    time.sleep(2)
-    resp = kraken_request('/0/private/QueryOrders', {
-        "nonce": str(int(1000*time.time())),
-        "txid": transaction_id,
-        "trades": True
-    }, api_key, api_sec)
-    return resp
+def get_macdhist():
+    close = get_ohlcdata_macd()
+    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+    macd_dict = macdhist.to_dict()
+    macd_hist_values = list(macd_dict.values())
+    return macd_hist_values[-1]
 
-@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
-def buy_asset():
-    print("Buying the following amount of", asset_pair, ":", volume_to_buy)
-    buy_order = kraken_request('/0/private/AddOrder', {
+# returns last 2 macd hist values for given assetpair/interval as list [x, y]
+def get_macdhist_start():
+    close = get_ohlcdata_macd()
+    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+    macd_dict = macdhist.to_dict()
+    macd_hist_values = list(macd_dict.values())
+    return [macd_hist_values[-2], macd_hist_values[-1]]
+
+def open_increase_long_pos():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "buy",
-        "volume": volume_to_buy,
+        "reduce_only": False,
+        "volume": order_volume,
+        "leverage": leverage,
+        "close[ordertype]": "stop-loss-limit",
+        "close[price]": sll_trigger, # sll trigger price
+        "close[price2]": sll_limit, # sll limit price
         "pair": asset_pair
     }, api_key, api_sec)
-    return buy_order
+    return response
 
-@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
-def sell_asset():
-    print("Selling the following amount of", asset_pair, ":", volume_to_sell)
-    sell_order = kraken_request('/0/private/AddOrder', {
+def open_increase_short_pos():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
         "ordertype": "market",
         "type": "sell",
-        "volume": volume_to_sell,
+        "reduce_only": False,
+        "volume": order_volume,
+        "leverage": leverage,
+        "close[ordertype]": "stop-loss-limit",
+        "close[price]": sll_trigger, # sll trigger price
+        "close[price2]": sll_limit, # sll limit price
         "pair": asset_pair
     }, api_key, api_sec)
-    return sell_order
+    return response
 
-def rsi_tradingview(period: int = 14, round_rsi: bool = True):
-    # RSI tradingview calculation
-    delta = get_ohlcdata().diff()
-    up = delta.copy()
-    up[up < 0] = 0
-    up = pd.Series.ewm(up, alpha=1/period).mean()
-    down = delta.copy()
-    down[down > 0] = 0
-    down *= -1
-    down = pd.Series.ewm(down, alpha=1/period).mean()
-    rsi = np.where(up == 0, 0, np.where(down == 0, 100, 100 - (100 / (1 + up / down))))
-    return np.round(rsi, 2) if round_rsi else rsi
+def close_short_pos():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "buy",
+        "reduce_only": False,
+        "volume": "0",
+        "leverage": leverage,
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
 
-def get_macd():
-    close = get_ohlcdata_macd()
-    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
-    macd_dict = macd.to_dict()
-    macd_values = list(macd_dict.values())
-    return macd_values[-1]
+def close_long_pos():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "sell",
+        "reduce_only": False,
+        "volume": "0",
+        "leverage": leverage,
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
 
-def check_create_asset_file():
-    global asset_dict
-    asset_file_exists = os.path.exists(asset_file_path)
-    # create file if it doesnt exist, add dictionary per asset to it
-    if not asset_file_exists:
-      print(f"Asset file {asset_file} doesnt exist , creating one")
-      asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": []}})
-      write_to_asset_file()
-    else:
-      print(f"Asset file {asset_file} exists, reading")
-      asset_dict = json.loads(read_asset_file())
-      if asset_pair not in asset_dict.keys():
-        print(f"Asset pair {asset_pair} not present in asset file {asset_file}, updating file")
-        asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": []}})
-        write_to_asset_file()
-        print(f"Appended {asset_pair} to {asset_file}")
-      if "price_bought" not in asset_dict[asset_pair].keys():
-        print(f"price bought not present in asset dict, appending")
-        y = {"price_bought": []} 
-        asset_dict[asset_pair].update(y)
-        write_to_asset_file()
+def cancel_order(order_txid):
+   time.sleep(2)
+   response = kraken_request('/0/private/CancelOrder', {
+       "nonce": str(int(1000*time.time())), 
+       "txid": order_txid
+   }, api_key, api_sec)
+   return response
 
-@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
-def write_to_asset_file():
-    f = open(asset_file, "w")
-    f.write(json.dumps(asset_dict))
-    f.close()
+def query_open_orders():
+   time.sleep(2)
+   response = kraken_request('/0/private/OpenOrders', {
+       "nonce": str(int(1000*time.time()))
+   }, api_key, api_sec)
+   return response
 
-@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
-def read_asset_file():
-    f = open(asset_file, "r")
-    asset_json = f.read()
-    f.close()
-    return asset_json
+def query_open_pos():
+   response = kraken_request('/0/private/OpenPositions', {
+       "nonce": str(int(1000*time.time()))
+   }, api_key, api_sec)
+   return response
+
+'''
+construct asset dict to story macd hist values in per asset pair   
+asset_dict = {
+  <pair 1>: [],
+  <pair 2>: [],
+  <pair 3>: []
+  }
+'''
+def create_asset_dict():
+    func_dict = {}
+    for asset_pair in asset_pairs:
+       func_dict[asset_pair] = []
+    return func_dict
+
+asset_dict = create_asset_dict()
+
+print(f"Asset dict: {asset_dict}")
 
 # main loop
 while True:
-  start_list_24h.append(24)
-  list_4h.append(4)
-  list_24h.append(24)
-  if len(list_4h) == 1:
-    timeframe = "4h"
-    file_extension = '.json'
-    asset_file = timeframe + file_extension 
-    asset_file_path = './' + asset_file
-    interval_time_minutes = 240
-    interval_time_simple = '4h'
-    order_size = 100
-    for asset_pair in asset_pairs:
-      api_key = get_asset_vars()[2]
-      api_sec = get_asset_vars()[1]
-      check_create_asset_file()
-      rsi_list_values  = rsi_tradingview()
-      rsi = float(rsi_list_values[-1])
-      # set these vars for testing purposes
-      # rsi = 25
-      # macd_list = [1, 2, 3] # for buying asset
-      # macd_list = [3, 2, 1] # for selling asset
-      # order_size = 15
-      print(f"{interval_time_simple} RSI  {asset_pair}: {rsi}")
-      print(f"opening asset file {asset_file}")
-      asset_dict = json.loads(read_asset_file())
-      macd_list = asset_dict[asset_pair]["macd"] 
-      rsi_list = asset_dict[asset_pair]["rsi"]
-      holdings_list = asset_dict[asset_pair]["holdings"]
-      price_list = asset_dict[asset_pair]["price_bought"]
-      if len(rsi_list) == 1:
-        if rsi_list[0] < rsi_lower_boundary:
-          print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
-          rsi = rsi_list[0]
-        elif rsi_list[0] > rsi_upper_boundary:
-          print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
-          rsi = rsi_list[0]
-        else:
-          print(f"{interval_time_simple} {asset_pair}: Clearing RSI value {rsi_list[0]}")
-          rsi_list.clear()
-          rsi_list.append(rsi)
-          asset_dict[asset_pair]["rsi"] = rsi_list
-          write_to_asset_file()
-      elif len(rsi_list) == 0:
-        print(f"{interval_time_simple} {asset_pair}: RSI list is empty, appending {rsi} to it")
-        rsi_list.append(rsi)
-        asset_dict[asset_pair]["rsi"] = rsi_list
-        write_to_asset_file()
-      if rsi < rsi_lower_boundary and len(macd_list) < 3:
-        print(f"{interval_time_simple} {asset_pair}: RSI {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
-        macd = get_macd() 
-        macd_list.append(macd)
-        asset_dict[asset_pair]["macd"] = macd_list
-        write_to_asset_file()
-        print(f"{interval_time_simple} {asset_pair}: Appended {macd} macd value to macd list")
-        print(f"{interval_time_simple} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
-        tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
+  interval_time_minutes = 1440
+  interval_time_simple = '1d'
+  order_size = 1200
+  # order_size = 10
+  sll_short_trigger_pct = 1.09 # trigger pct from current price
+  sll_short_limit_pct = 1.10 # limit pct from current price
+  sll_long_trigger_pct = 0.91 # trigger pct from current price
+  sll_long_limit_pct = 0.90 # limit pct from current price
+  for asset_pair in asset_pairs:
+    api_key = get_asset_vars()[2]
+    api_sec = get_asset_vars()[1]
+    leverage = get_asset_vars()[3]
+    asset_pair_short = get_asset_vars()[4]
+    macd_hist_list = asset_dict[asset_pair]
+    if len(macd_hist_list) == 0:
+      print(f"{interval_time_simple} {asset_pair}: MACD hist list length: {len(macd_hist_list)}, appending 2 MACD hist values")
+      macd_hist_tmp = get_macdhist_start()
+      macd_hist_list.append(macd_hist_tmp[-2])
+      macd_hist_list.append(macd_hist_tmp[-1])
+      asset_dict[asset_pair] = macd_hist_list
+      time.sleep(1)
+      print(f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}")
+      tg_message = f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}"
+      send_telegram_message()
+    if len(macd_hist_list) == 1:
+      print(f"{interval_time_simple} {asset_pair}: {macd_hist_list}, appending 1 MACD hist value")
+      print(f"{interval_time_simple} {asset_pair}: MACD hist list length: {len(macd_hist_list)}, appending 1 MACD hist value")
+      macd_hist_list.append(get_macdhist())
+      asset_dict[asset_pair] = macd_hist_list
+      time.sleep(1)
+      print(f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}")
+      tg_message = f"{interval_time_simple} {asset_pair}: Appended MACD hist: {macd_hist_list}"
+      send_telegram_message()
+    ############## for testing purposes ####################
+    # macd_hist_list = [-1, 1] ######## BUY
+    # macd_hist_list = [1, -1] # ######## SELL
+    if macd_hist_list[-2] < 0:
+      # if macd_hist_list = [< 0, y]
+      print(f"{interval_time_simple} {asset_pair}: Watching to buy asset when MACD hist crosses 0")
+      if macd_hist_list[-1] < 0:
+        # if macd_hist_list = [<0, <0]
+        print(f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
+        macd_hist_list.pop(0)
+        # macd_hist_list = [<0]
+        # append macd_hist_list to asset_dict[asset_pair]
+        asset_dict[asset_pair] = macd_hist_list
+        tg_message = f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
         send_telegram_message()
-      elif rsi < rsi_lower_boundary and len(macd_list) >= 3:
-        print(f"{interval_time_simple} {asset_pair}: RSI < {rsi_lower_boundary} and macd_list >= 3")
-        tg_message = f"{interval_time_simple} {asset_pair}: RSI < {rsi_lower_boundary} and macd_list >= 3"
+      elif macd_hist_list[-1] > 0:
+        print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing short pos if any and opening long pos")
+        tg_message = f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing short pos if any and opening long pos"
         send_telegram_message()
-        if macd_list[-3] < macd_list[-2] < macd_list[-1]:
-          print(f"{interval_time_simple} {asset_pair}: MACD in upward trend for 3 iterations: {macd_list[-3:]}, buying {asset_pair}")
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD in upward trend for 3 iterations: {macd_list[-3:]}, buying {asset_pair}"
-          send_telegram_message()
+        open_orders = query_open_orders().json()['result']
+        if not open_orders['open']:
+          print(f"No open orders currently present")
+          print(f"{interval_time_simple} {asset_pair}: Opening los pos")
           asset_close = float(get_asset_close())
           usd_order_size = order_size
-          volume_to_buy = str(float(usd_order_size / asset_close))
-          order_output = buy_asset() # executes buy order and assigns output to var
+          order_volume = str(float(usd_order_size / asset_close))
+          sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
+          sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
+          order_output = open_increase_long_pos()
           if not order_output.json()['error']:
-            print(f"{interval_time_simple} {asset_pair}: Bought {volume_to_buy}")
-            tg_message = order_output.json()['result']
-            send_telegram_message()        
-            macd_list.clear()
-            rsi_list.clear()
-            transaction_id = order_output.json()['result']['txid'][0]
-            order_info = get_orderinfo()
-            executed_size = order_info.json()['result'][transaction_id]['vol_exec']
-            holdings_list.append(float(executed_size))
-            price_list.append(asset_close)
-            asset_dict[asset_pair]["macd"] = macd_list
-            asset_dict[asset_pair]["rsi"] = rsi_list
-            asset_dict[asset_pair]["holdings"] = holdings_list
-            asset_dict[asset_pair]["price_bought"] = price_list
-            write_to_asset_file()
-          else:
-            print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
-            tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
+            print(f"{interval_time_simple} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
+            tg_message = f"{interval_time_simple} {asset_pair} Succesfully opened long pos: {order_output.json()}"
             send_telegram_message()
-        else: 
-          macd = get_macd() 
-          macd_list.append(macd)
-          print(f"{interval_time_simple} {asset_pair}: Appending {macd} macd list")
-          asset_dict[asset_pair]["macd"] = macd_list
-          write_to_asset_file()
-      elif rsi > rsi_upper_boundary and len(macd_list) < 3:
-        print(f"{interval_time_simple} {asset_pair}: RSI {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
-        macd = get_macd() 
-        macd_list.append(macd)
-        asset_dict[asset_pair]["macd"] = macd_list
-        write_to_asset_file()
-        print(f"{interval_time_simple} {asset_pair}: Appended {macd} macd value to macd list")
-        print(f"{interval_time_simple} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
-        tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
-        send_telegram_message()
-      elif rsi > rsi_upper_boundary and len(macd_list) >= 3:
-        if macd_list[-3] > macd_list[-2] > macd_list[-1]:
-          print(f"{interval_time_simple} {asset_pair}: MACD in downward trend for 3 iterations: {macd_list[-3:]}, selling {asset_pair}")
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD in downward trend for 3 iterations: {macd_list[-3:]}, selling {asset_pair}"
-          send_telegram_message()
-          if float(sum(holdings_list)) > 0: # check if we have some in our holdings
-            volume_to_sell = str(sum(holdings_list))
-            if min_order_size() < float(volume_to_sell):
-              asset_close = float(get_asset_close())
-              price_list_avg = sum(price_list) / len(price_list)
-              if asset_close > price_list_avg:
-                order_output = sell_asset()
-                if not order_output.json()['error']:
-                  macd_list.clear()
-                  rsi_list.clear()
-                  holdings_list.clear()
-                  price_list.clear()
-                  asset_dict[asset_pair]["macd"] = macd_list
-                  asset_dict[asset_pair]["rsi"] = rsi_list
-                  asset_dict[asset_pair]["holdings"] = holdings_list
-                  asset_dict[asset_pair]["price_bought"] = price_list
-                  write_to_asset_file()
-                  print(f"{interval_time_simple} {asset_pair}: Sold {volume_to_sell}")
-                  tg_message = order_output.json()['result']
-                  send_telegram_message()        
-                else:
-                  print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
-                  tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
-                  send_telegram_message()
-              else:
-                print(f"Asset pair {asset_pair} close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing RSI and MACD list and continuing")
-                tg_message = f"Asset pair {asset_pair} close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing     RSI and MACD list and continuing"
-                send_telegram_message()
-                macd_list.clear()
-                rsi_list.clear()
-                asset_dict[asset_pair]["macd"] = macd_list
-                asset_dict[asset_pair]["rsi"] = rsi_list
-                write_to_asset_file()
-            else:
-              macd_list.clear()
-              rsi_list.clear()
-              asset_dict[asset_pair]["macd"] = macd_list
-              asset_dict[asset_pair]["rsi"] = rsi_list
-              write_to_asset_file()
-              print(f"{interval_time_simple} {asset_pair}: Not enough left to sell")
-              tg_message = f"{interval_time_simple} {asset_pair}: Not enough left to sell"
+            macd_hist_list.pop(0)
+            asset_dict[asset_pair] = macd_hist_list
+          else:
+            print(f"{interval_time_simple} {asset_pair}: Something went wrong opening a long pos: {order_output.json()}")
+            tg_message = f"{interval_time_simple} {asset_pair} Something went wrong opening a long pos: {order_output.json()}"
+            send_telegram_message()
+            macd_hist_list.pop(0)
+            asset_dict[asset_pair] = macd_hist_list
+        else:
+          print(f"There are open orders")
+          print(f"Checking if there are open orders for {asset_pair}")
+          open_orders = query_open_orders().json()['result']
+          open_order_dict = {}
+          for key, value in open_orders['open'].items():
+            # key = asset pair short
+            # value = order txid
+            open_order_dict.update({value['descr']['pair']: key})
+            '''
+            open_order_keys = [asset_pair_short]
+            open_order_values = [order_txid]
+            open_order_dict = {asset_pair_short: order_txid, asset_pair_short: order_txid}
+            '''
+          if asset_pair_short in open_order_dict.keys():
+            print(f"{interval_time_simple} {asset_pair}: cancelling SLL order")
+            order_txid = open_order_dict[asset_pair_short]
+            order_output = cancel_order(order_txid)
+            if not order_output.json()['error']:
+              print(f"{interval_time_simple} {asset_pair}: Succesfully cleared SLL order: {order_output.json()}")
+              tg_message = f"{interval_time_simple} {asset_pair} Succesfully cleared SLL order: {order_output.json()}"
               send_telegram_message()
+              print(f"{interval_time_simple} {asset_pair}: Closing short pos")
+              time.sleep(5)
+              order_output = close_short_pos()
+              print(f"Result closing short pos for {asset_pair}: {order_output}")
+              if not order_output.json()['error']:
+                print(f"{interval_time_simple} {asset_pair}: Succesfully closed short pos: {order_output.json()}")
+                tg_message = f"{interval_time_simple} {asset_pair} Succesfully closed short pos: {order_output.json()}"
+                send_telegram_message()
+                print(f"{interval_time_simple} {asset_pair}: Opening long pos")
+                asset_close = float(get_asset_close())
+                usd_order_size = order_size
+                order_volume = str(float(usd_order_size / asset_close))
+                sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
+                sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
+                order_output = open_increase_long_pos()
+                if not order_output.json()['error']:
+                  print(f"{interval_time_simple} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
+                  tg_message = f"{interval_time_simple} {asset_pair} Succesfully opened long pos: {order_output.json()}"
+                  send_telegram_message()
+                  macd_hist_list.pop(0)
+                  asset_dict[asset_pair] = macd_hist_list
+                else:
+                  print(f"{interval_time_simple} {asset_pair}: Something went wrong opening a long pos: {order_output.json()}")
+                  tg_message = f"{interval_time_simple} {asset_pair} Something went wrong opening a long pos: {order_output.json()}"
+                  send_telegram_message()
+                  macd_hist_list.pop(0)
+                  asset_dict[asset_pair] = macd_hist_list
+              else:
+                print(f"{interval_time_simple} {asset_pair}: Something went wrong closing short pos: {order_output.json()}")
+                tg_message = f"{interval_time_simple} {asset_pair} Something went wrong closing short pos: {order_output.json()}"
+                send_telegram_message()
+                macd_hist_list.pop(0)
+                asset_dict[asset_pair] = macd_hist_list
+            else:
+              print(f"{interval_time_simple} {asset_pair}: Something went wrong cancelling SLL order: {order_output.json()}")
+              tg_message = f"{interval_time_simple} {asset_pair} Something went wrong cancelling SLL order: {order_output.json()}"
+              send_telegram_message()
+              macd_hist_list.pop(0)
+              asset_dict[asset_pair] = macd_hist_list
           else:
-            macd_list.clear()
-            rsi_list.clear()
-            asset_dict[asset_pair]["macd"] = macd_list
-            asset_dict[asset_pair]["rsi"] = rsi_list
-            write_to_asset_file()
-            print(f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it")  
-            tg_message = f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it"
-            send_telegram_message()
-        else:
-          print(f"{interval_time_simple} {asset_pair}: No downward MACD trend yet")
-          tg_message = f"{interval_time_simple} {asset_pair}: No downward MACD trend yet"
-          send_telegram_message()
-          macd = get_macd() 
-          macd_list.append(macd)
-          asset_dict[asset_pair]["macd"] = macd_list
-          write_to_asset_file()
-      else:
-        print(f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds")
-        tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds"
+            print(f"{interval_time_simple} {asset_pair} not present in orders, opening long pos")
+            asset_close = float(get_asset_close())
+            usd_order_size = order_size
+            order_volume = str(float(usd_order_size / asset_close))
+            sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
+            sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
+            order_output = open_increase_long_pos()
+            if not order_output.json()['error']:
+              print(f"{interval_time_simple} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
+              tg_message = f"{interval_time_simple} {asset_pair} Succesfully opened long pos: {order_output.json()}"
+              send_telegram_message()
+              macd_hist_list.pop(0)
+              asset_dict[asset_pair] = macd_hist_list
+            else:
+              print(f"{interval_time_simple} {asset_pair}: Someting went wrong opening a long pos: {order_output.json()}")
+              tg_message = f"{interval_time_simple} {asset_pair} Something went wrong opening a long pos: {order_output.json()}"
+              send_telegram_message()
+              macd_hist_list.pop(0)
+              asset_dict[asset_pair] = macd_hist_list
+    elif macd_hist_list[-2] > 0:
+      print(f"{interval_time_simple} {asset_pair}: Watching to sell asset when MACD hist crosses 0 and opening a short position")
+      if macd_hist_list[-1] > 0:
+        print(f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
+        macd_hist_list.pop(0)
+        asset_dict[asset_pair] = macd_hist_list
+        tg_message = f"{interval_time_simple} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
         send_telegram_message()
-      time.sleep(3) # sleep 3 seconds between asset pair
-    list_4h.clear()
-  if len(list_24h) == 6 or len(start_list_24h) == 1:
-    timeframe = "1d"
-    file_extension = '.json'
-    asset_file = timeframe + file_extension 
-    asset_file_path = './' + asset_file
-    interval_time_minutes = 1440
-    interval_time_simple = '1d'
-    order_size = 200
-    for asset_pair in asset_pairs:
-      api_key = get_asset_vars()[2]
-      api_sec = get_asset_vars()[1]
-      check_create_asset_file()
-      rsi_list_values  = rsi_tradingview()
-      rsi = float(rsi_list_values[-1])
-      # set these vars for testing purposes
-      # rsi = 25
-      # macd_list = [1, 2, 3] # for buying asset
-      # macd_list = [3, 2, 1] # for selling asset
-      # order_size = 15
-      print(f"{interval_time_simple} RSI  {asset_pair}: {rsi}")
-      print(f"opening asset file {asset_file}")
-      asset_dict = json.loads(read_asset_file())
-      macd_list = asset_dict[asset_pair]["macd"] 
-      rsi_list = asset_dict[asset_pair]["rsi"]
-      holdings_list = asset_dict[asset_pair]["holdings"]
-      price_list = asset_dict[asset_pair]["price_bought"]
-      if len(rsi_list) == 1:
-        if rsi_list[0] < rsi_lower_boundary:
-          print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
-          rsi = rsi_list[0]
-        elif rsi_list[0] > rsi_upper_boundary:
-          print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
-          rsi = rsi_list[0]
-        else:
-          print(f"{interval_time_simple} {asset_pair}: Clearing RSI value {rsi_list[0]}")
-          rsi_list.clear()
-          rsi_list.append(rsi)
-          asset_dict[asset_pair]["rsi"] = rsi_list
-          write_to_asset_file()
-      elif len(rsi_list) == 0:
-        print(f"{interval_time_simple} {asset_pair}: RSI list is empty, appending {rsi} to it")
-        rsi_list.append(rsi)
-        asset_dict[asset_pair]["rsi"] = rsi_list
-        write_to_asset_file()
-      if rsi < rsi_lower_boundary and len(macd_list) < 3:
-        print(f"{interval_time_simple} {asset_pair}: RSI {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
-        macd = get_macd() 
-        macd_list.append(macd)
-        asset_dict[asset_pair]["macd"] = macd_list
-        write_to_asset_file()
-        print(f"{interval_time_simple} {asset_pair}: Appended {macd} macd value to macd list")
-        print(f"{interval_time_simple} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
-        tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
+      elif macd_hist_list[-1] < 0:
+        print(f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing long pos if any and opening short pos")
+        tg_message = f"{interval_time_simple} {asset_pair}: MACD hist crossed 0, closing long pos if any and opening short pos"
         send_telegram_message()
-      elif rsi < rsi_lower_boundary and len(macd_list) >= 3:
-        print(f"{interval_time_simple} {asset_pair}: RSI < {rsi_lower_boundary} and macd_list >= 3")
-        tg_message = f"{interval_time_simple} {asset_pair}: RSI < {rsi_lower_boundary} and macd_list >= 3"
-        send_telegram_message()
-        if macd_list[-3] < macd_list[-2] < macd_list[-1]:
-          print(f"{interval_time_simple} {asset_pair}: MACD in upward trend for 3 iterations: {macd_list[-3:]}, buying {asset_pair}")
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD in upward trend for 3 iterations: {macd_list[-3:]}, buying {asset_pair}"
-          send_telegram_message()
+        open_orders = query_open_orders().json()['result']
+        if not open_orders['open']:
+          print(f"No open orders currently present")
+          print(f"{interval_time_simple} {asset_pair}: Opening short pos")
           asset_close = float(get_asset_close())
           usd_order_size = order_size
-          volume_to_buy = str(float(usd_order_size / asset_close))
-          order_output = buy_asset() # executes buy order and assigns output to var
+          order_volume = str(float(usd_order_size / asset_close))
+          sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
+          sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
+          order_output = open_increase_short_pos()
           if not order_output.json()['error']:
-            print(f"{interval_time_simple} {asset_pair}: Bought {volume_to_buy}")
-            tg_message = order_output.json()['result']
-            send_telegram_message()        
-            macd_list.clear()
-            rsi_list.clear()
-            transaction_id = order_output.json()['result']['txid'][0]
-            order_info = get_orderinfo()
-            executed_size = order_info.json()['result'][transaction_id]['vol_exec']
-            holdings_list.append(float(executed_size))
-            price_list.append(asset_close)
-            asset_dict[asset_pair]["macd"] = macd_list
-            asset_dict[asset_pair]["rsi"] = rsi_list
-            asset_dict[asset_pair]["holdings"] = holdings_list
-            asset_dict[asset_pair]["price_bought"] = price_list
-            write_to_asset_file()
-          else:
-            print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
-            tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
+            print(f"{interval_time_simple} {asset_pair}: Succesfully opened short pos: {order_output.json()}")
+            tg_message = f"{interval_time_simple} {asset_pair} Succesfully opened short pos: {order_output.json()}"
             send_telegram_message()
-        else: 
-          macd = get_macd() 
-          macd_list.append(macd)
-          print(f"{interval_time_simple} {asset_pair}: Appending {macd} macd list")
-          asset_dict[asset_pair]["macd"] = macd_list
-          write_to_asset_file()
-      elif rsi > rsi_upper_boundary and len(macd_list) < 3:
-        print(f"{interval_time_simple} {asset_pair}: RSI {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
-        macd = get_macd() 
-        macd_list.append(macd)
-        asset_dict[asset_pair]["macd"] = macd_list
-        write_to_asset_file()
-        print(f"{interval_time_simple} {asset_pair}: Appended {macd} macd value to macd list")
-        print(f"{interval_time_simple} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
-        tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
-        send_telegram_message()
-      elif rsi > rsi_upper_boundary and len(macd_list) >= 3:
-        if macd_list[-3] > macd_list[-2] > macd_list[-1]:
-          print(f"{interval_time_simple} {asset_pair}: MACD in downward trend for 3 iterations: {macd_list[-3:]}, selling {asset_pair}")
-          tg_message = f"{interval_time_simple} {asset_pair}: MACD in downward trend for 3 iterations: {macd_list[-3:]}, selling {asset_pair}"
-          send_telegram_message()
-          if float(sum(holdings_list)) > 0: # check if we have some in our holdings
-            volume_to_sell = str(sum(holdings_list))
-            if min_order_size() < float(volume_to_sell):
-              asset_close = float(get_asset_close())
-              price_list_avg = sum(price_list) / len(price_list)
-              if asset_close > price_list_avg:
-                order_output = sell_asset()
-                if not order_output.json()['error']:
-                  macd_list.clear()
-                  rsi_list.clear()
-                  holdings_list.clear()
-                  price_list.clear()
-                  asset_dict[asset_pair]["macd"] = macd_list
-                  asset_dict[asset_pair]["rsi"] = rsi_list
-                  asset_dict[asset_pair]["holdings"] = holdings_list
-                  asset_dict[asset_pair]["price_bought"] = price_list
-                  write_to_asset_file()
-                  print(f"{interval_time_simple} {asset_pair}: Sold {volume_to_sell}")
-                  tg_message = order_output.json()['result']
-                  send_telegram_message()        
-                else:
-                  print(f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}")
-                  tg_message = f"{interval_time_simple} {asset_pair}: An error occured when trying to place a sell order: {order_output.json()['error']}"
-                  send_telegram_message()
-              else:
-                print(f"Asset pair {asset_pair} close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing RSI and MACD list and continuing")
-                tg_message = f"Asset pair {asset_pair} close is: {asset_close}, which is less than our avg bought price: {price_list_avg}. Clearing     RSI and MACD list and continuing"
-                send_telegram_message()
-                macd_list.clear()
-                rsi_list.clear()
-                asset_dict[asset_pair]["macd"] = macd_list
-                asset_dict[asset_pair]["rsi"] = rsi_list
-                write_to_asset_file()
-            else:
-              macd_list.clear()
-              rsi_list.clear()
-              asset_dict[asset_pair]["macd"] = macd_list
-              asset_dict[asset_pair]["rsi"] = rsi_list
-              write_to_asset_file()
-              print(f"{interval_time_simple} {asset_pair}: Not enough left to sell")
-              tg_message = f"{interval_time_simple} {asset_pair}: Not enough left to sell"
-              send_telegram_message()
+            macd_hist_list.pop(0)
+            asset_dict[asset_pair] = macd_hist_list
           else:
-            macd_list.clear()
-            rsi_list.clear()
-            asset_dict[asset_pair]["macd"] = macd_list
-            asset_dict[asset_pair]["rsi"] = rsi_list
-            write_to_asset_file()
-            print(f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it")  
-            tg_message = f"{interval_time_simple} {asset_pair}: Nothing left to sell because we own 0 of it"
+            print(f"{interval_time_simple} {asset_pair}: Something went wrong opening a short pos: {order_output.json()}")
+            tg_message = f"{interval_time_simple} {asset_pair} Something went wrong opening a short pos: {order_output.json()}"
             send_telegram_message()
+            macd_hist_list.pop(0)
+            asset_dict[asset_pair] = macd_hist_list
         else:
-          print(f"{interval_time_simple} {asset_pair}: No downward MACD trend yet")
-          tg_message = f"{interval_time_simple} {asset_pair}: No downward MACD trend yet"
-          send_telegram_message()
-          macd = get_macd() 
-          macd_list.append(macd)
-          asset_dict[asset_pair]["macd"] = macd_list
-          write_to_asset_file()
-      else:
-        print(f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds")
-        tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds"
-        send_telegram_message()
-      time.sleep(3) # sleep 3 seconds between asset pair
-    list_24h.clear()
+          print(f"There are open orders")
+          print(f"Checking if there are open orders for {asset_pair}")
+          open_orders = query_open_orders().json()['result']
+          open_order_dict = {}
+          for key, value in open_orders['open'].items():
+            # key = asset pair short
+            # value = order txid
+            open_order_dict.update({value['descr']['pair']: key})
+            '''
+            open_order_keys = [asset_pair_short]
+            open_order_values = [order_txid]
+            open_order_dict = {asset_pair_short: order_txid, asset_pair_short: order_txid}
+            '''
+          if asset_pair_short in open_order_dict.keys():
+            print(f"{interval_time_simple} {asset_pair}: cancelling SLL order")
+            order_txid = open_order_dict[asset_pair_short]
+            order_output = cancel_order(order_txid)
+            if not order_output.json()['error']:
+              print(f"{interval_time_simple} {asset_pair}: Succesfully cleared SLL order: {order_output.json()}")
+              tg_message = f"{interval_time_simple} {asset_pair} Succesfully cleared SLL order: {order_output.json()}"
+              send_telegram_message()
+              time.sleep(5)
+              print(f"{interval_time_simple} {asset_pair}: Closing long pos")
+              order_output = close_long_pos()
+              print(f"Result closing long pos for {asset_pair}: {order_output}")
+              if not order_output.json()['error']:
+                print(f"{interval_time_simple} {asset_pair}: Succesfully closed long pos: {order_output.json()}")
+                tg_message = f"{interval_time_simple} {asset_pair} Succesfully closed long pos: {order_output.json()}"
+                send_telegram_message()
+                print(f"{interval_time_simple} {asset_pair}: Opening short pos")
+                asset_close = float(get_asset_close())
+                usd_order_size = order_size
+                order_volume = str(float(usd_order_size / asset_close))
+                sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
+                sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
+                order_output = open_increase_short_pos()
+                if not order_output.json()['error']:
+                  print(f"{interval_time_simple} {asset_pair}: Succesfully opened short pos: {order_output.json()}")
+                  tg_message = f"{interval_time_simple} {asset_pair} Succesfully opened short pos: {order_output.json()}"
+                  send_telegram_message()
+                  macd_hist_list.pop(0)
+                  asset_dict[asset_pair] = macd_hist_list
+                else:
+                  print(f"{interval_time_simple} {asset_pair}: Something went wrong opening a short pos: {order_output.json()}")
+                  tg_message = f"{interval_time_simple} {asset_pair} Something went wrong opening a short pos: {order_output.json()}"
+                  send_telegram_message()
+                  macd_hist_list.pop(0)
+                  asset_dict[asset_pair] = macd_hist_list
+              else:
+                print(f"{interval_time_simple} {asset_pair}: Something went wrong closing long pos: {order_output.json()}")
+                tg_message = f"{interval_time_simple} {asset_pair} Something went wrong closing long pos: {order_output.json()}"
+                send_telegram_message()
+                macd_hist_list.pop(0)
+                asset_dict[asset_pair] = macd_hist_list
+            else:
+              print(f"{interval_time_simple} {asset_pair}: Something went wrong cancelling SLL order: {order_output.json()}")
+              tg_message = f"{interval_time_simple} {asset_pair} Something went wrong cancelling SLL order: {order_output.json()}"
+              send_telegram_message()
+              macd_hist_list.pop(0)
+              asset_dict[asset_pair] = macd_hist_list
+          else:
+            print(f"{interval_time_simple} {asset_pair} not present in orders, opening short pos")
+            asset_close = float(get_asset_close())
+            usd_order_size = order_size
+            order_volume = str(float(usd_order_size / asset_close))
+            sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
+            sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
+            order_output = open_increase_short_pos()
+            if not order_output.json()['error']:
+              print(f"{interval_time_simple} {asset_pair}: Succesfully opened short pos: {order_output.json()}")
+              tg_message = f"{interval_time_simple} {asset_pair} Succesfully opened short pos: {order_output.json()}"
+              send_telegram_message()
+              macd_hist_list.pop(0)
+              asset_dict[asset_pair] = macd_hist_list
+            else:
+              print(f"{interval_time_simple} {asset_pair}: Someting went wrong opening a short pos: {order_output.json()}")
+              tg_message = f"{interval_time_simple} {asset_pair} Something went wrong opening a short pos: {order_output.json()}"
+              send_telegram_message()
+              macd_hist_list.pop(0)
+              asset_dict[asset_pair] = macd_hist_list
+    print(f"{asset_pair} block done, sleeping 3 seconds")
+    time.sleep(3) # sleep 3 seconds between asset pair
+  print(f"Done with all assets, sleeping for {loop_time_seconds} seconds")
   time.sleep(loop_time_seconds)
