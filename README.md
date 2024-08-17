@@ -1,3 +1,5 @@
+[![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/pylint-dev/pylint)
+
 # Trading bot written in Python utilizing the Kraken API for trading cryptocurrencies
 
 ## Strategy
