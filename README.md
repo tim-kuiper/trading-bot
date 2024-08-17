@@ -1,7 +1,9 @@
 # Trading bot written in Python utilizing the Kraken API for trading cryptocurrencies
 
 ## Strategy
-Currently there are 2 stratege
+Currently there are 2 strategies:
+- Main branch: MACD only, go long/short on MACD crossover, using daily (1D) timeframe. Strategy is backtested using a Tradingview backtester which returned profits for almost all assets.
+- v0.8 branch: trades RSI and MACD, a trade is triggered when RSI is below or above a certain value. After that the MACD is analyzed and when MACD is in an upward/downward trend the asset is bought or sold 
 
 ## Requirements / dependencies
 - Tested on Fedora39/40
@@ -14,3 +16,4 @@ Currently there are 2 stratege
 ## Todo
 - Containerize application
 - Create Helm chart to be used on k8s
+- Update MACD/RSI strategy such that no asset file is used and rename branch
