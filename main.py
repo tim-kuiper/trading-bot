@@ -162,6 +162,15 @@ def open_increase_short_pos():
         "pair": asset_pair
     }, api_key, api_sec)
     return response
+  
+@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
+def get_asset_decimal():
+    # https://support.kraken.com/hc/en-us/articles/4521313131540-Price-decimal-precision
+    time.sleep(2)
+    payload = {'pair': asset_pair}
+    resp = requests.get('https://api.kraken.com/0/public/AssetPairs', params=payload)
+    decimal_asset = int(resp.json()['result'][asset_pair]['pair_decimals'])
+    return decimal_asset
 
 def close_short_pos():
     time.sleep(2)
@@ -289,8 +298,8 @@ while True:
           asset_close = float(get_asset_close())
           usd_order_size = order_size
           order_volume = str(float(usd_order_size / asset_close))
-          sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
-          sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
+          sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), get_asset_decimal()))
+          sll_limit = str(round(float(asset_close * sll_long_limit_pct), get_asset_decimal()))
           order_output = open_increase_long_pos()
           if not order_output.json()['error']:
             print(f"{interval_time_simple} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
@@ -338,8 +347,8 @@ while True:
                 asset_close = float(get_asset_close())
                 usd_order_size = order_size
                 order_volume = str(float(usd_order_size / asset_close))
-                sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
-                sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
+                sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), get_asset_decimal()))
+                sll_limit = str(round(float(asset_close * sll_long_limit_pct), get_asset_decimal()))
                 order_output = open_increase_long_pos()
                 if not order_output.json()['error']:
                   print(f"{interval_time_simple} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
@@ -370,8 +379,8 @@ while True:
             asset_close = float(get_asset_close())
             usd_order_size = order_size
             order_volume = str(float(usd_order_size / asset_close))
-            sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
-            sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
+            sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), get_asset_decimal()))
+            sll_limit = str(round(float(asset_close * sll_long_limit_pct), get_asset_decimal()))
             order_output = open_increase_long_pos()
             if not order_output.json()['error']:
               print(f"{interval_time_simple} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
@@ -404,8 +413,8 @@ while True:
           asset_close = float(get_asset_close())
           usd_order_size = order_size
           order_volume = str(float(usd_order_size / asset_close))
-          sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
-          sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
+          sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), get_asset_decimal()))
+          sll_limit = str(round(float(asset_close * sll_short_limit_pct), get_asset_decimal()))
           order_output = open_increase_short_pos()
           if not order_output.json()['error']:
             print(f"{interval_time_simple} {asset_pair}: Succesfully opened short pos: {order_output.json()}")
@@ -453,8 +462,8 @@ while True:
                 asset_close = float(get_asset_close())
                 usd_order_size = order_size
                 order_volume = str(float(usd_order_size / asset_close))
-                sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
-                sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
+                sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), get_asset_decimal()))
+                sll_limit = str(round(float(asset_close * sll_short_limit_pct), get_asset_decimal()))
                 order_output = open_increase_short_pos()
                 if not order_output.json()['error']:
                   print(f"{interval_time_simple} {asset_pair}: Succesfully opened short pos: {order_output.json()}")
@@ -485,8 +494,8 @@ while True:
             asset_close = float(get_asset_close())
             usd_order_size = order_size
             order_volume = str(float(usd_order_size / asset_close))
-            sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
-            sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
+            sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), get_asset_decimal()))
+            sll_limit = str(round(float(asset_close * sll_short_limit_pct), get_asset_decimal()))
             order_output = open_increase_short_pos()
             if not order_output.json()['error']:
               print(f"{interval_time_simple} {asset_pair}: Succesfully opened short pos: {order_output.json()}")
