@@ -1,4 +1,0 @@
-- Start program
-- If asset pair macd crosses 0 upwards
-  - Check if there are open orders for asset pair
-    - If there are check the margin order 
