@@ -16,24 +16,26 @@ import itertools
 ## general vars
 
 asset_dict = {}
-# asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'XETHZUSD', 'ADAUSD', 'SOLUSD']
-asset_pairs = ['XXBTZUSD']
+asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'XETHZUSD', 'ADAUSD', 'SOLUSD']
+# asset_pairs = ['SOLUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
 loop_time_seconds = 14400
-rsi_lower_boundary = 49
-rsi_upper_boundary = 51
-# interval_time_minutes = 240 # 4h timeframe
+rsi_lower_boundary = 30
+rsi_upper_boundary = 70
+# interval_time_minutes = 1 # 4h timeframe
 # interval_time_minutes = 1440 # 1d timeframe
 # interval_time_minutes = 10080 # 1w timeframe
-interval_time_minutes = 60 # 1h timeframe
+# interval_time_minutes = 60 # 1h timeframe
 # interval_time_minutes = 15 # 15m timeframe
 # interval_time_minutes = 30 # 30m timeframe
 data_dict = {}
-balance_usd = 5000
-order_size = 20
-intervals = ['1', '5', '15', '30', '60', '240', '720', '1440']
+# balance_usd = 5000
+# order_size = 10
+# intervals = ['1', '5', '15', '30', '60', '240', '720', '1440']
+# intervals = [1, 5, 15, 30, 60, 240, 720, 1440]
+intervals = [1440]
 
 # functions
 def get_asset_vars():
@@ -42,38 +44,43 @@ def get_asset_vars():
       asset_code = "XXBT"
       api_sec = os.environ['api_sec_env_btc']
       api_key = os.environ['api_key_env_btc']
+      asset_pair_short = "XBTUSD"
     if asset_pair == "XXRPZUSD":
       asset_code = "XXRP"
       api_sec = os.environ['api_sec_env_xrp']
       api_key = os.environ['api_key_env_xrp']
+      asset_pair_short = "XRPUSD"
     if asset_pair == "ADAUSD":
       asset_code = "ADA"
       api_sec = os.environ['api_sec_env_ada']
       api_key = os.environ['api_key_env_ada']
+      asset_pair_short = "ADAUSD"
     if asset_pair == "SOLUSD":
       asset_code = "SOL"
       api_sec = os.environ['api_sec_env_sol']
       api_key = os.environ['api_key_env_sol']
+      asset_pair_short = "SOLUSD"
     if asset_pair == "XETHZUSD":
       asset_code = "XETH"
       api_sec = os.environ['api_sec_env_eth']
       api_key = os.environ['api_key_env_eth']
-    return [asset_code, api_sec, api_key]
+      asset_pair_short = "ETHUSD"
+    return [asset_code, api_sec, api_key, asset_pair_short]
 
-def get_kraken_signature(urlpath, data, secret):
-    postdata = urllib.parse.urlencode(data)
-    encoded = (str(data['nonce']) + postdata).encode()
-    message = urlpath.encode() + hashlib.sha256(encoded).digest()
-    mac = hmac.new(base64.b64decode(secret), message, hashlib.sha512)
-    sigdigest = base64.b64encode(mac.digest())
-    return sigdigest.decode()
-
-def kraken_request(uri_path, data, api_key, api_sec):
-    headers = {}
-    headers['API-Key'] = api_key
-    headers['API-Sign'] = get_kraken_signature(uri_path, data, api_sec)
-    req = requests.post((api_url + uri_path), headers=headers, data=data)
-    return req 
+#def get_kraken_signature(urlpath, data, secret):
+#    postdata = urllib.parse.urlencode(data)
+#    encoded = (str(data['nonce']) + postdata).encode()
+#    message = urlpath.encode() + hashlib.sha256(encoded).digest()
+#    mac = hmac.new(base64.b64decode(secret), message, hashlib.sha512)
+#    sigdigest = base64.b64encode(mac.digest())
+#    return sigdigest.decode()
+#
+#def kraken_request(uri_path, data, api_key, api_sec):
+#    headers = {}
+#    headers['API-Key'] = api_key
+#    headers['API-Sign'] = get_kraken_signature(uri_path, data, api_sec)
+#    req = requests.post((api_url + uri_path), headers=headers, data=data)
+#    return req 
 
 def get_ohlc():
     # time.sleep(2)
@@ -81,7 +88,8 @@ def get_ohlc():
     # ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
     # construct a dataframe and assign columns using asset ohlc data
     # df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
-    df = pd.read_csv('XBTUSD_' + str(interval_time_minutes) + '.csv')
+    # df = pd.read_csv('XBTUSD_' + str(interval_time_minutes) + '.csv')
+    df = pd.read_csv(asset_pair_short + '_' + str(interval_time_minutes) + '.csv')
     # df.columns = ['unixtimestamp', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
     df.columns = ['unixtimestamp', 'open', 'high', 'low', 'close', 'volume', 'count']
     # we are only interested in asset close data, so create var for close data columns and set var type as float
@@ -110,7 +118,8 @@ def get_time():
 def get_macd():
     # close = get_ohlcdata_macd()
     close = get_close()
-    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+    # macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=macd_fast, slowperiod=macd_slow, signalperiod=macd_signal)
     macd_dict = macd.to_dict()
     macd_values = list(macd_dict.values())
     # return macd_values[-1]
@@ -140,10 +149,50 @@ def get_asset_amount():
 
 for asset_pair in asset_pairs:
   for interval_time_minutes in intervals:
+    if interval_time_minutes == 1:
+      order_size = 5
+      macd_fast = 6
+      macd_slow = 13
+      macd_signal = 5
+    if interval_time_minutes == 5:
+      order_size = 10
+      macd_fast = 6
+      macd_slow = 13
+      macd_signal = 5
+    if interval_time_minutes == 15:
+      order_size = 20
+      macd_fast = 8
+      macd_slow = 17
+      macd_signal = 9
+    if interval_time_minutes == 30:
+      order_size = 30
+      macd_fast = 12
+      macd_slow = 26
+      macd_signal = 9
+    if interval_time_minutes == 60:
+      order_size = 40
+      macd_fast = 12
+      macd_slow = 26
+      macd_signal = 9
+    if interval_time_minutes == 240:
+      order_size = 50
+      macd_fast = 8
+      macd_slow = 24
+      macd_signal = 9
+    if interval_time_minutes == 720:
+      order_size = 60
+      macd_fast = 8
+      macd_slow = 24
+      macd_signal = 9
+    if interval_time_minutes == 1440:
+      order_size = 250
+      macd_fast = 12
+      macd_slow = 26
+      macd_signal = 9
     holdings = []
     api_key = get_asset_vars()[2]
     api_sec = get_asset_vars()[1]
-    # data_dict = dict({"Time": get_time(), "MACD": get_macd(), "RSI": get_rsi()})
+    asset_pair_short = get_asset_vars()[3]
     time_list = get_time()
     macd_list = get_macd()
     rsi_list = get_rsi().tolist()
@@ -154,7 +203,10 @@ for asset_pair in asset_pairs:
     amount_list_temp = []
     holdings_list = []
     price_bought_list = []
-    print(f"Starting balance: {balance_usd}")
+    balance_usd_temp = []
+    balance_usd = 5000 # starting balance
+    print(f"{asset_pair} {interval_time_minutes}m starting balance: {balance_usd}")
+    print(f"{asset_pair} {interval_time_minutes}m order size: {order_size}")
     for (times, macd, rsi, close, amount) in zip(time_list, macd_list, rsi_list, close_list, amount_list):
       #print(f"{times}, {macd}, {rsi}, {close}, {amount}")
       # print(f"Balance USD: {balance_usd}")
@@ -176,18 +228,22 @@ for asset_pair in asset_pairs:
         elif len(rsi_list_temp) == 0:
           #print(f"RSI temp list empty: {rsi_list_temp}, appending rsi {rsi} to list")
           rsi_list_temp.append(rsi)
-        if rsi < rsi_lower_boundary and len(macd_list_temp) < 3:
+        # if rsi < rsi_lower_boundary and len(macd_list_temp) < 3:
+        if rsi < rsi_lower_boundary and len(macd_list_temp) < 2:
           #print(f"RSI: {rsi} and length of macd list temp lower than 3: {macd_list_temp}")
           macd_list_temp.append(macd)
-        if rsi < rsi_lower_boundary and len(macd_list_temp) >= 3:
+        # if rsi < rsi_lower_boundary and len(macd_list_temp) >= 3:
+        if rsi < rsi_lower_boundary and len(macd_list_temp) >= 2:
           #print(f"RSI: {rsi} and macd list temp: {macd_list_temp}")
-          if macd_list_temp[-3] < macd_list_temp[-2] < macd_list_temp[-1]:
+          # if macd_list_temp[-3] < macd_list_temp[-2] < macd_list_temp[-1]:
+          if macd_list_temp[-2] < macd_list_temp[-1]:
             #print(f"MACD in upward trend, buying asset")
             holdings_list.append(amount)
             # usd_bought = sum(holdings_list) * close
             balance_usd = balance_usd - order_size
-            #print(f"USD balance after buy: {balance_usd}")
-            #print(f"Holdings list: {holdings_list}")
+            balance_usd_temp.append(balance_usd)
+            # print(f"USD balance after buy: {balance_usd}")
+            # print(f"Holdings list: {holdings_list}")
             price_bought_list.append(close)
             #print(f"Price bought list: {price_bought_list}")
             macd_list_temp.clear()
@@ -196,13 +252,16 @@ for asset_pair in asset_pairs:
             #print(f"MACD list temp not in upward trend, appending {macd} to macd list temp")
             macd_list_temp.append(macd)
             #print(f"Appended macd {macd} to macd list temp: {macd_list_temp}")
-        elif rsi > rsi_upper_boundary and len(macd_list_temp) < 3:
+        # elif rsi > rsi_upper_boundary and len(macd_list_temp) < 3:
+        elif rsi > rsi_upper_boundary and len(macd_list_temp) < 2:
           #print(f"RSI {rsi} but macd list temp has not enough length: {macd_list_temp}")
           macd_list_temp.append(macd)
           #print(f"Appended {macd} to macd list temp, macd list temp: {macd_list_temp}")
-        elif rsi > rsi_upper_boundary and len(macd_list_temp) >= 3:
+        # elif rsi > rsi_upper_boundary and len(macd_list_temp) >= 3:
+        elif rsi > rsi_upper_boundary and len(macd_list_temp) >= 2:
           #print(f"RSI {rsi} and macd list temp > 3: {macd_list_temp}")
-          if macd_list_temp[-3] > macd_list_temp[-2] > macd_list_temp[-1]:
+          # if macd_list_temp[-3] > macd_list_temp[-2] > macd_list_temp[-1]:
+          if macd_list_temp[-2] > macd_list_temp[-1]:
             #print(f"Downward macd trend for macd_list_temp: {macd_list_temp}, selling asset if we have any")
             if float(sum(holdings_list)) > 0:
               #print(f"Holdings greater than 0: {sum(holdings_list)}")
@@ -233,4 +292,7 @@ for asset_pair in asset_pairs:
       #else:
         #print(f"Incorrect test for macd {macd} and rsi {rsi}") 
     print(f"Ending balance for {interval_time_minutes}m {asset_pair} with RSI < {rsi_lower_boundary} and RSI > {rsi_upper_boundary}: {balance_usd}")
+    print(f"{asset_pair} {interval_time_minutes}m max drawdown: {min(balance_usd_temp)}")
+    balance_usd = []
+    balance_usd_temp.clear()
     time.sleep(2)
