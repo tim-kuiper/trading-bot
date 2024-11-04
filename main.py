@@ -61,28 +61,11 @@ def kraken_request(uri_path, data, api_key, api_sec):
     return req
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
-def get_holdings():
-    holdings = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
-    return holdings
-
-@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def get_min_order_size():
     time.sleep(2)
     resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
     minimum_order_size = float(resp.json()['result'][asset_pair]['ordermin'])
     return minimum_order_size
-
-@retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
-def get_ohlcdata():
-    time.sleep(2)
-    payload = {'pair': asset_pair, 'interval': interval_time_minutes}
-    ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
-    # construct a dataframe and assign columns using asset ohlc data
-    df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
-    df.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
-    # we are only interested in asset close data, so create var for close data columns and set var type as float
-    close_data = df['close'].astype(float) # set close data to float
-    return close_data
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def buy_asset():
