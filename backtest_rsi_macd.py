@@ -35,7 +35,7 @@ data_dict = {}
 # order_size = 10
 # intervals = ['1', '5', '15', '30', '60', '240', '720', '1440']
 # intervals = [1, 5, 15, 30, 60, 240, 720, 1440]
-intervals = [1440]
+intervals = [60]
 
 # functions
 def get_asset_vars():
@@ -170,7 +170,7 @@ for asset_pair in asset_pairs:
       macd_slow = 26
       macd_signal = 9
     if interval_time_minutes == 60:
-      order_size = 40
+      order_size = 5
       macd_fast = 12
       macd_slow = 26
       macd_signal = 9

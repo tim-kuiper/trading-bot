@@ -17,7 +17,7 @@ import itertools
 
 asset_dict = {}
 # asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'XETHZUSD', 'ADAUSD', 'SOLUSD']
-asset_pairs = ['SOLUSD']
+asset_pairs = ['XXBTZUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
@@ -32,7 +32,7 @@ interval_time_minutes = 1440 # 1d timeframe
 # interval_time_minutes = 30 # 30m timeframe
 data_dict = {}
 # balance_usd = 5000
-order_size = 100
+order_size = 10
 intervals = [1440]
 
 # functions
@@ -98,6 +98,11 @@ def get_time():
       time_data_list_datetime.append(normal_time)
     return time_data_list_datetime
 
+def get_ema(period):
+    close = get_close()
+    ema = talib.EMA(close, tmeperiod=period)
+    return ema
+
 #def get_macd():
 #    # close = get_ohlcdata_macd()
 #    close = get_close()
@@ -137,6 +142,8 @@ for asset_pair in asset_pairs:
     api_sec = get_asset_vars()[1]
     asset_pair_short = get_asset_vars()[3]
     time_list = get_time()
+    ema_9_list = get_ema(9).tolist()
+    ema_20_list = get_ema(20).tolist()
     rsi_list = get_rsi().tolist()
     close_list = get_close().tolist()
     amount_list = get_asset_amount()
@@ -147,24 +154,21 @@ for asset_pair in asset_pairs:
     balance_usd = 5000 # starting balance
     print(f"{asset_pair} {interval_time_minutes}m starting balance: {balance_usd}")
     print(f"{asset_pair} {interval_time_minutes}m order size: {order_size}")
-    for (times, rsi, close, amount) in zip(time_list, rsi_list, close_list, amount_list):
+    for (times, macd, rsi, close, amount) in zip(time_list, macd_list, rsi_list, close_list, amount_list):
       #print(f"{times}, {macd}, {rsi}, {close}, {amount}")
       # print(f"Balance USD: {balance_usd}")
       # is_macd_float = isinstance(macd,float)
       # if 0 < rsi < 100 and macd == macd: # NaN type is always not equal, also to itself
-      if rsi < rsi_lower_boundary:
+      if rsi < 30:
       # buy
-        print(f"RSI: {rsi}")
         holdings_list.append(amount)
         usd_bought = sum(holdings_list) * close
         balance_usd = balance_usd - order_size
         balance_usd_temp.append(balance_usd)
         price_bought_list.append(close)
-        #rsi_list_temp.clear()
-        print(f"Balance: {balance_usd}")
-      elif rsi > rsi_upper_boundary:
+        rsi_list_temp.clear()
+      elif rsi > 70:
       # sell
-        print(f"RSI: {rsi}")
         if float(sum(holdings_list)) > 0:
           price_bought_avg = sum(price_bought_list) / len(price_bought_list)
           if close > price_bought_avg:
@@ -172,9 +176,8 @@ for asset_pair in asset_pairs:
             balance_usd = balance_usd + usd_sold
             price_bought_list.clear()
             holdings_list.clear()
-          print(f"Balance: {balance_usd}")
-      #else:
-      #  print(f"Continuing")
+      else:
+        print(f"Continuing")
     print(f"Ending balance for {interval_time_minutes}m {asset_pair} with RSI < {rsi_lower_boundary} and RSI > {rsi_upper_boundary}: {balance_usd}")
     print(f"{asset_pair} {interval_time_minutes}m max drawdown: {min(balance_usd_temp)}")
     balance_usd = []
