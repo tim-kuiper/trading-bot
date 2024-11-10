@@ -10,7 +10,7 @@ requests==2.31.0
 setuptools==70.2.0
 six==1.16.0
 statistics==1.0.3.5
-TA-Lib==0.4.28
+TA-Lib==0.4.32
 tenacity==8.4.2
 tzdata==2023.3
 urllib3==2.0.6

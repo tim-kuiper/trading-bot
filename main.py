@@ -14,30 +14,15 @@ from tenacity import *
 
 # set vars
 ## general vars
-asset_pairs = ['XXBTZUSD', 'SOLUSD', 'XETHZUSD']
+asset_pairs = ['XXBTZUSD', 'SOLUSD', 'XETHZUSD', 'MINAUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
 loop_time_seconds = 86400 # 1d - iteration time for main loop
+api_sec = os.environ['kraken_private_key']
+api_key = os.environ['kraken_api_key']
 
-# functions
-def get_asset_vars():
-    ## asset pair specific vars
-    if asset_pair == "XXBTZUSD":
-      asset_code = "XXBT"
-      api_sec = os.environ['api_sec_env_btc']
-      api_key = os.environ['api_key_env_btc']
-    if asset_pair == "SOLUSD":
-      asset_code = "SOL"
-      api_sec = os.environ['api_sec_env_sol']
-      api_key = os.environ['api_key_env_sol']
-    if asset_pair == "XETHZUSD":
-      asset_code = "XETH"
-      api_sec = os.environ['api_sec_env_eth']
-      api_key = os.environ['api_key_env_eth']
-    return [asset_code, api_sec, api_key]
-    
 def send_telegram_message():
     token = tg_token
     chat_id = "481520678"
@@ -83,8 +68,6 @@ def buy_asset():
 # main loop
 while True:
   for asset_pair in asset_pairs:
-    api_key = get_asset_vars()[2]
-    api_sec = get_asset_vars()[1]
     order_size = get_min_order_size()
     try:
       buy_asset()
