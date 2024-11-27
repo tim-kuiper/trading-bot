@@ -13,8 +13,7 @@ import datetime
 from tenacity import *
 
 '''
-- Buy RSI < 35 and MACD upwards trend 3 iterations
-- Sell RSI > 65 and MACD downwards trend 3 iterations
+- Buy RSI < 35 and MACD upwards trend 2 iterations
 
 Flow:
 - Create dict to store asset_pair dict with rsi list, macd list and holdings list
