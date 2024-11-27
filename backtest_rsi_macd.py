@@ -16,14 +16,15 @@ import itertools
 ## general vars
 
 asset_dict = {}
-asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'XETHZUSD', 'ADAUSD', 'SOLUSD']
+# asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'XETHZUSD', 'ADAUSD', 'SOLUSD']
+asset_pairs = ['XXBTZUSD']
 # asset_pairs = ['SOLUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
 loop_time_seconds = 14400
-rsi_lower_boundary = 30
-rsi_upper_boundary = 70
+rsi_lower_boundary = 35
+rsi_upper_boundary = 65
 # interval_time_minutes = 1 # 4h timeframe
 # interval_time_minutes = 1440 # 1d timeframe
 # interval_time_minutes = 10080 # 1w timeframe
@@ -32,10 +33,10 @@ rsi_upper_boundary = 70
 # interval_time_minutes = 30 # 30m timeframe
 data_dict = {}
 # balance_usd = 5000
-# order_size = 10
+order_size = 100
 # intervals = ['1', '5', '15', '30', '60', '240', '720', '1440']
 # intervals = [1, 5, 15, 30, 60, 240, 720, 1440]
-intervals = [60]
+intervals = [240]
 
 # functions
 def get_asset_vars():
@@ -67,34 +68,9 @@ def get_asset_vars():
       asset_pair_short = "ETHUSD"
     return [asset_code, api_sec, api_key, asset_pair_short]
 
-#def get_kraken_signature(urlpath, data, secret):
-#    postdata = urllib.parse.urlencode(data)
-#    encoded = (str(data['nonce']) + postdata).encode()
-#    message = urlpath.encode() + hashlib.sha256(encoded).digest()
-#    mac = hmac.new(base64.b64decode(secret), message, hashlib.sha512)
-#    sigdigest = base64.b64encode(mac.digest())
-#    return sigdigest.decode()
-#
-#def kraken_request(uri_path, data, api_key, api_sec):
-#    headers = {}
-#    headers['API-Key'] = api_key
-#    headers['API-Sign'] = get_kraken_signature(uri_path, data, api_sec)
-#    req = requests.post((api_url + uri_path), headers=headers, data=data)
-#    return req 
-
 def get_ohlc():
-    # time.sleep(2)
-    # payload = {'pair': asset_pair, 'interval': interval_time_minutes}
-    # ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
-    # construct a dataframe and assign columns using asset ohlc data
-    # df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
-    # df = pd.read_csv('XBTUSD_' + str(interval_time_minutes) + '.csv')
     df = pd.read_csv(asset_pair_short + '_' + str(interval_time_minutes) + '.csv')
-    # df.columns = ['unixtimestamp', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
     df.columns = ['unixtimestamp', 'open', 'high', 'low', 'close', 'volume', 'count']
-    # we are only interested in asset close data, so create var for close data columns and set var type as float
-    # close_data = df['close']
-    # return close_data
     return df
 
 def get_close():
@@ -118,17 +94,13 @@ def get_time():
 def get_macd():
     # close = get_ohlcdata_macd()
     close = get_close()
-    # macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
-    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=macd_fast, slowperiod=macd_slow, signalperiod=macd_signal)
+    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
     macd_dict = macd.to_dict()
     macd_values = list(macd_dict.values())
-    # return macd_values[-1]
     return macd_values
 
 def get_rsi(period: int = 14, round_rsi: bool = True):
-    # RSI tradingview calculation
     close_data = get_close()
-    # delta = get_ohlc().diff()
     delta = close_data.diff()
     up = delta.copy()
     up[up < 0] = 0 
@@ -149,46 +121,6 @@ def get_asset_amount():
 
 for asset_pair in asset_pairs:
   for interval_time_minutes in intervals:
-    if interval_time_minutes == 1:
-      order_size = 5
-      macd_fast = 6
-      macd_slow = 13
-      macd_signal = 5
-    if interval_time_minutes == 5:
-      order_size = 10
-      macd_fast = 6
-      macd_slow = 13
-      macd_signal = 5
-    if interval_time_minutes == 15:
-      order_size = 20
-      macd_fast = 8
-      macd_slow = 17
-      macd_signal = 9
-    if interval_time_minutes == 30:
-      order_size = 30
-      macd_fast = 12
-      macd_slow = 26
-      macd_signal = 9
-    if interval_time_minutes == 60:
-      order_size = 5
-      macd_fast = 12
-      macd_slow = 26
-      macd_signal = 9
-    if interval_time_minutes == 240:
-      order_size = 50
-      macd_fast = 8
-      macd_slow = 24
-      macd_signal = 9
-    if interval_time_minutes == 720:
-      order_size = 60
-      macd_fast = 8
-      macd_slow = 24
-      macd_signal = 9
-    if interval_time_minutes == 1440:
-      order_size = 250
-      macd_fast = 12
-      macd_slow = 26
-      macd_signal = 9
     holdings = []
     api_key = get_asset_vars()[2]
     api_sec = get_asset_vars()[1]
