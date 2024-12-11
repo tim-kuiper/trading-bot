@@ -24,8 +24,8 @@ list_4h = []
 list_24h = []
 start_list_24h = [] # use this list in combination with the regular 24h list in order to execute the 24h block without waiting a full day
 loop_time_seconds = 14400
-rsi_lower_boundary = 31
-rsi_upper_boundary = 69
+rsi_lower_boundary = 35
+rsi_upper_boundary = 65
 api_sec = os.environ['kraken_private_key']
 api_key = os.environ['kraken_api_key']
 
@@ -49,7 +49,7 @@ def send_telegram_message():
     chat_id = "481520678"
     message = tg_message
     url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
-    requests.get(url) # send message
+    requests.get(url) # send tg msg
 
 def get_kraken_signature(urlpath, data, secret):
     postdata = urllib.parse.urlencode(data)
@@ -211,7 +211,7 @@ while True:
     asset_file_path = './' + asset_file
     interval_time_minutes = 240
     interval_time_simple = '4h'
-    order_size = 10
+    order_size = 100
     for asset_pair in asset_pairs:
       asset_code = get_asset_code()
       check_create_asset_file()
@@ -256,9 +256,9 @@ while True:
         asset_dict[asset_pair]["rsi"] = rsi_list
         write_to_asset_file()
       # set these vars for testing purposes
-      rsi = 50
-      macd_list = [1, 2] # for buying asset
-      order_size = 15
+      # rsi = 50
+      # macd_list = [1, 2] # for buying asset
+      # order_size = 15
       if rsi < rsi_lower_boundary and len(macd_list) < 2:
         print(f"{interval_time_simple} {asset_pair}: RSI {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
         macd = get_macd() 
@@ -301,8 +301,6 @@ while True:
             asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
             write_to_asset_file()
             print(f"{interval_time_simple} asset_dict: {asset_dict}")
-            # tg_message = f"{interval_time_simple} asset dict: {asset_dict}"
-            # send_telegram_message()
             avg_price_list.clear()
             asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
           else:
@@ -317,15 +315,11 @@ while True:
           asset_dict[asset_pair]["macd"] = macd_list
           write_to_asset_file()
           print(f"{interval_time_simple} asset_dict: {asset_dict}")
-          # tg_message = f"{interval_time_simple} asset dict: {asset_dict}"
-          # send_telegram_message()
       else:
         print(f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds")
         tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds"
         send_telegram_message()
         print(f"{interval_time_simple} asset dict: {asset_dict}")
-        # tg_message = f"{interval_time_simple} asset dict: {asset_dict}"
-        # send_telegram_message()
       time.sleep(3) # sleep 3 seconds between asset pair
     tg_message = f"{interval_time_simple} asset dict: {asset_dict}"
     send_telegram_message()
