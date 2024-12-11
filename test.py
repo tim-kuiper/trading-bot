@@ -74,10 +74,12 @@ def get_holdings():
 holdings = get_holdings()
 print(f"holdings: {holdings.json()['result']}")
 for asset_pair in asset_pairs:
-    asset_code = get_asset_code()
-    if asset_code in holdings.json()['result']:
-       print(f"Asset pair {asset_pair} present in holdings!")
-       print(f"Var type: {type(holdings.json()['result'][asset_code])}")
+  asset_code = get_asset_code()
+  if asset_code in holdings.json()['result']:
+    if float(holdings.json()['result'][asset_code]) > 0:
+       print(f"Asset {asset_pair} present in our holdings")
     else:
-       print(f"Asset pair {asset_pair} not present")
+       print(f"Asset {asset_pair} not present in our holdings")
+  else:
+     print(f"Asset pair {asset_pair} not present")
        

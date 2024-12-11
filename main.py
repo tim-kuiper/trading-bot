@@ -211,15 +211,12 @@ while True:
     asset_file_path = './' + asset_file
     interval_time_minutes = 240
     interval_time_simple = '4h'
-    order_size = 100
+    order_size = 10
     for asset_pair in asset_pairs:
+      asset_code = get_asset_code()
       check_create_asset_file()
       rsi_list_values  = rsi_tradingview()
       rsi = float(rsi_list_values[-1])
-      # set these vars for testing purposes
-      # rsi = 25
-      # macd_list = [1, 2] # for buying asset
-      # order_size = 15
       print(f"{interval_time_simple} RSI  {asset_pair}: {rsi}")
       print(f"opening asset file {asset_file}")
       asset_dict = json.loads(read_asset_file())
@@ -228,6 +225,18 @@ while True:
       holdings_list = asset_dict[asset_pair]["holdings"]
       price_list = asset_dict[asset_pair]["price_bought"]
       avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
+      holdings = get_holdings()
+      if asset_code in holdings.json()['result']:
+        print(f"{interval_time_simple} {asset_pair} present in holdings, checking if we actually have more than 0")
+        if float(holdings.json()['result'][asset_code]) > 0:
+          print(f"{interval_time_simple} {asset_pair} holdings: {float(holdings.json()['result'][asset_code])}, nothing to clear")
+        else:
+          print(f"{interval_time_simple} {asset_pair} holdings zero, clearing price bought / avg price brought / holdings from asset dict")
+          holdings_list.clear()
+          price_list.clear()
+          avg_price_list.clear()
+      else:
+         print(f"{interval_time_simple} {asset_pair} not present in holdings on kraken")
       if len(rsi_list) == 1:
         if rsi_list[0] < rsi_lower_boundary:
           print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
@@ -246,6 +255,10 @@ while True:
         rsi_list.append(rsi)
         asset_dict[asset_pair]["rsi"] = rsi_list
         write_to_asset_file()
+      # set these vars for testing purposes
+      rsi = 50
+      macd_list = [1, 2] # for buying asset
+      order_size = 15
       if rsi < rsi_lower_boundary and len(macd_list) < 2:
         print(f"{interval_time_simple} {asset_pair}: RSI {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
         macd = get_macd() 
@@ -279,6 +292,7 @@ while True:
             executed_size = order_info.json()['result'][transaction_id]['vol_exec']
             holdings_list.append(float(executed_size))
             price_list.append(asset_close)
+            avg_price_list.clear()
             avg_price_list.append((sum(price_list)/(len(price_list))))
             asset_dict[asset_pair]["macd"] = macd_list
             asset_dict[asset_pair]["rsi"] = rsi_list
@@ -286,8 +300,9 @@ while True:
             asset_dict[asset_pair]["price_bought"] = price_list
             asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
             write_to_asset_file()
-            tg_message = f"Asset dict: {asset_dict}"
-            send_telegram_message()
+            print(f"{interval_time_simple} asset_dict: {asset_dict}")
+            # tg_message = f"{interval_time_simple} asset dict: {asset_dict}"
+            # send_telegram_message()
             avg_price_list.clear()
             asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
           else:
@@ -301,10 +316,18 @@ while True:
           print(f"{interval_time_simple} {asset_pair}: Appending {macd} macd list")
           asset_dict[asset_pair]["macd"] = macd_list
           write_to_asset_file()
+          print(f"{interval_time_simple} asset_dict: {asset_dict}")
+          # tg_message = f"{interval_time_simple} asset dict: {asset_dict}"
+          # send_telegram_message()
       else:
         print(f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds")
         tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds"
         send_telegram_message()
+        print(f"{interval_time_simple} asset dict: {asset_dict}")
+        # tg_message = f"{interval_time_simple} asset dict: {asset_dict}"
+        # send_telegram_message()
       time.sleep(3) # sleep 3 seconds between asset pair
+    tg_message = f"{interval_time_simple} asset dict: {asset_dict}"
+    send_telegram_message()
     list_4h.clear()
   time.sleep(loop_time_seconds)
