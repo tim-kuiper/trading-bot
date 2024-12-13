@@ -12,19 +12,22 @@ import talib
 import datetime 
 from tenacity import *
 import itertools
+import warnings
+
+warnings.filterwarnings("ignore")
+
 # set vars
 ## general vars
 
 asset_dict = {}
-# asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'XETHZUSD', 'ADAUSD', 'SOLUSD']
-asset_pairs = ['XXBTZUSD']
-# asset_pairs = ['SOLUSD']
-pd.options.display.max_rows = 999
+asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'XETHZUSD', 'ADAUSD', 'SOLUSD']
+# asset_pairs = ['XXBTZUSD']
+asset_csv_dir = "/home/str1der/crypto/kraken_ohlc/30-11-24"
+pd.options.display.max_rows = 9999999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
-loop_time_seconds = 14400
-rsi_lower_boundary = 35
-rsi_upper_boundary = 65
+rsi_lower_boundary = 70
+rsi_upper_boundary = 30
 # interval_time_minutes = 1 # 4h timeframe
 # interval_time_minutes = 1440 # 1d timeframe
 # interval_time_minutes = 10080 # 1w timeframe
@@ -33,54 +36,56 @@ rsi_upper_boundary = 65
 # interval_time_minutes = 30 # 30m timeframe
 data_dict = {}
 # balance_usd = 5000
-order_size = 100
+order_size = 1000
 # intervals = ['1', '5', '15', '30', '60', '240', '720', '1440']
 # intervals = [1, 5, 15, 30, 60, 240, 720, 1440]
-intervals = [240]
+# intervals = [240]
+intervals = [1]
+
+#api_sec = os.environ['kraken_private_key']
+#api_key = os.environ['kraken_api_key']
 
 # functions
-def get_asset_vars():
+def get_asset_code(asset_pair):
     ## asset pair specific vars
     if asset_pair == "XXBTZUSD":
       asset_code = "XXBT"
-      api_sec = os.environ['api_sec_env_btc']
-      api_key = os.environ['api_key_env_btc']
-      asset_pair_short = "XBTUSD"
     if asset_pair == "XXRPZUSD":
       asset_code = "XXRP"
-      api_sec = os.environ['api_sec_env_xrp']
-      api_key = os.environ['api_key_env_xrp']
-      asset_pair_short = "XRPUSD"
     if asset_pair == "ADAUSD":
       asset_code = "ADA"
-      api_sec = os.environ['api_sec_env_ada']
-      api_key = os.environ['api_key_env_ada']
-      asset_pair_short = "ADAUSD"
     if asset_pair == "SOLUSD":
       asset_code = "SOL"
-      api_sec = os.environ['api_sec_env_sol']
-      api_key = os.environ['api_key_env_sol']
-      asset_pair_short = "SOLUSD"
     if asset_pair == "XETHZUSD":
       asset_code = "XETH"
-      api_sec = os.environ['api_sec_env_eth']
-      api_key = os.environ['api_key_env_eth']
+    return asset_code
+
+def get_asset_pair_short(asset_pair):
+    if asset_pair == "XXBTZUSD":
+      asset_pair_short = "XBTUSD"
+    if asset_pair == "XXRPZUSD":
+      asset_pair_short = "XRPUSD"
+    if asset_pair == "ADAUSD":
+      asset_pair_short = "ADAUSD"
+    if asset_pair == "SOLUSD":
+      asset_pair_short = "SOLUSD"
+    if asset_pair == "XETHZUSD":
       asset_pair_short = "ETHUSD"
-    return [asset_code, api_sec, api_key, asset_pair_short]
+    return asset_pair_short
 
 def get_ohlc():
-    df = pd.read_csv(asset_pair_short + '_' + str(interval_time_minutes) + '.csv')
+    df = pd.read_csv(asset_csv_dir + '/' + asset_pair_short + '_' + str(interval_time_minutes) + '.csv')
     df.columns = ['unixtimestamp', 'open', 'high', 'low', 'close', 'volume', 'count']
     return df
 
 def get_close():
-    time.sleep(2)
+    # time.sleep(2)
     ohlc_data = get_ohlc()
     close_data = ohlc_data['close'].astype(float)
     return close_data
 
 def get_time():
-    time.sleep(2)
+    # time.sleep(2)
     ohlc_data = get_ohlc()
     time_data_dict = ohlc_data['unixtimestamp'].to_dict()
     time_data_list = list(time_data_dict.values())
@@ -94,7 +99,8 @@ def get_time():
 def get_macd():
     # close = get_ohlcdata_macd()
     close = get_close()
-    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+    # macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=3, slowperiod=12, signalperiod=6)
     macd_dict = macd.to_dict()
     macd_values = list(macd_dict.values())
     return macd_values
@@ -122,9 +128,8 @@ def get_asset_amount():
 for asset_pair in asset_pairs:
   for interval_time_minutes in intervals:
     holdings = []
-    api_key = get_asset_vars()[2]
-    api_sec = get_asset_vars()[1]
-    asset_pair_short = get_asset_vars()[3]
+    asset_pair_short = get_asset_pair_short(asset_pair)
+    asset_code = get_asset_code(asset_pair)
     time_list = get_time()
     macd_list = get_macd()
     rsi_list = get_rsi().tolist()
@@ -136,7 +141,7 @@ for asset_pair in asset_pairs:
     holdings_list = []
     price_bought_list = []
     balance_usd_temp = []
-    balance_usd = 5000 # starting balance
+    balance_usd = 200000 # starting balance
     print(f"{asset_pair} {interval_time_minutes}m starting balance: {balance_usd}")
     print(f"{asset_pair} {interval_time_minutes}m order size: {order_size}")
     for (times, macd, rsi, close, amount) in zip(time_list, macd_list, rsi_list, close_list, amount_list):
@@ -199,18 +204,18 @@ for asset_pair in asset_pairs:
               #print(f"Holdings greater than 0: {sum(holdings_list)}")
               price_bought_avg = sum(price_bought_list) / len(price_bought_list)
               #print(f"Avg price bought: {price_bought_avg}")
-              if close > price_bought_avg:
-                usd_sold = sum(holdings_list) * close
-                balance_usd = balance_usd + usd_sold
-                #print(f"USD balance after sell: {balance_usd}")
-                macd_list_temp.clear()
-                rsi_list_temp.clear()
-                price_bought_list.clear()
-                holdings_list.clear()
-              else:
-                #print(f"Avg too low")
-                macd_list_temp.clear()
-                rsi_list_temp.clear()
+              # if close > price_bought_avg:
+              usd_sold = sum(holdings_list) * close
+              balance_usd = balance_usd + usd_sold
+              #print(f"USD balance after sell: {balance_usd}")
+              macd_list_temp.clear()
+              rsi_list_temp.clear()
+              price_bought_list.clear()
+              holdings_list.clear()
+             # else:
+             #   #print(f"Avg too low")
+             #   macd_list_temp.clear()
+             #   rsi_list_temp.clear()
             else:
               #print(f"Nothing in our holdings, clearing rsi and macd temp list")
               macd_list_temp.clear()
