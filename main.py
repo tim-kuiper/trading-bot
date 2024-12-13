@@ -170,19 +170,42 @@ def check_create_asset_file():
     # create file if it doesnt exist, add dictionary per asset to it
     if not asset_file_exists:
       print(f"Asset file {asset_file} doesnt exist , creating one")
-      asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": [], "avg_price_bought": []}})
+      asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": [], "avg_price_bought": [], "current_price": [], "price_difference_pct": []}})
       write_to_asset_file()
     else:
       print(f"Asset file {asset_file} exists, reading")
       asset_dict = json.loads(read_asset_file())
       if asset_pair not in asset_dict.keys():
         print(f"Asset pair {asset_pair} not present in asset file {asset_file}, updating file")
-        asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": [], "avg_price_bought": []}})
+        asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": [], "avg_price_bought": [], "current_price": [], "price_difference_pct": []}})
         write_to_asset_file()
         print(f"Appended {asset_pair} to {asset_file}")
+      if "rsi" not in asset_dict[asset_pair].keys():
+        y = {"rsi": []} 
+        asset_dict[asset_pair].update(y)
+        write_to_asset_file()
+      if "macd" not in asset_dict[asset_pair].keys():
+        y = {"macd": []} 
+        asset_dict[asset_pair].update(y)
+        write_to_asset_file()
+      if "holdings" not in asset_dict[asset_pair].keys():
+        y = {"holdings": []} 
+        asset_dict[asset_pair].update(y)
+        write_to_asset_file()
       if "price_bought" not in asset_dict[asset_pair].keys():
-        print(f"price bought not present in asset dict, appending")
         y = {"price_bought": []} 
+        asset_dict[asset_pair].update(y)
+        write_to_asset_file()
+      if "avg_price_bought" not in asset_dict[asset_pair].keys():
+        y = {"avg_price_bought": []} 
+        asset_dict[asset_pair].update(y)
+        write_to_asset_file()
+      if "current_price" not in asset_dict[asset_pair].keys():
+        y = {"current_price": []} 
+        asset_dict[asset_pair].update(y)
+        write_to_asset_file()
+      if "price_difference_pct" not in asset_dict[asset_pair].keys():
+        y = {"price_difference_pct": []} 
         asset_dict[asset_pair].update(y)
         write_to_asset_file()
 
@@ -225,6 +248,8 @@ while True:
       holdings_list = asset_dict[asset_pair]["holdings"]
       price_list = asset_dict[asset_pair]["price_bought"]
       avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
+      current_price_list = asset_dict[asset_pair]["current_price"]
+      price_difference_pct_list = asset_dict[asset_pair]["price_different_pct"]
       holdings = get_holdings()
       if asset_code in holdings.json()['result']:
         print(f"{interval_time_simple} {asset_pair} present in holdings, checking if we actually have more than 0")
