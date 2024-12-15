@@ -251,12 +251,13 @@ while True:
       current_price_list = asset_dict[asset_pair]["current_price"]
       price_difference_pct_list = asset_dict[asset_pair]["price_different_pct"]
       holdings = get_holdings()
+      # In the case of selling asset manually, clear our holdings/price bought/avg price bought from the asset dict
       if asset_code in holdings.json()['result']:
-        print(f"{interval_time_simple} {asset_pair} present in holdings, checking if we actually have more than 0")
+        print(f"{interval_time_simple} {asset_pair} present in holdings on kraken, checking if we actually have more than 0")
         if float(holdings.json()['result'][asset_code]) > 0:
           print(f"{interval_time_simple} {asset_pair} holdings: {float(holdings.json()['result'][asset_code])}, nothing to clear")
         else:
-          print(f"{interval_time_simple} {asset_pair} holdings zero, clearing price bought / avg price brought / holdings from asset dict")
+          print(f"{interval_time_simple} {asset_pair} holdings zero on kraken, clearing price bought/avg price brought/holdings from asset dict")
           holdings_list.clear()
           price_list.clear()
           avg_price_list.clear()
@@ -266,9 +267,9 @@ while True:
         if rsi_list[0] < rsi_lower_boundary:
           print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
           rsi = rsi_list[0]
-        elif rsi_list[0] > rsi_upper_boundary:
-          print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
-          rsi = rsi_list[0]
+        # elif rsi_list[0] > rsi_upper_boundary:
+        #   print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
+        #   rsi = rsi_list[0]
         else:
           print(f"{interval_time_simple} {asset_pair}: Clearing RSI value {rsi_list[0]}")
           rsi_list.clear()
