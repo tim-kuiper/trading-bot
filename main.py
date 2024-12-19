@@ -249,7 +249,7 @@ while True:
       price_list = asset_dict[asset_pair]["price_bought"]
       avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
       current_price_list = asset_dict[asset_pair]["current_price"]
-      price_difference_pct_list = asset_dict[asset_pair]["price_different_pct"]
+      price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
       holdings = get_holdings()
       # In the case of selling asset manually, clear our holdings/price bought/avg price bought from the asset dict
       if asset_code in holdings.json()['result']:
