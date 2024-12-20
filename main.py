@@ -282,6 +282,7 @@ while True:
          print(f"{interval_time_simple} {asset_pair} not present in holdings on kraken")
 
       if len(rsi_list) == 1:
+
         if rsi_list[0] < rsi_lower_boundary:
           print(f"{interval_time_simple} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
           rsi = rsi_list[0]
@@ -328,7 +329,7 @@ while True:
         macd_list.append(macd)
         current_price_list.clear()
         current_price_list.append(float(get_asset_close()))
-        asset_dict[asset_pair]["current_price"] = current_price_list()
+        asset_dict[asset_pair]["current_price"] = current_price_list
         asset_dict[asset_pair]["macd"] = macd_list
         write_to_asset_file()
         check_create_asset_file()
@@ -340,6 +341,7 @@ while True:
         avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
         current_price_list = asset_dict[asset_pair]["current_price"]
         price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
+
         print(f"{interval_time_simple} {asset_pair}: Appended {macd} macd value to macd list")
         print(f"{interval_time_simple} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
         # tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
@@ -378,7 +380,7 @@ while True:
             asset_dict[asset_pair]["holdings"] = holdings_list
             asset_dict[asset_pair]["price_bought"] = price_bought_list
             asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
-            asset_dict[asset_pair]["current_price"] = current_price_list()
+            asset_dict[asset_pair]["current_price"] = current_price_list
             write_to_asset_file()
             check_create_asset_file()
             asset_dict = json.loads(read_asset_file())
@@ -402,7 +404,7 @@ while True:
           macd_list.append(macd)
           current_price_list.clear()
           current_price_list.append(float(get_asset_close()))
-          asset_dict[asset_pair]["current_price"] = current_price_list()
+          asset_dict[asset_pair]["current_price"] = current_price_list
           print(f"{interval_time_simple} {asset_pair}: Appending {macd} to macd list")
           asset_dict[asset_pair]["macd"] = macd_list
           write_to_asset_file()
@@ -422,7 +424,7 @@ while True:
         send_telegram_message()
         current_price_list.clear()
         current_price_list.append(float(get_asset_close()))
-        asset_dict[asset_pair]["current_price"] = current_price_list()
+        asset_dict[asset_pair]["current_price"] = current_price_list
         write_to_asset_file()
         check_create_asset_file()
         asset_dict = json.loads(read_asset_file())
