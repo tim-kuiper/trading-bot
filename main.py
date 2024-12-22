@@ -23,7 +23,8 @@ list_1h = []
 list_4h = []
 list_24h = []
 start_list_24h = [] # use this list in combination with the regular 24h list in order to execute the 24h block without waiting a full day
-loop_time_seconds = 14400
+# loop_time_seconds = 14400
+loop_time_seconds = 86400
 rsi_lower_boundary = 35
 rsi_upper_boundary = 65
 api_sec = os.environ['kraken_private_key']
@@ -226,18 +227,18 @@ def read_asset_file():
 
 # main loop
 while True:
-  start_list_24h.append(24)
-  list_4h.append(4)
+  # start_list_24h.append(24)
+  # list_4h.append(4)
   list_24h.append(24)
 
-  if len(list_4h) == 1:
-    timeframe = "4h"
+  if len(list_24h) == 1:
+    timeframe = "1d"
     file_extension = '.json'
     asset_file = timeframe + file_extension 
     asset_file_path = './' + asset_file
-    interval_time_minutes = 240
-    interval_time_simple = '4h'
-    order_size = 100
+    interval_time_minutes = 1440
+    interval_time_simple = '1d'
+    order_size = 200
 
     # loop over assets
     for asset_pair in asset_pairs:
@@ -440,5 +441,5 @@ while True:
       time.sleep(3) # sleep 3 seconds between asset pair
     tg_message = f"{interval_time_simple} asset dict: {asset_dict}"
     send_telegram_message()
-    list_4h.clear()
+    list_24h.clear()
   time.sleep(loop_time_seconds)
