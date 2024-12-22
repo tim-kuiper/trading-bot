@@ -14,7 +14,7 @@ from tenacity import *
 # set vars
 ## general vars
 asset_dict = {}
-asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'XETHZUSD']
+asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'XETHZUSD', 'MINAUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
@@ -42,6 +42,8 @@ def get_asset_code():
       asset_code = "SOL"
     if asset_pair == "XETHZUSD":
       asset_code = "XETH"
+    if asset_pair == "MINAUSD":
+      asset_code = "MINA"
     return asset_code
     
 def send_telegram_message():
@@ -277,7 +279,6 @@ while True:
           avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
           current_price_list = asset_dict[asset_pair]["current_price"]
           price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
-
       else:
          print(f"{interval_time_simple} {asset_pair} not present in holdings on kraken")
 
@@ -341,7 +342,6 @@ while True:
         avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
         current_price_list = asset_dict[asset_pair]["current_price"]
         price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
-
         print(f"{interval_time_simple} {asset_pair}: Appended {macd} macd value to macd list")
         print(f"{interval_time_simple} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
         # tg_message = f"{interval_time_simple} {asset_pair}: RSI {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
