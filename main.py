@@ -422,10 +422,11 @@ while True:
           macd_list.append(macd)
           current_price_list.clear()
           current_price_list.append(float(get_asset_close()))
-          price_difference_pct_list.clear()
-          price_difference_pct_value = float((float(current_price_list[0])-float(avg_price_list[0]))/float(avg_price_list[0])*100)
-          price_difference_pct_list.append(price_difference_pct_value)
-          asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
+          if avg_price_list:
+            price_difference_pct_list.clear()
+            price_difference_pct_value = float((float(current_price_list[0])-float(avg_price_list[0]))/float(avg_price_list[0])*100)
+            price_difference_pct_list.append(price_difference_pct_value)
+            asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
           asset_dict[asset_pair]["current_price"] = current_price_list
           print(f"{interval_time_simple} {asset_pair}: Appending {macd} to macd list")
           asset_dict[asset_pair]["macd"] = macd_list
@@ -446,10 +447,11 @@ while True:
         send_telegram_message()
         current_price_list.clear()
         current_price_list.append(float(get_asset_close()))
-        price_difference_pct_list.clear()
-        price_difference_pct_value = float((float(current_price_list[0])-float(avg_price_list[0]))/float(avg_price_list[0])*100)
-        price_difference_pct_list.append(price_difference_pct_value)
-        asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
+        if avg_price_list:
+          price_difference_pct_list.clear()
+          price_difference_pct_value = float((float(current_price_list[0])-float(avg_price_list[0]))/float(avg_price_list[0])*100)
+          price_difference_pct_list.append(price_difference_pct_value)
+          asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
         asset_dict[asset_pair]["current_price"] = current_price_list
         write_to_asset_file()
        # check_create_asset_file()
