@@ -8,6 +8,10 @@ COPY ./python-deps/requirements.txt .
 RUN dnf -y install python3 && \
     dnf -y install python3-devel && \ 
     dnf -y install python3-pip && \ 
+    dnf -y install file && \
+    dnf -y install cmp && \
+    dnf -y install diff && \
+    dnf -y install awk && \
     dnf -y install gcc && \
     dnf -y install sleep && \
     cd ta-lib-0.6.3 && \
