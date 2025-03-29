@@ -4,6 +4,7 @@ WORKDIR /app
 
 ADD ./ta-lib-deps/ta-lib-0.6.3-src.tar.gz .
 COPY ./python-deps/requirements.txt .
+COPY ./main.py .
 
 RUN dnf -y install python3 && \
     dnf -y install python3-devel && \ 
@@ -20,4 +21,4 @@ RUN dnf -y install python3 && \
     make install && \
     pip install -r /app/requirements.txt
 
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["python3", "-u", "/app/main.py"]
