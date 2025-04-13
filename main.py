@@ -271,8 +271,8 @@ def get_timeframe_in_minutes():
     return interval_time_minutes
 
 input_valdn()
-get_timeframe_in_seconds()
-get_timeframe_in_minutes()
+loop_time_seconds = get_timeframe_in_seconds()
+interval_time_minutes = get_timeframe_in_minutes()
 
 # main loop
 while True:
@@ -306,6 +306,28 @@ while True:
       print(f"{timeframe} {asset_pair} present in holdings on kraken, checking if we actually have more than 0")
       if float(holdings.json()['result'][asset_code]) > 0:
         print(f"{timeframe} {asset_pair} holdings: {float(holdings.json()['result'][asset_code])}, nothing to clear")
+        # Check for when holdings on Kraken matching the holdings in file. If not, set Kraken holdings to file
+        if float(holdings.json()['result'][asset_code]) == sum(holdings_list):
+          print(f"{timeframe} {asset_pair}: holdings matching the holdings on file")
+        else:
+          print(f"{timeframe} {asset_pair}: append Kraken holdings to file")
+          holdings_list.clear()
+          holdings_list.append(float(holdings.json()['result'][asset_code]))
+          asset_dict[asset_pair]["holdings"] = holdings_list
+          asset_dict[asset_pair]["price_bought"] = price_bought_list
+          asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
+          asset_dict[asset_pair]["current_price"] = current_price_list
+          asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
+          write_to_asset_file()
+          check_create_asset_file()
+          asset_dict = json.loads(read_asset_file())
+          macd_list = asset_dict[asset_pair]["macd"] 
+          rsi_list = asset_dict[asset_pair]["rsi"]
+          holdings_list = asset_dict[asset_pair]["holdings"]
+          price_bought_list = asset_dict[asset_pair]["price_bought"]
+          avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
+          current_price_list = asset_dict[asset_pair]["current_price"]
+          price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
       else:
         print(f"{timeframe} {asset_pair} holdings zero on kraken, clearing price bought/avg price brought/holdings from asset dict")
         holdings_list.clear()
@@ -503,18 +525,7 @@ while True:
         asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
       asset_dict[asset_pair]["current_price"] = current_price_list
       write_to_asset_file()
-     # check_create_asset_file()
-     # asset_dict = json.loads(read_asset_file())
-     # macd_list = asset_dict[asset_pair]["macd"] 
-     # rsi_list = asset_dict[asset_pair]["rsi"]
-     # holdings_list = asset_dict[asset_pair]["holdings"]
-     # price_bought_list = asset_dict[asset_pair]["price_bought"]
-     # avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
-     # current_price_list = asset_dict[asset_pair]["current_price"]
-     # price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
-     # print(f"{timeframe} asset dict: {asset_dict}")
-
     time.sleep(3) # sleep 3 seconds between asset pair
-  tg_message = f"{timeframe} asset dict: {asset_dict}"
+  tg_message = f"{timeframe} asset dict: {json.dumps(asset_dict, indent=2)}"
   send_telegram_message()
   time.sleep(loop_time_seconds)
