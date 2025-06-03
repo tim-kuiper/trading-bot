@@ -30,31 +30,36 @@ rsi_upper_boundary = 65
 api_sec = os.environ['kraken_private_key']
 api_key = os.environ['kraken_api_key']
 
-# functions
 def get_asset_code():
-    ## asset pair specific vars
+    """Get asset code from asset pair
+       TODO: use asset_pair as function arg 
+    """
     if asset_pair == "XXBTZUSD":
-      asset_code = "XXBT"
+        kraken_asset_code = "XXBT"
     if asset_pair == "XXRPZUSD":
-      asset_code = "XXRP"
+        kraken_asset_code = "XXRP"
     if asset_pair == "ADAUSD":
-      asset_code = "ADA"
+        kraken_asset_code = "ADA"
     if asset_pair == "SOLUSD":
-      asset_code = "SOL"
+        kraken_asset_code = "SOL"
     if asset_pair == "XETHZUSD":
-      asset_code = "XETH"
+        kraken_asset_code = "XETH"
     if asset_pair == "MINAUSD":
-      asset_code = "MINA"
-    return asset_code
-    
+        kraken_asset_code = "MINA"
+    return kraken_asset_code
+
 def send_telegram_message():
+    """Send TG message
+       TODO: use telegram token and message as function arg
+    """
     token = tg_token
     chat_id = "481520678"
     message = tg_message
     url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
-    requests.get(url) # send tg msg
+    requests.get(url, timeout=10) # send tg msg
 
 def get_kraken_signature(urlpath, data, secret):
+    """Create HMAC signature from request"""
     postdata = urllib.parse.urlencode(data)
     encoded = (str(data['nonce']) + postdata).encode()
     message = urlpath.encode() + hashlib.sha256(encoded).digest()
@@ -63,49 +68,61 @@ def get_kraken_signature(urlpath, data, secret):
     return sigdigest.decode()
 
 def kraken_request(uri_path, data, api_key, api_sec):
+    """Construct request for Kraken API using API credentials"""
     headers = {}
     headers['API-Key'] = api_key
     headers['API-Sign'] = get_kraken_signature(uri_path, data, api_sec)
-    req = requests.post((api_url + uri_path), headers=headers, data=data)
+    req = requests.post((api_url + uri_path), headers=headers, data=data, timeout=10)
     return req
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def get_holdings():
-    holdings = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
-    return holdings
+    """Function for obtaining holdings"""
+    kraken_holdings = kraken_request('/0/private/Balance', {"nonce": str(int(1000*time.time()))}, api_key, api_sec)
+    return kraken_holdings
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def min_order_size():
+    """Obtain minimum order size for asset pair
+       TODO: use asset_pair as function arg
+    """
     time.sleep(2)
-    resp = requests.get('https://api.kraken.com/0/public/AssetPairs')
+    resp = requests.get('https://api.kraken.com/0/public/AssetPairs', timeout=10)
     minimum_order_size = float(resp.json()['result'][asset_pair]['ordermin'])
     return minimum_order_size
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def get_asset_close():
+    """Get last asset close price
+       TODO: Use asset_pair as function arg
+    """
     time.sleep(2)
     payload = {'pair': asset_pair}
-    resp = requests.get('https://api.kraken.com/0/public/Ticker', params=payload)
+    resp = requests.get('https://api.kraken.com/0/public/Ticker', params=payload, timeout=10)
     close_value = resp.json()['result'][asset_pair]['c'][0]
     return close_value
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def get_ohlcdata():
+    """Get OHLC (Open/High/Low/Close) data for asset pair
+       TODO: Use asset_pair and interval_time_minutes as function arg
+    """
     time.sleep(2)
     payload = {'pair': asset_pair, 'interval': interval_time_minutes}
-    ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
-    # construct a dataframe and assign columns using asset ohlc data
+    ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload, timeout=10)
     df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
     df.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
-    # we are only interested in asset close data, so create var for close data columns and set var type as float
     close_data = df['close'].astype(float) # set close data to float
     return close_data
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def get_ohlcdata_macd():
+    """Get OHLC data without float type for MACD
+       TODO: Use asset_pair and interval_time_minutes as function arg
+    """
     time.sleep(2)
     payload = {'pair': asset_pair, 'interval': interval_time_minutes}
-    ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload)
+    ohlc_data_raw = requests.get('https://api.kraken.com/0/public/OHLC', params=payload, timeout=10)
     # construct a dataframe and assign columns using asset ohlc data
     df = pd.DataFrame(ohlc_data_raw.json()['result'][asset_pair])
     df.columns = ['unixtimestap', 'open', 'high', 'low', 'close', 'vwap', 'volume', 'count']
@@ -115,6 +132,9 @@ def get_ohlcdata_macd():
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def get_orderinfo():
+    """Get information about open order with TXID as input
+       TODO: Use TXID as function arg  
+    """
     time.sleep(2)
     resp = kraken_request('/0/private/QueryOrders', {
         "nonce": str(int(1000*time.time())),
@@ -125,6 +145,9 @@ def get_orderinfo():
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def buy_asset():
+    """Buy asset_pair with volume_to_buy amount
+       TODO: Use asset_pair and volume_to_buy as function arg
+    """
     print("Buying the following amount of", asset_pair, ":", volume_to_buy)
     buy_order = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
@@ -137,6 +160,9 @@ def buy_asset():
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def sell_asset():
+    """Sell asset_pair with volume_to_sell amount
+       TODO: use asset_pair and volume_to_sell as function args
+    """
     print("Selling the following amount of", asset_pair, ":", volume_to_sell)
     sell_order = kraken_request('/0/private/AddOrder', {
         "nonce": str(int(1000*time.time())),
@@ -148,7 +174,9 @@ def sell_asset():
     return sell_order
 
 def rsi_tradingview(period: int = 14, round_rsi: bool = True):
-    # RSI tradingview calculation
+    """Calculate RSI based on TradingView calculation
+       TODO: add source for this calculation
+    """
     delta = get_ohlcdata().diff()
     up = delta.copy()
     up[up < 0] = 0
@@ -157,20 +185,25 @@ def rsi_tradingview(period: int = 14, round_rsi: bool = True):
     down[down > 0] = 0
     down *= -1
     down = pd.Series.ewm(down, alpha=1/period).mean()
-    rsi = np.where(up == 0, 0, np.where(down == 0, 100, 100 - (100 / (1 + up / down))))
-    return np.round(rsi, 2) if round_rsi else rsi
+    rsi_tv = np.where(up == 0, 0, np.where(down == 0, 100, 100 - (100 / (1 + up / down))))
+    return np.round(rsi_tv, 2) if round_rsi else rsi_tv
 
 def get_macd():
+    """Calculate MACD value
+       TODO: use get_ohlcdata_macd return value as function arg
+    """
     close = get_ohlcdata_macd()
-    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
-    macd_dict = macd.to_dict()
+    macd_value, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+    macd_dict = macd_value.to_dict()
     macd_values = list(macd_dict.values())
     return macd_values[-1]
 
 def check_create_asset_file():
+    """Check if asset file exists, otherwise create a JSON asset file with asset_pairs
+       TODO: remove global asset_dict var from this function, its not neat
+    """
     global asset_dict
     asset_file_exists = os.path.exists(asset_file_path)
-    # create file if it doesnt exist, add dictionary per asset to it
     if not asset_file_exists:
       print(f"Asset file {asset_file} doesnt exist , creating one")
       asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": [], "avg_price_bought": [], "current_price": [], "price_difference_pct": []}})
@@ -214,61 +247,72 @@ def check_create_asset_file():
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def write_to_asset_file():
+    """Write the asset_dictionary to file"""
     f = open(asset_file, "w")
     f.write(json.dumps(asset_dict))
     f.close()
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def read_asset_file():
+    """Read asset file into memory"""
     f = open(asset_file, "r")
     asset_json = f.read()
     f.close()
     return asset_json
 
 def input_valdn():
+    """Validate user input
+       TODO: add validation for strategy
+    """
     if timeframe in ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"]:
-      pass
+        pass
     else:
-       print(f"Timeframe must be one of: 1m|5m|15m|30m|1h|4h|1d|1w")
-       exit(1)
+        print("Timeframe must be one of: 1m|5m|15m|30m|1h|4h|1d|1w")
+        sys.exit(1)
 
 def get_timeframe_in_seconds():
+    """Convert timeframe to seconds
+       TODO: use timeframe as input arg
+    """
     if timeframe == "1m":
-      loop_time_seconds = 60
+        loop_time_sec = 60
     elif timeframe == "5m":
-       loop_time_seconds = 300
+        loop_time_sec = 300
     elif timeframe == "15m":
-       loop_time_seconds = 900
+        loop_time_sec = 900
     elif timeframe == "30m":
-       loop_time_seconds = 1800
+        loop_time_sec = 1800
     elif timeframe == "1h":
-       loop_time_seconds = 3600
+        loop_time_sec = 3600
     elif timeframe == "4h":
-       loop_time_seconds = 14400
+        loop_time_sec = 14400
     elif timeframe == "1d":
-       loop_time_seconds = 86400
+        loop_time_sec = 86400
     elif timeframe == "1w":
-       loop_time_seconds = 604800
-    return loop_time_seconds
+        loop_time_sec = 604800
+    return loop_time_sec
 
 def get_timeframe_in_minutes():
+    """Convert timeframe to seconds
+       TODO: use timeframe as input arg
+    """
     if timeframe == "1m":
-      interval_time_minutes = 1
+        interval_time_min = 1
     elif timeframe == "5m":
-      interval_time_minutes = 5
+        interval_time_min = 5
     elif timeframe == "15m":
-       interval_time_minutes = 15
+        interval_time_min = 15
     elif timeframe == "30m":
-       interval_time_minutes = 30
+        interval_time_min = 30
     elif timeframe == "1h":
-       interval_time_minutes = 60
+        interval_time_min = 60
     elif timeframe == "4h":
-       interval_time_minutes = 240
+        interval_time_min = 240
     elif timeframe == "1d":
-       interval_time_minutes = 1440
+        interval_time_min = 1440
     elif timeframe == "1w":
-       interval_time_minutes = 10080
-    return interval_time_minutes
+        interval_time_min = 10080
+    return interval_time_min
 
 input_valdn()
 loop_time_seconds = get_timeframe_in_seconds()
