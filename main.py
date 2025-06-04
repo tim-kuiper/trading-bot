@@ -320,256 +320,252 @@ interval_time_minutes = get_timeframe_in_minutes()
 
 # main loop
 while True:
-  file_extension = '.json'
-  asset_file = timeframe + file_extension 
-  asset_file_path = './' + asset_file
-  # interval_time_minutes = 1440
-  # timeframe = '1d'
-  # order_size = 25
+    file_extension = '.json'
+    asset_file = timeframe + file_extension 
+    asset_file_path = './' + asset_file
+    # interval_time_minutes = 1440
+    # timeframe = '1d'
+    # order_size = 25
 
-  # loop over assets
-  for asset_pair in asset_pairs:
-    asset_code = get_asset_code()
-    check_create_asset_file()
-    rsi_list_values  = rsi_tradingview()
-    rsi = float(rsi_list_values[-1])
-    print(f"{timeframe} RSI  {asset_pair}: {rsi}")
-    print(f"opening asset file {asset_file}")
-    asset_dict = json.loads(read_asset_file())
-    macd_list = asset_dict[asset_pair]["macd"] 
-    rsi_list = asset_dict[asset_pair]["rsi"]
-    holdings_list = asset_dict[asset_pair]["holdings"]
-    price_bought_list = asset_dict[asset_pair]["price_bought"]
-    avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
-    current_price_list = asset_dict[asset_pair]["current_price"]
-    price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
-    holdings = get_holdings()
+    # loop over assets
+    for asset_pair in asset_pairs:
+        asset_code = get_asset_code()
+        check_create_asset_file()
+        rsi_list_values  = rsi_tradingview()
+        rsi = float(rsi_list_values[-1])
+        print(f"{timeframe} RSI  {asset_pair}: {rsi}")
+        print(f"opening asset file {asset_file}")
+        asset_dict = json.loads(read_asset_file())
+        macd_list = asset_dict[asset_pair]["macd"] 
+        rsi_list = asset_dict[asset_pair]["rsi"]
+        holdings_list = asset_dict[asset_pair]["holdings"]
+        price_bought_list = asset_dict[asset_pair]["price_bought"]
+        avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
+        current_price_list = asset_dict[asset_pair]["current_price"]
+        price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
+        holdings = get_holdings()
 
-    # In the case of selling asset manually, clear our holdings/price bought/avg price bought from the asset dict
-    if asset_code in holdings.json()['result']:
-      print(f"{timeframe} {asset_pair} present in holdings on kraken, checking if we actually have more than 0")
-      if float(holdings.json()['result'][asset_code]) > 0:
-        print(f"{timeframe} {asset_pair} holdings: {float(holdings.json()['result'][asset_code])}, nothing to clear")
-        # Check for when holdings on Kraken matching the holdings in file. If not, set Kraken holdings to file
-        if float(holdings.json()['result'][asset_code]) == sum(holdings_list):
-          print(f"{timeframe} {asset_pair}: holdings matching the holdings on file")
+        # In the case of selling asset manually, clear our holdings/price bought/avg price bought from the asset dict
+        if asset_code in holdings.json()['result']:
+            print(f"{timeframe} {asset_pair} present in holdings on kraken, checking if we actually have more than 0")
+            if float(holdings.json()['result'][asset_code]) > 0:
+                print(f"{timeframe} {asset_pair} holdings: {float(holdings.json()['result'][asset_code])}, nothing to clear")
+                # Check for when holdings on Kraken matching the holdings in file. If not, set Kraken holdings to file
+                if float(holdings.json()['result'][asset_code]) == sum(holdings_list):
+                    print(f"{timeframe} {asset_pair}: holdings matching the holdings on file")
+                else:
+                    print(f"{timeframe} {asset_pair}: append Kraken holdings to file")
+                    holdings_list.clear()
+                    holdings_list.append(float(holdings.json()['result'][asset_code]))
+                    asset_dict[asset_pair]["holdings"] = holdings_list
+                    asset_dict[asset_pair]["price_bought"] = price_bought_list
+                    asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
+                    asset_dict[asset_pair]["current_price"] = current_price_list
+                    asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
+                    write_to_asset_file()
+                    check_create_asset_file()
+                    asset_dict = json.loads(read_asset_file())
+                    macd_list = asset_dict[asset_pair]["macd"] 
+                    rsi_list = asset_dict[asset_pair]["rsi"]
+                    holdings_list = asset_dict[asset_pair]["holdings"]
+                    price_bought_list = asset_dict[asset_pair]["price_bought"]
+                    avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
+                    current_price_list = asset_dict[asset_pair]["current_price"]
+                    price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
+            else:
+                print(f"{timeframe} {asset_pair} holdings zero on kraken, clearing price bought/avg price brought/holdings from asset dict")
+                holdings_list.clear()
+                price_bought_list.clear()
+                avg_price_list.clear()
+                current_price_list.clear()
+                current_price_list.append(float(get_asset_close()))
+                price_difference_pct_list.clear()
+                asset_dict[asset_pair]["holdings"] = holdings_list
+                asset_dict[asset_pair]["price_bought"] = price_bought_list
+                asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
+                asset_dict[asset_pair]["current_price"] = current_price_list
+                asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
+                write_to_asset_file()
+                check_create_asset_file()
+                asset_dict = json.loads(read_asset_file())
+                macd_list = asset_dict[asset_pair]["macd"] 
+                rsi_list = asset_dict[asset_pair]["rsi"]
+                holdings_list = asset_dict[asset_pair]["holdings"]
+                price_bought_list = asset_dict[asset_pair]["price_bought"]
+                avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
+                current_price_list = asset_dict[asset_pair]["current_price"]
+                price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
         else:
-          print(f"{timeframe} {asset_pair}: append Kraken holdings to file")
-          holdings_list.clear()
-          holdings_list.append(float(holdings.json()['result'][asset_code]))
-          asset_dict[asset_pair]["holdings"] = holdings_list
-          asset_dict[asset_pair]["price_bought"] = price_bought_list
-          asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
-          asset_dict[asset_pair]["current_price"] = current_price_list
-          asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
-          write_to_asset_file()
-          check_create_asset_file()
-          asset_dict = json.loads(read_asset_file())
-          macd_list = asset_dict[asset_pair]["macd"] 
-          rsi_list = asset_dict[asset_pair]["rsi"]
-          holdings_list = asset_dict[asset_pair]["holdings"]
-          price_bought_list = asset_dict[asset_pair]["price_bought"]
-          avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
-          current_price_list = asset_dict[asset_pair]["current_price"]
-          price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
-      else:
-        print(f"{timeframe} {asset_pair} holdings zero on kraken, clearing price bought/avg price brought/holdings from asset dict")
-        holdings_list.clear()
-        price_bought_list.clear()
-        avg_price_list.clear()
-        current_price_list.clear()
-        current_price_list.append(float(get_asset_close()))
-        price_difference_pct_list.clear()
-        asset_dict[asset_pair]["holdings"] = holdings_list
-        asset_dict[asset_pair]["price_bought"] = price_bought_list
-        asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
-        asset_dict[asset_pair]["current_price"] = current_price_list
-        asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
-        write_to_asset_file()
-        check_create_asset_file()
-        asset_dict = json.loads(read_asset_file())
-        macd_list = asset_dict[asset_pair]["macd"] 
-        rsi_list = asset_dict[asset_pair]["rsi"]
-        holdings_list = asset_dict[asset_pair]["holdings"]
-        price_bought_list = asset_dict[asset_pair]["price_bought"]
-        avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
-        current_price_list = asset_dict[asset_pair]["current_price"]
-        price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
-    else:
-       print(f"{timeframe} {asset_pair} not present in holdings on kraken")
+            print(f"{timeframe} {asset_pair} not present in holdings on kraken")
+        if len(rsi_list) == 1:
+            if rsi_list[0] < rsi_lower_boundary:
+                print(f"{timeframe} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
+                rsi = rsi_list[0]
+            # elif rsi_list[0] > rsi_upper_boundary:
+            #   print(f"{timeframe} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
+            #   rsi = rsi_list[0]
+            else:
+                print(f"{timeframe} {asset_pair}: Clearing RSI value {rsi_list[0]}")
+                rsi_list.clear()
+                rsi_list.append(rsi)
+                current_price_list.clear()
+                current_price_list.append(float(get_asset_close()))
+                asset_dict[asset_pair]["rsi"] = rsi_list
+                asset_dict[asset_pair]["current_price"] = current_price_list
+                write_to_asset_file()
+                check_create_asset_file()
+                asset_dict = json.loads(read_asset_file())
+                macd_list = asset_dict[asset_pair]["macd"] 
+                rsi_list = asset_dict[asset_pair]["rsi"]
+                holdings_list = asset_dict[asset_pair]["holdings"]
+                price_bought_list = asset_dict[asset_pair]["price_bought"]
+                avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
+                current_price_list = asset_dict[asset_pair]["current_price"]
+                price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
+        elif len(rsi_list) == 0:
+            print(f"{timeframe} {asset_pair}: RSI list is empty, appending {rsi} to it")
+            rsi_list.append(rsi)
+            asset_dict[asset_pair]["rsi"] = rsi_list
+            write_to_asset_file()
+            check_create_asset_file()
+            asset_dict = json.loads(read_asset_file())
+            macd_list = asset_dict[asset_pair]["macd"] 
+            rsi_list = asset_dict[asset_pair]["rsi"]
+            holdings_list = asset_dict[asset_pair]["holdings"]
+            price_bought_list = asset_dict[asset_pair]["price_bought"]
+            avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
+            current_price_list = asset_dict[asset_pair]["current_price"]
+            price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
+        # set these vars for testing purposes
+        # buy:
+        # rsi = 29
+        # macd_list = [1, 2]
+        # order_size = 5
+        # sell:
+        # rsi = 66
+        # macd_list = [2, 1]
+        if rsi < rsi_lower_boundary and len(macd_list) < 2:
+            print(f"{timeframe} {asset_pair}: RSI {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
+            macd = get_macd() 
+            macd_list.append(macd)
+            current_price_list.clear()
+            current_price_list.append(float(get_asset_close()))
+            if avg_price_list:
+                price_difference_pct_list.clear()
+                price_difference_pct_value = float((float(current_price_list[0])-float(avg_price_list[0]))/float(avg_price_list[0])*100)
+                price_difference_pct_list.append(price_difference_pct_value)
+                asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
+            asset_dict[asset_pair]["current_price"] = current_price_list
+            asset_dict[asset_pair]["macd"] = macd_list
+            write_to_asset_file()
+            check_create_asset_file()
+            asset_dict = json.loads(read_asset_file())
+            macd_list = asset_dict[asset_pair]["macd"] 
+            rsi_list = asset_dict[asset_pair]["rsi"]
+            holdings_list = asset_dict[asset_pair]["holdings"]
+            price_bought_list = asset_dict[asset_pair]["price_bought"]
+            avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
+            current_price_list = asset_dict[asset_pair]["current_price"]
+            price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
+            print(f"{timeframe} {asset_pair}: Appended {macd} macd value to macd list")
+            print(f"{timeframe} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
+            # tg_message = f"{timeframe} {asset_pair}: RSI {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
+            # send_telegram_message()
+        elif rsi < rsi_lower_boundary and len(macd_list) >= 2:
+            print(f"{timeframe} {asset_pair}: RSI < {rsi_lower_boundary} and macd_list >= 2")
+            tg_message = f"{timeframe} {asset_pair}: RSI < {rsi_lower_boundary} and macd_list >= 2"
+            send_telegram_message()
 
-    if len(rsi_list) == 1:
+            if macd_list[-2] < macd_list[-1]:
+                print(f"{timeframe} {asset_pair}: MACD in upward trend for {len(macd_list)} iterations, buying {asset_pair}")
+                tg_message = f"{timeframe} {asset_pair}: MACD in upward trend for {len(macd_list)} iterations, buying {asset_pair}"
+                send_telegram_message()
+                asset_close = float(get_asset_close())
+                usd_order_size = order_size
+                volume_to_buy = str(float(usd_order_size / asset_close))
+                order_output = buy_asset()
 
-      if rsi_list[0] < rsi_lower_boundary:
-        print(f"{timeframe} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
-        rsi = rsi_list[0]
-      # elif rsi_list[0] > rsi_upper_boundary:
-      #   print(f"{timeframe} {asset_pair}: Read {rsi_list[0]} RSI in file, keeping value in list")
-      #   rsi = rsi_list[0]
-      else:
-        print(f"{timeframe} {asset_pair}: Clearing RSI value {rsi_list[0]}")
-        rsi_list.clear()
-        rsi_list.append(rsi)
-        current_price_list.clear()
-        current_price_list.append(float(get_asset_close()))
-        asset_dict[asset_pair]["rsi"] = rsi_list
-        asset_dict[asset_pair]["current_price"] = current_price_list
-        write_to_asset_file()
-        check_create_asset_file()
-        asset_dict = json.loads(read_asset_file())
-        macd_list = asset_dict[asset_pair]["macd"] 
-        rsi_list = asset_dict[asset_pair]["rsi"]
-        holdings_list = asset_dict[asset_pair]["holdings"]
-        price_bought_list = asset_dict[asset_pair]["price_bought"]
-        avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
-        current_price_list = asset_dict[asset_pair]["current_price"]
-        price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
-    elif len(rsi_list) == 0:
-      print(f"{timeframe} {asset_pair}: RSI list is empty, appending {rsi} to it")
-      rsi_list.append(rsi)
-      asset_dict[asset_pair]["rsi"] = rsi_list
-      write_to_asset_file()
-      check_create_asset_file()
-      asset_dict = json.loads(read_asset_file())
-      macd_list = asset_dict[asset_pair]["macd"] 
-      rsi_list = asset_dict[asset_pair]["rsi"]
-      holdings_list = asset_dict[asset_pair]["holdings"]
-      price_bought_list = asset_dict[asset_pair]["price_bought"]
-      avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
-      current_price_list = asset_dict[asset_pair]["current_price"]
-      price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
-
-    # set these vars for testing purposes
-    # buy:
-    # rsi = 29
-    # macd_list = [1, 2]
-    # order_size = 5
-    # sell:
-    # rsi = 66
-    # macd_list = [2, 1]
-
-    if rsi < rsi_lower_boundary and len(macd_list) < 2:
-      print(f"{timeframe} {asset_pair}: RSI {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
-      macd = get_macd() 
-      macd_list.append(macd)
-      current_price_list.clear()
-      current_price_list.append(float(get_asset_close()))
-      if avg_price_list:
-        price_difference_pct_list.clear()
-        price_difference_pct_value = float((float(current_price_list[0])-float(avg_price_list[0]))/float(avg_price_list[0])*100)
-        price_difference_pct_list.append(price_difference_pct_value)
-        asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
-      asset_dict[asset_pair]["current_price"] = current_price_list
-      asset_dict[asset_pair]["macd"] = macd_list
-      write_to_asset_file()
-      check_create_asset_file()
-      asset_dict = json.loads(read_asset_file())
-      macd_list = asset_dict[asset_pair]["macd"] 
-      rsi_list = asset_dict[asset_pair]["rsi"]
-      holdings_list = asset_dict[asset_pair]["holdings"]
-      price_bought_list = asset_dict[asset_pair]["price_bought"]
-      avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
-      current_price_list = asset_dict[asset_pair]["current_price"]
-      price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
-      print(f"{timeframe} {asset_pair}: Appended {macd} macd value to macd list")
-      print(f"{timeframe} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
-      # tg_message = f"{timeframe} {asset_pair}: RSI {rsi} and MACD list: {asset_dict[asset_pair]['macd']}"
-      # send_telegram_message()
-    elif rsi < rsi_lower_boundary and len(macd_list) >= 2:
-      print(f"{timeframe} {asset_pair}: RSI < {rsi_lower_boundary} and macd_list >= 2")
-      tg_message = f"{timeframe} {asset_pair}: RSI < {rsi_lower_boundary} and macd_list >= 2"
-      send_telegram_message()
-
-      if macd_list[-2] < macd_list[-1]:
-        print(f"{timeframe} {asset_pair}: MACD in upward trend for {len(macd_list)} iterations, buying {asset_pair}")
-        tg_message = f"{timeframe} {asset_pair}: MACD in upward trend for {len(macd_list)} iterations, buying {asset_pair}"
-        send_telegram_message()
-        asset_close = float(get_asset_close())
-        usd_order_size = order_size
-        volume_to_buy = str(float(usd_order_size / asset_close))
-        order_output = buy_asset()
-
-        if not order_output.json()['error']:
-          print(f"{timeframe} {asset_pair}: Bought {volume_to_buy}")
-          tg_message = order_output.json()['result']
-          send_telegram_message()        
-          macd_list.clear()
-          rsi_list.clear()
-          transaction_id = order_output.json()['result']['txid'][0]
-          order_info = get_orderinfo()
-          executed_size = order_info.json()['result'][transaction_id]['vol_exec']
-          holdings_list.append(float(executed_size))
-          price_bought_list.append(asset_close)
-          current_price_list.clear()
-          current_price_list.append(asset_close)
-          avg_price_list.clear()
-          avg_price_list.append((sum(price_bought_list)/(len(price_bought_list))))
-          price_difference_pct_list.clear()
-          price_difference_pct_value = float((float(current_price_list[0])-float(avg_price_list[0]))/float(avg_price_list[0])*100)
-          price_difference_pct_list.append(price_difference_pct_value)
-          asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
-          asset_dict[asset_pair]["macd"] = macd_list
-          asset_dict[asset_pair]["rsi"] = rsi_list
-          asset_dict[asset_pair]["holdings"] = holdings_list
-          asset_dict[asset_pair]["price_bought"] = price_bought_list
-          asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
-          asset_dict[asset_pair]["current_price"] = current_price_list
-          write_to_asset_file()
-          check_create_asset_file()
-          asset_dict = json.loads(read_asset_file())
-          macd_list = asset_dict[asset_pair]["macd"] 
-          rsi_list = asset_dict[asset_pair]["rsi"]
-          holdings_list = asset_dict[asset_pair]["holdings"]
-          price_bought_list = asset_dict[asset_pair]["price_bought"]
-          avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
-          current_price_list = asset_dict[asset_pair]["current_price"]
-          price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
-          print(f"{timeframe} asset_dict: {asset_dict}")
-          #avg_price_list.clear()
-          #asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
+                if not order_output.json()['error']:
+                    print(f"{timeframe} {asset_pair}: Bought {volume_to_buy}")
+                    tg_message = order_output.json()['result']
+                    send_telegram_message()        
+                    macd_list.clear()
+                    rsi_list.clear()
+                    transaction_id = order_output.json()['result']['txid'][0]
+                    order_info = get_orderinfo()
+                    executed_size = order_info.json()['result'][transaction_id]['vol_exec']
+                    holdings_list.append(float(executed_size))
+                    price_bought_list.append(asset_close)
+                    current_price_list.clear()
+                    current_price_list.append(asset_close)
+                    avg_price_list.clear()
+                    avg_price_list.append((sum(price_bought_list)/(len(price_bought_list))))
+                    price_difference_pct_list.clear()
+                    price_difference_pct_value = float((float(current_price_list[0])-float(avg_price_list[0]))/float(avg_price_list[0])*100)
+                    price_difference_pct_list.append(price_difference_pct_value)
+                    asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
+                    asset_dict[asset_pair]["macd"] = macd_list
+                    asset_dict[asset_pair]["rsi"] = rsi_list
+                    asset_dict[asset_pair]["holdings"] = holdings_list
+                    asset_dict[asset_pair]["price_bought"] = price_bought_list
+                    asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
+                    asset_dict[asset_pair]["current_price"] = current_price_list
+                    write_to_asset_file()
+                    check_create_asset_file()
+                    asset_dict = json.loads(read_asset_file())
+                    macd_list = asset_dict[asset_pair]["macd"] 
+                    rsi_list = asset_dict[asset_pair]["rsi"]
+                    holdings_list = asset_dict[asset_pair]["holdings"]
+                    price_bought_list = asset_dict[asset_pair]["price_bought"]
+                    avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
+                    current_price_list = asset_dict[asset_pair]["current_price"]
+                    price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
+                    print(f"{timeframe} asset_dict: {asset_dict}")
+                    #avg_price_list.clear()
+                    #asset_dict[asset_pair]["avg_price_bought"] = avg_price_list
+                else:
+                    print(f"{timeframe} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
+                    tg_message = f"{timeframe} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
+                    send_telegram_message()
+            else: 
+                print(f"{timeframe} {asset_pair}: Not enough MACD values yet, appending one to the list")
+                macd = get_macd() 
+                macd_list.append(macd)
+                current_price_list.clear()
+                current_price_list.append(float(get_asset_close()))
+                if avg_price_list:
+                    price_difference_pct_list.clear()
+                    price_difference_pct_value = float((float(current_price_list[0])-float(avg_price_list[0]))/float(avg_price_list[0])*100)
+                    price_difference_pct_list.append(price_difference_pct_value)
+                    asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
+                asset_dict[asset_pair]["current_price"] = current_price_list
+                print(f"{timeframe} {asset_pair}: Appending {macd} to macd list")
+                asset_dict[asset_pair]["macd"] = macd_list
+                write_to_asset_file()
+                check_create_asset_file()
+                asset_dict = json.loads(read_asset_file())
+                macd_list = asset_dict[asset_pair]["macd"] 
+                rsi_list = asset_dict[asset_pair]["rsi"]
+                holdings_list = asset_dict[asset_pair]["holdings"]
+                price_bought_list = asset_dict[asset_pair]["price_bought"]
+                avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
+                current_price_list = asset_dict[asset_pair]["current_price"]
+                price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
+                print(f"{timeframe} asset_dict: {asset_dict}")
         else:
-          print(f"{timeframe} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}")
-          tg_message = f"{timeframe} {asset_pair}: An error occured when trying to place a buy order: {order_output.json()['error']}"
-          send_telegram_message()
-      else: 
-        print(f"{timeframe} {asset_pair}: Not enough MACD values yet, appending one to the list")
-        macd = get_macd() 
-        macd_list.append(macd)
-        current_price_list.clear()
-        current_price_list.append(float(get_asset_close()))
-        if avg_price_list:
-          price_difference_pct_list.clear()
-          price_difference_pct_value = float((float(current_price_list[0])-float(avg_price_list[0]))/float(avg_price_list[0])*100)
-          price_difference_pct_list.append(price_difference_pct_value)
-          asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
-        asset_dict[asset_pair]["current_price"] = current_price_list
-        print(f"{timeframe} {asset_pair}: Appending {macd} to macd list")
-        asset_dict[asset_pair]["macd"] = macd_list
-        write_to_asset_file()
-        check_create_asset_file()
-        asset_dict = json.loads(read_asset_file())
-        macd_list = asset_dict[asset_pair]["macd"] 
-        rsi_list = asset_dict[asset_pair]["rsi"]
-        holdings_list = asset_dict[asset_pair]["holdings"]
-        price_bought_list = asset_dict[asset_pair]["price_bought"]
-        avg_price_list = asset_dict[asset_pair]["avg_price_bought"]
-        current_price_list = asset_dict[asset_pair]["current_price"]
-        price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
-        print(f"{timeframe} asset_dict: {asset_dict}")
-    else:
-      print(f"{timeframe} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds")
-      tg_message = f"{timeframe} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds"
-      send_telegram_message()
-      current_price_list.clear()
-      current_price_list.append(float(get_asset_close()))
-      if avg_price_list:
-        price_difference_pct_list.clear()
-        price_difference_pct_value = float((float(current_price_list[0])-float(avg_price_list[0]))/float(avg_price_list[0])*100)
-        price_difference_pct_list.append(price_difference_pct_value)
-        asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
-      asset_dict[asset_pair]["current_price"] = current_price_list
-      write_to_asset_file()
-    time.sleep(3) # sleep 3 seconds between asset pair
-  tg_message = f"{timeframe} asset dict: {json.dumps(asset_dict, indent=2)}"
-  send_telegram_message()
-  time.sleep(loop_time_seconds)
+            print(f"{timeframe} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds")
+            tg_message = f"{timeframe} {asset_pair}: RSI {rsi}, nothing to do. Checking back in {loop_time_seconds} seconds"
+            send_telegram_message()
+            current_price_list.clear()
+            current_price_list.append(float(get_asset_close()))
+            if avg_price_list:
+                price_difference_pct_list.clear()
+                price_difference_pct_value = float((float(current_price_list[0])-float(avg_price_list[0]))/float(avg_price_list[0])*100)
+                price_difference_pct_list.append(price_difference_pct_value)
+                asset_dict[asset_pair]["price_difference_pct"] = price_difference_pct_list
+            asset_dict[asset_pair]["current_price"] = current_price_list
+            write_to_asset_file()
+        time.sleep(3) # sleep 3 seconds between asset pair
+    tg_message = f"{timeframe} asset dict: {json.dumps(asset_dict, indent=2)}"
+    send_telegram_message()
+    time.sleep(loop_time_seconds)
