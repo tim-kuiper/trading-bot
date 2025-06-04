@@ -205,45 +205,45 @@ def check_create_asset_file():
     global asset_dict
     asset_file_exists = os.path.exists(asset_file_path)
     if not asset_file_exists:
-      print(f"Asset file {asset_file} doesnt exist , creating one")
-      asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": [], "avg_price_bought": [], "current_price": [], "price_difference_pct": []}})
-      write_to_asset_file()
-    else:
-      print(f"Asset file {asset_file} exists, reading")
-      asset_dict = json.loads(read_asset_file())
-      if asset_pair not in asset_dict.keys():
-        print(f"Asset pair {asset_pair} not present in asset file {asset_file}, updating file")
+        print(f"Asset file {asset_file} doesnt exist , creating one")
         asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": [], "avg_price_bought": [], "current_price": [], "price_difference_pct": []}})
         write_to_asset_file()
-        print(f"Appended {asset_pair} to {asset_file}")
-      if "rsi" not in asset_dict[asset_pair].keys():
-        y = {"rsi": []} 
-        asset_dict[asset_pair].update(y)
-        write_to_asset_file()
-      if "macd" not in asset_dict[asset_pair].keys():
-        y = {"macd": []} 
-        asset_dict[asset_pair].update(y)
-        write_to_asset_file()
-      if "holdings" not in asset_dict[asset_pair].keys():
-        y = {"holdings": []} 
-        asset_dict[asset_pair].update(y)
-        write_to_asset_file()
-      if "price_bought" not in asset_dict[asset_pair].keys():
-        y = {"price_bought": []} 
-        asset_dict[asset_pair].update(y)
-        write_to_asset_file()
-      if "avg_price_bought" not in asset_dict[asset_pair].keys():
-        y = {"avg_price_bought": []} 
-        asset_dict[asset_pair].update(y)
-        write_to_asset_file()
-      if "current_price" not in asset_dict[asset_pair].keys():
-        y = {"current_price": []} 
-        asset_dict[asset_pair].update(y)
-        write_to_asset_file()
-      if "price_difference_pct" not in asset_dict[asset_pair].keys():
-        y = {"price_difference_pct": []} 
-        asset_dict[asset_pair].update(y)
-        write_to_asset_file()
+    else:
+        print(f"Asset file {asset_file} exists, reading")
+        asset_dict = json.loads(read_asset_file())
+        if asset_pair not in asset_dict.keys():
+            print(f"Asset pair {asset_pair} not present in asset file {asset_file}, updating file")
+            asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": [], "avg_price_bought": [], "current_price": [], "price_difference_pct": []}})
+            write_to_asset_file()
+            print(f"Appended {asset_pair} to {asset_file}")
+        if "rsi" not in asset_dict[asset_pair].keys():
+            y = {"rsi": []} 
+            asset_dict[asset_pair].update(y)
+            write_to_asset_file()
+        if "macd" not in asset_dict[asset_pair].keys():
+            y = {"macd": []} 
+            asset_dict[asset_pair].update(y)
+            write_to_asset_file()
+        if "holdings" not in asset_dict[asset_pair].keys():
+            y = {"holdings": []} 
+            asset_dict[asset_pair].update(y)
+            write_to_asset_file()
+        if "price_bought" not in asset_dict[asset_pair].keys():
+            y = {"price_bought": []} 
+            asset_dict[asset_pair].update(y)
+            write_to_asset_file()
+        if "avg_price_bought" not in asset_dict[asset_pair].keys():
+            y = {"avg_price_bought": []} 
+            asset_dict[asset_pair].update(y)
+            write_to_asset_file()
+        if "current_price" not in asset_dict[asset_pair].keys():
+            y = {"current_price": []} 
+            asset_dict[asset_pair].update(y)
+            write_to_asset_file()
+        if "price_difference_pct" not in asset_dict[asset_pair].keys():
+            y = {"price_difference_pct": []} 
+            asset_dict[asset_pair].update(y)
+            write_to_asset_file()
 
 @retry(reraise=True, wait=wait_fixed(2), stop=stop_after_attempt(5))
 def write_to_asset_file():
