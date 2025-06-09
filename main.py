@@ -1,4 +1,5 @@
 import urllib.parse
+import argparse
 import hashlib
 import hmac
 import base64
@@ -12,35 +13,18 @@ import talib
 from tenacity import *
 import sys
 
-if len(sys.argv) > 4:
-    print(f"3 arguments expected, got {len(sys.argv) - 1}")
-    raise SystemExit(1)
-elif len(sys.argv) < 4:
-    print(f"3 arguments expected, got {len(sys.argv) - 1}")
-    raise SystemExit(1)
-else:
-    # 3 arguments specified, now check if they're valid
-    # set vars for timeframe, order_size and strategy
-    timeframe = sys.argv[1]
-    order_size = sys.argv[2]
-    strategy = sys.argv[3]
-    if timeframe in ["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"]:
-        pass
-    else:
-        print("Timeframe must be one of: 1m|5m|15m|30m|1h|4h|1d|1w")
-        raise SystemExit(1)
-    if type(order_size).__name__ == "int" and order_size > 0:
-        print(f"Type: {type(order_size).__name__}")
-        pass
-    else:
-        print("Order size must be a number and not 0")
-        print(f"Type: {type(order_size).__name__}")
-        raise SystemExit(1)
-    if strategy in ["dca-macd-rsi", "dca-flat", "macd-crossover", "rsi", "macd-rsi"]:
-        pass
-    else:
-        print("Strategy must be one of: dca-macd-rsi|dca-flat|macd-crossover|rsi|macd-rsi")
-        raise SystemExit(1)
+parser = argparse.ArgumentParser()
+
+parser.add_argument("timeframe", choices=["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"], type=str)
+parser.add_argument("order_size", type=int)
+parser.add_argument("strategy", choices=["dca-macd-rsi", "dca-flat", "macd-crossover", "rsi", "macd-rsi"], type=str)
+
+args = parser.parse_args()
+
+timeframe = args.timeframe
+order_size = args.order_size
+strategy = args.strategy
+
 
 # set vars
 ## general vars
