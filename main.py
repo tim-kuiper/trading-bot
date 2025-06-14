@@ -13,6 +13,7 @@ import talib
 from tenacity import *
 import sys
 
+<<<<<<< HEAD
 parser = argparse.ArgumentParser()
 
 parser.add_argument("timeframe", choices=["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"], type=str)
@@ -25,6 +26,18 @@ timeframe = args.timeframe
 order_size = args.order_size
 strategy = args.strategy
 
+=======
+parser = argparse.ArgumentParser(description="Add trading bot arguments")
+parser.add_argument("timeframe", type=str, help="Add timeframe (1m/5m/15m/30m/1h/4h/1d/1w)")
+parser.add_argument("order_size", type=int, help="Order size in USD")
+parser.add_argument("strategy", type=str, help="Strategy (dca-macd-rsi/dca-flat/macd-crossover/rsi/macd-rsi)")
+args = parser.parse_args()
+
+# program args
+timeframe = args.timeframe
+order_size = args.order_size
+strategy = args.strategy
+>>>>>>> 7c23b66 (upd)
 
 # set vars
 ## general vars
@@ -314,7 +327,6 @@ def get_timeframe_in_minutes():
         interval_time_min = 10080
     return interval_time_min
 
-input_valdn()
 loop_time_seconds = get_timeframe_in_seconds()
 interval_time_minutes = get_timeframe_in_minutes()
 
