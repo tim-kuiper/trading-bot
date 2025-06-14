@@ -13,20 +13,6 @@ import talib
 from tenacity import *
 import sys
 
-<<<<<<< HEAD
-parser = argparse.ArgumentParser()
-
-parser.add_argument("timeframe", choices=["1m", "5m", "15m", "30m", "1h", "4h", "1d", "1w"], type=str)
-parser.add_argument("order_size", type=int)
-parser.add_argument("strategy", choices=["dca-macd-rsi", "dca-flat", "macd-crossover", "rsi", "macd-rsi"], type=str)
-
-args = parser.parse_args()
-
-timeframe = args.timeframe
-order_size = args.order_size
-strategy = args.strategy
-
-=======
 parser = argparse.ArgumentParser(description="Add trading bot arguments")
 parser.add_argument("timeframe", type=str, help="Add timeframe (1m/5m/15m/30m/1h/4h/1d/1w)")
 parser.add_argument("order_size", type=int, help="Order size in USD")
@@ -37,7 +23,6 @@ args = parser.parse_args()
 timeframe = args.timeframe
 order_size = args.order_size
 strategy = args.strategy
->>>>>>> 7c23b66 (upd)
 
 # set vars
 ## general vars
@@ -575,5 +560,25 @@ if strategy == "dca-macd-rsi":
                 write_to_asset_file()
             time.sleep(3) # sleep 3 seconds between asset pair
         tg_message = f"{timeframe} asset dict: {json.dumps(asset_dict, indent=2)}"
+        send_telegram_message()
+        time.sleep(loop_time_seconds)
+elif strategy == "dca-flat":
+    while True:
+        for asset_pair in asset_pairs:
+            order_size = min_order_size()
+            try:
+                buy_asset()
+                print(f"DCA: bought {asset_pair}")
+                tg_message = f"DCA: bought {asset_pair}"
+                send_telegram_message()
+            except:
+                print(f"DCA: exception occured trying to buy {asset_pair}")
+                tg_message = f"DCA: exception occured trying to buy {asset_pair}"
+                send_telegram_message()
+                raise SystemError
+            print(f"{asset_pair} block done, sleeping 3 seconds")
+            time.sleep(3) # sleep 3 seconds between asset pair
+        print(f"DCA: sleeping for {loop_time_seconds} seconds")
+        tg_message = f"DCA: sleeping for {loop_time_seconds} seconds"
         send_telegram_message()
         time.sleep(loop_time_seconds)
