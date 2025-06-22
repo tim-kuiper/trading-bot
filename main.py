@@ -562,6 +562,7 @@ if strategy == "dca-macd-rsi":
         tg_message = f"{timeframe} asset dict: {json.dumps(asset_dict, indent=2)}"
         send_telegram_message()
         time.sleep(loop_time_seconds)
+elif strategy == "macd-crossover":
 elif strategy == "dca-flat":
     while True:
         for asset_pair in asset_pairs:
