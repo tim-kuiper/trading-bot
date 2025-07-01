@@ -268,6 +268,24 @@ def read_asset_file():
     f.close()
     return asset_json
 
+def get_kraken_leverage():
+    """Get leverage amount for asset pair on kraken
+       TODO: dynamically obtain leverage ratio using Kraken API
+    """
+    if asset_pair == "XXBTZUSD":
+        kraken_leverage = "5:1"
+    if asset_pair == "XXRPZUSD":
+        kraken_leverage= "5:1"
+    if asset_pair == "ADAUSD":
+        kraken_leverage = "3:1"
+    if asset_pair == "SOLUSD":
+        kraken_leverage = "4:1"
+    if asset_pair == "XETHZUSD":
+        kraken_leverage = "5:1"
+    if asset_pair == "MINAUSD":
+        kraken_leverage = "4:1"
+    return kraken_leverage
+
 def get_timeframe_in_seconds():
     """Convert timeframe to seconds
        TODO: use timeframe as input arg
@@ -589,9 +607,7 @@ elif strategy == "macd-crossover":
         sll_long_trigger_pct = 0.91 # trigger pct from current price
         sll_long_limit_pct = 0.90 # limit pct from current price
         for asset_pair in asset_pairs:
-          api_key = get_asset_vars()[2]
-          api_sec = get_asset_vars()[1]
-          leverage = get_asset_vars()[3]
+          leverage = get_kraken_leverage()
           asset_pair_short = get_asset_vars()[4]
           macd_hist_list = asset_dict[asset_pair]
           if len(macd_hist_list) == 0:

@@ -1,13 +1,5 @@
-import argparse
+import requests
 
-parser = argparse.ArgumentParser(
-    prog="test",
-    description="this is a testprogram",
-    epilog="thank you"
-)
+output = requests.get(url="https://api.kraken.com/0/public/AssetPairs")
 
-parser.add_argument("timeframe")
-parser.add_argument("strategy")
-
-args = parser.parse_args()
-
+print(output.json()['result']['MINAUSD'])
