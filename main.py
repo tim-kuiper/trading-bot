@@ -607,266 +607,266 @@ elif strategy == "macd-crossover":
         sll_long_trigger_pct = 0.91 # trigger pct from current price
         sll_long_limit_pct = 0.90 # limit pct from current price
         for asset_pair in asset_pairs:
-          leverage = get_kraken_leverage()
-          asset_pair_short = get_asset_vars()[4]
-          macd_hist_list = asset_dict[asset_pair]
-          if len(macd_hist_list) == 0:
-            print(f"{timeframe} {asset_pair}: MACD hist list length: {len(macd_hist_list)}, appending 2 MACD hist values")
-            macd_hist_tmp = get_macdhist_start()
-            macd_hist_list.append(macd_hist_tmp[-2])
-            macd_hist_list.append(macd_hist_tmp[-1])
-            asset_dict[asset_pair] = macd_hist_list
-            time.sleep(1)
-            print(f"{timeframe} {asset_pair}: Appended MACD hist: {macd_hist_list}")
-            tg_message = f"{timeframe} {asset_pair}: Appended MACD hist: {macd_hist_list}"
-            send_telegram_message()
-          if len(macd_hist_list) == 1:
-            print(f"{timeframe} {asset_pair}: {macd_hist_list}, appending 1 MACD hist value")
-            print(f"{timeframe} {asset_pair}: MACD hist list length: {len(macd_hist_list)}, appending 1 MACD hist value")
-            macd_hist_list.append(get_macdhist())
-            asset_dict[asset_pair] = macd_hist_list
-            time.sleep(1)
-            print(f"{timeframe} {asset_pair}: Appended MACD hist: {macd_hist_list}")
-            tg_message = f"{timeframe} {asset_pair}: Appended MACD hist: {macd_hist_list}"
-            send_telegram_message()
-          ############## for testing purposes ####################
-          # macd_hist_list = [-1, 1] ######## BUY
-          # macd_hist_list = [1, -1] # ######## SELL
-          if macd_hist_list[-2] < 0:
-            # if macd_hist_list = [< 0, y]
-            print(f"{timeframe} {asset_pair}: Watching to buy asset when MACD hist crosses 0")
-            if macd_hist_list[-1] < 0:
-              # if macd_hist_list = [<0, <0]
-              print(f"{timeframe} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
-              macd_hist_list.pop(0)
-              # macd_hist_list = [<0]
-              # append macd_hist_list to asset_dict[asset_pair]
-              asset_dict[asset_pair] = macd_hist_list
-              tg_message = f"{timeframe} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
-              send_telegram_message()
-            elif macd_hist_list[-1] > 0:
-              print(f"{timeframe} {asset_pair}: MACD hist crossed 0, closing short pos if any and opening long pos")
-              tg_message = f"{timeframe} {asset_pair}: MACD hist crossed 0, closing short pos if any and opening long pos"
-              send_telegram_message()
-              open_orders = query_open_orders().json()['result']
-              if not open_orders['open']:
-                print(f"No open orders currently present")
-                print(f"{timeframe} {asset_pair}: Opening los pos")
-                asset_close = float(get_asset_close())
-                usd_order_size = order_size
-                order_volume = str(float(usd_order_size / asset_close))
-                sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
-                sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
-                order_output = open_increase_long_pos()
-                if not order_output.json()['error']:
-                  print(f"{timeframe} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
-                  tg_message = f"{timeframe} {asset_pair} Succesfully opened long pos: {order_output.json()}"
-                  send_telegram_message()
-                  macd_hist_list.pop(0)
-                  asset_dict[asset_pair] = macd_hist_list
-                else:
-                  print(f"{timeframe} {asset_pair}: Something went wrong opening a long pos: {order_output.json()}")
-                  tg_message = f"{timeframe} {asset_pair} Something went wrong opening a long pos: {order_output.json()}"
-                  send_telegram_message()
-                  macd_hist_list.pop(0)
-                  asset_dict[asset_pair] = macd_hist_list
-              else:
-                print(f"There are open orders")
-                print(f"Checking if there are open orders for {asset_pair}")
-                open_orders = query_open_orders().json()['result']
-                open_order_dict = {}
-                for key, value in open_orders['open'].items():
-                  # key = asset pair short
-                  # value = order txid
-                  open_order_dict.update({value['descr']['pair']: key})
-                  '''
-                  open_order_keys = [asset_pair_short]
-                  open_order_values = [order_txid]
-                  open_order_dict = {asset_pair_short: order_txid, asset_pair_short: order_txid}
-                  '''
-                if asset_pair_short in open_order_dict.keys():
-                  print(f"{timeframe} {asset_pair}: cancelling SLL order")
-                  order_txid = open_order_dict[asset_pair_short]
-                  order_output = cancel_order(order_txid)
-                  if not order_output.json()['error']:
-                    print(f"{timeframe} {asset_pair}: Succesfully cleared SLL order: {order_output.json()}")
-                    tg_message = f"{timeframe} {asset_pair} Succesfully cleared SLL order: {order_output.json()}"
+            leverage = get_kraken_leverage()
+            asset_pair_short = get_asset_vars()[4]
+            macd_hist_list = asset_dict[asset_pair]
+            if len(macd_hist_list) == 0:
+                print(f"{timeframe} {asset_pair}: MACD hist list length: {len(macd_hist_list)}, appending 2 MACD hist values")
+                macd_hist_tmp = get_macdhist_start()
+                macd_hist_list.append(macd_hist_tmp[-2])
+                macd_hist_list.append(macd_hist_tmp[-1])
+                asset_dict[asset_pair] = macd_hist_list
+                time.sleep(1)
+                print(f"{timeframe} {asset_pair}: Appended MACD hist: {macd_hist_list}")
+                tg_message = f"{timeframe} {asset_pair}: Appended MACD hist: {macd_hist_list}"
+                send_telegram_message()
+            if len(macd_hist_list) == 1:
+                print(f"{timeframe} {asset_pair}: {macd_hist_list}, appending 1 MACD hist value")
+                print(f"{timeframe} {asset_pair}: MACD hist list length: {len(macd_hist_list)}, appending 1 MACD hist value")
+                macd_hist_list.append(get_macdhist())
+                asset_dict[asset_pair] = macd_hist_list
+                time.sleep(1)
+                print(f"{timeframe} {asset_pair}: Appended MACD hist: {macd_hist_list}")
+                tg_message = f"{timeframe} {asset_pair}: Appended MACD hist: {macd_hist_list}"
+                send_telegram_message()
+            ############## for testing purposes ####################
+            # macd_hist_list = [-1, 1] ######## BUY
+            # macd_hist_list = [1, -1] # ######## SELL
+            if macd_hist_list[-2] < 0:
+                # if macd_hist_list = [< 0, y]
+                print(f"{timeframe} {asset_pair}: Watching to buy asset when MACD hist crosses 0")
+                if macd_hist_list[-1] < 0:
+                    # if macd_hist_list = [<0, <0]
+                    print(f"{timeframe} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
+                    macd_hist_list.pop(0)
+                    # macd_hist_list = [<0]
+                    # append macd_hist_list to asset_dict[asset_pair]
+                    asset_dict[asset_pair] = macd_hist_list
+                    tg_message = f"{timeframe} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
                     send_telegram_message()
-                    print(f"{timeframe} {asset_pair}: Closing short pos")
-                    time.sleep(5)
-                    order_output = close_short_pos()
-                    print(f"Result closing short pos for {asset_pair}: {order_output}")
-                    if not order_output.json()['error']:
-                      print(f"{timeframe} {asset_pair}: Succesfully closed short pos: {order_output.json()}")
-                      tg_message = f"{timeframe} {asset_pair} Succesfully closed short pos: {order_output.json()}"
-                      send_telegram_message()
-                      print(f"{timeframe} {asset_pair}: Opening long pos")
-                      asset_close = float(get_asset_close())
-                      usd_order_size = order_size
-                      order_volume = str(float(usd_order_size / asset_close))
-                      sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
-                      sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
-                      order_output = open_increase_long_pos()
-                      if not order_output.json()['error']:
-                        print(f"{timeframe} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
-                        tg_message = f"{timeframe} {asset_pair} Succesfully opened long pos: {order_output.json()}"
-                        send_telegram_message()
-                        macd_hist_list.pop(0)
-                        asset_dict[asset_pair] = macd_hist_list
-                      else:
-                        print(f"{timeframe} {asset_pair}: Something went wrong opening a long pos: {order_output.json()}")
-                        tg_message = f"{timeframe} {asset_pair} Something went wrong opening a long pos: {order_output.json()}"
-                        send_telegram_message()
-                        macd_hist_list.pop(0)
-                        asset_dict[asset_pair] = macd_hist_list
+                elif macd_hist_list[-1] > 0:
+                    print(f"{timeframe} {asset_pair}: MACD hist crossed 0, closing short pos if any and opening long pos")
+                    tg_message = f"{timeframe} {asset_pair}: MACD hist crossed 0, closing short pos if any and opening long pos"
+                    send_telegram_message()
+                    open_orders = query_open_orders().json()['result']
+                    if not open_orders['open']:
+                        print(f"No open orders currently present")
+                        print(f"{timeframe} {asset_pair}: Opening los pos")
+                        asset_close = float(get_asset_close())
+                        usd_order_size = order_size
+                        order_volume = str(float(usd_order_size / asset_close))
+                        sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
+                        sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
+                        order_output = open_increase_long_pos()
+                        if not order_output.json()['error']:
+                          print(f"{timeframe} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
+                          tg_message = f"{timeframe} {asset_pair} Succesfully opened long pos: {order_output.json()}"
+                          send_telegram_message()
+                          macd_hist_list.pop(0)
+                          asset_dict[asset_pair] = macd_hist_list
+                        else:
+                          print(f"{timeframe} {asset_pair}: Something went wrong opening a long pos: {order_output.json()}")
+                          tg_message = f"{timeframe} {asset_pair} Something went wrong opening a long pos: {order_output.json()}"
+                          send_telegram_message()
+                          macd_hist_list.pop(0)
+                          asset_dict[asset_pair] = macd_hist_list
                     else:
-                      print(f"{timeframe} {asset_pair}: Something went wrong closing short pos: {order_output.json()}")
-                      tg_message = f"{timeframe} {asset_pair} Something went wrong closing short pos: {order_output.json()}"
-                      send_telegram_message()
-                      macd_hist_list.pop(0)
-                      asset_dict[asset_pair] = macd_hist_list
-                  else:
-                    print(f"{timeframe} {asset_pair}: Something went wrong cancelling SLL order: {order_output.json()}")
-                    tg_message = f"{timeframe} {asset_pair} Something went wrong cancelling SLL order: {order_output.json()}"
-                    send_telegram_message()
+                        print(f"There are open orders")
+                        print(f"Checking if there are open orders for {asset_pair}")
+                        open_orders = query_open_orders().json()['result']
+                        open_order_dict = {}
+                        for key, value in open_orders['open'].items():
+                            # key = asset pair short
+                            # value = order txid
+                            open_order_dict.update({value['descr']['pair']: key})
+                            """
+                            open_order_keys = [asset_pair_short]
+                            open_order_values = [order_txid]
+                            open_order_dict = {asset_pair_short: order_txid, asset_pair_short: order_txid}
+                            """
+                        if asset_pair_short in open_order_dict.keys():
+                            print(f"{timeframe} {asset_pair}: cancelling SLL order")
+                            order_txid = open_order_dict[asset_pair_short]
+                            order_output = cancel_order(order_txid)
+                            if not order_output.json()['error']:
+                                print(f"{timeframe} {asset_pair}: Succesfully cleared SLL order: {order_output.json()}")
+                                tg_message = f"{timeframe} {asset_pair} Succesfully cleared SLL order: {order_output.json()}"
+                                send_telegram_message()
+                                print(f"{timeframe} {asset_pair}: Closing short pos")
+                                time.sleep(5)
+                                order_output = close_short_pos()
+                                print(f"Result closing short pos for {asset_pair}: {order_output}")
+                                if not order_output.json()['error']:
+                                    print(f"{timeframe} {asset_pair}: Succesfully closed short pos: {order_output.json()}")
+                                    tg_message = f"{timeframe} {asset_pair} Succesfully closed short pos: {order_output.json()}"
+                                    send_telegram_message()
+                                    print(f"{timeframe} {asset_pair}: Opening long pos")
+                                    asset_close = float(get_asset_close())
+                                    usd_order_size = order_size
+                                    order_volume = str(float(usd_order_size / asset_close))
+                                    sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
+                                    sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
+                                    order_output = open_increase_long_pos()
+                                    if not order_output.json()['error']:
+                                        print(f"{timeframe} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
+                                        tg_message = f"{timeframe} {asset_pair} Succesfully opened long pos: {order_output.json()}"
+                                        send_telegram_message()
+                                        macd_hist_list.pop(0)
+                                        asset_dict[asset_pair] = macd_hist_list
+                                    else:
+                                        print(f"{timeframe} {asset_pair}: Something went wrong opening a long pos: {order_output.json()}")
+                                        tg_message = f"{timeframe} {asset_pair} Something went wrong opening a long pos: {order_output.json()}"
+                                        send_telegram_message()
+                                        macd_hist_list.pop(0)
+                                        asset_dict[asset_pair] = macd_hist_list
+                                else:
+                                    print(f"{timeframe} {asset_pair}: Something went wrong closing short pos: {order_output.json()}")
+                                    tg_message = f"{timeframe} {asset_pair} Something went wrong closing short pos: {order_output.json()}"
+                                    send_telegram_message()
+                                    macd_hist_list.pop(0)
+                                    asset_dict[asset_pair] = macd_hist_list
+                            else:
+                                print(f"{timeframe} {asset_pair}: Something went wrong cancelling SLL order: {order_output.json()}")
+                                tg_message = f"{timeframe} {asset_pair} Something went wrong cancelling SLL order: {order_output.json()}"
+                                send_telegram_message()
+                                macd_hist_list.pop(0)
+                                asset_dict[asset_pair] = macd_hist_list
+                        else:
+                            print(f"{timeframe} {asset_pair} not present in orders, opening long pos")
+                            asset_close = float(get_asset_close())
+                            usd_order_size = order_size
+                            order_volume = str(float(usd_order_size / asset_close))
+                            sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
+                            sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
+                            order_output = open_increase_long_pos()
+                            if not order_output.json()['error']:
+                                print(f"{timeframe} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
+                                tg_message = f"{timeframe} {asset_pair} Succesfully opened long pos: {order_output.json()}"
+                                send_telegram_message()
+                                macd_hist_list.pop(0)
+                                asset_dict[asset_pair] = macd_hist_list
+                            else:
+                                print(f"{timeframe} {asset_pair}: Someting went wrong opening a long pos: {order_output.json()}")
+                                tg_message = f"{timeframe} {asset_pair} Something went wrong opening a long pos: {order_output.json()}"
+                                send_telegram_message()
+                                macd_hist_list.pop(0)
+                                asset_dict[asset_pair] = macd_hist_list
+            elif macd_hist_list[-2] > 0:
+                print(f"{timeframe} {asset_pair}: Watching to sell asset when MACD hist crosses 0 and opening a short position")
+                if macd_hist_list[-1] > 0:
+                    print(f"{timeframe} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
                     macd_hist_list.pop(0)
                     asset_dict[asset_pair] = macd_hist_list
-                else:
-                  print(f"{timeframe} {asset_pair} not present in orders, opening long pos")
-                  asset_close = float(get_asset_close())
-                  usd_order_size = order_size
-                  order_volume = str(float(usd_order_size / asset_close))
-                  sll_trigger = str(round(float(asset_close * sll_long_trigger_pct), 1))
-                  sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
-                  order_output = open_increase_long_pos()
-                  if not order_output.json()['error']:
-                    print(f"{timeframe} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
-                    tg_message = f"{timeframe} {asset_pair} Succesfully opened long pos: {order_output.json()}"
+                    tg_message = f"{timeframe} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
                     send_telegram_message()
-                    macd_hist_list.pop(0)
-                    asset_dict[asset_pair] = macd_hist_list
-                  else:
-                    print(f"{timeframe} {asset_pair}: Someting went wrong opening a long pos: {order_output.json()}")
-                    tg_message = f"{timeframe} {asset_pair} Something went wrong opening a long pos: {order_output.json()}"
+                elif macd_hist_list[-1] < 0:
+                    print(f"{timeframe} {asset_pair}: MACD hist crossed 0, closing long pos if any and opening short pos")
+                    tg_message = f"{timeframe} {asset_pair}: MACD hist crossed 0, closing long pos if any and opening short pos"
                     send_telegram_message()
-                    macd_hist_list.pop(0)
-                    asset_dict[asset_pair] = macd_hist_list
-          elif macd_hist_list[-2] > 0:
-            print(f"{timeframe} {asset_pair}: Watching to sell asset when MACD hist crosses 0 and opening a short position")
-            if macd_hist_list[-1] > 0:
-              print(f"{timeframe} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing")
-              macd_hist_list.pop(0)
-              asset_dict[asset_pair] = macd_hist_list
-              tg_message = f"{timeframe} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
-              send_telegram_message()
-            elif macd_hist_list[-1] < 0:
-              print(f"{timeframe} {asset_pair}: MACD hist crossed 0, closing long pos if any and opening short pos")
-              tg_message = f"{timeframe} {asset_pair}: MACD hist crossed 0, closing long pos if any and opening short pos"
-              send_telegram_message()
-              open_orders = query_open_orders().json()['result']
-              if not open_orders['open']:
-                print(f"No open orders currently present")
-                print(f"{timeframe} {asset_pair}: Opening short pos")
-                asset_close = float(get_asset_close())
-                usd_order_size = order_size
-                order_volume = str(float(usd_order_size / asset_close))
-                sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
-                sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
-                order_output = open_increase_short_pos()
-                if not order_output.json()['error']:
-                  print(f"{timeframe} {asset_pair}: Succesfully opened short pos: {order_output.json()}")
-                  tg_message = f"{timeframe} {asset_pair} Succesfully opened short pos: {order_output.json()}"
-                  send_telegram_message()
-                  macd_hist_list.pop(0)
-                  asset_dict[asset_pair] = macd_hist_list
-                else:
-                  print(f"{timeframe} {asset_pair}: Something went wrong opening a short pos: {order_output.json()}")
-                  tg_message = f"{timeframe} {asset_pair} Something went wrong opening a short pos: {order_output.json()}"
-                  send_telegram_message()
-                  macd_hist_list.pop(0)
-                  asset_dict[asset_pair] = macd_hist_list
-              else:
-                print(f"There are open orders")
-                print(f"Checking if there are open orders for {asset_pair}")
-                open_orders = query_open_orders().json()['result']
-                open_order_dict = {}
-                for key, value in open_orders['open'].items():
-                  # key = asset pair short
-                  # value = order txid
-                  open_order_dict.update({value['descr']['pair']: key})
-                  '''
-                  open_order_keys = [asset_pair_short]
-                  open_order_values = [order_txid]
-                  open_order_dict = {asset_pair_short: order_txid, asset_pair_short: order_txid}
-                  '''
-                if asset_pair_short in open_order_dict.keys():
-                  print(f"{timeframe} {asset_pair}: cancelling SLL order")
-                  order_txid = open_order_dict[asset_pair_short]
-                  order_output = cancel_order(order_txid)
-                  if not order_output.json()['error']:
-                    print(f"{timeframe} {asset_pair}: Succesfully cleared SLL order: {order_output.json()}")
-                    tg_message = f"{timeframe} {asset_pair} Succesfully cleared SLL order: {order_output.json()}"
-                    send_telegram_message()
-                    time.sleep(5)
-                    print(f"{timeframe} {asset_pair}: Closing long pos")
-                    order_output = close_long_pos()
-                    print(f"Result closing long pos for {asset_pair}: {order_output}")
-                    if not order_output.json()['error']:
-                      print(f"{timeframe} {asset_pair}: Succesfully closed long pos: {order_output.json()}")
-                      tg_message = f"{timeframe} {asset_pair} Succesfully closed long pos: {order_output.json()}"
-                      send_telegram_message()
-                      print(f"{timeframe} {asset_pair}: Opening short pos")
-                      asset_close = float(get_asset_close())
-                      usd_order_size = order_size
-                      order_volume = str(float(usd_order_size / asset_close))
-                      sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
-                      sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
-                      order_output = open_increase_short_pos()
-                      if not order_output.json()['error']:
-                        print(f"{timeframe} {asset_pair}: Succesfully opened short pos: {order_output.json()}")
-                        tg_message = f"{timeframe} {asset_pair} Succesfully opened short pos: {order_output.json()}"
-                        send_telegram_message()
-                        macd_hist_list.pop(0)
-                        asset_dict[asset_pair] = macd_hist_list
-                      else:
-                        print(f"{timeframe} {asset_pair}: Something went wrong opening a short pos: {order_output.json()}")
-                        tg_message = f"{timeframe} {asset_pair} Something went wrong opening a short pos: {order_output.json()}"
-                        send_telegram_message()
-                        macd_hist_list.pop(0)
-                        asset_dict[asset_pair] = macd_hist_list
+                    open_orders = query_open_orders().json()['result']
+                    if not open_orders['open']:
+                        print(f"No open orders currently present")
+                        print(f"{timeframe} {asset_pair}: Opening short pos")
+                        asset_close = float(get_asset_close())
+                        usd_order_size = order_size
+                        order_volume = str(float(usd_order_size / asset_close))
+                        sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
+                        sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
+                        order_output = open_increase_short_pos()
+                        if not order_output.json()['error']:
+                            print(f"{timeframe} {asset_pair}: Succesfully opened short pos: {order_output.json()}")
+                            tg_message = f"{timeframe} {asset_pair} Succesfully opened short pos: {order_output.json()}"
+                            send_telegram_message()
+                            macd_hist_list.pop(0)
+                            asset_dict[asset_pair] = macd_hist_list
+                        else:
+                            print(f"{timeframe} {asset_pair}: Something went wrong opening a short pos: {order_output.json()}")
+                            tg_message = f"{timeframe} {asset_pair} Something went wrong opening a short pos: {order_output.json()}"
+                            send_telegram_message()
+                            macd_hist_list.pop(0)
+                            asset_dict[asset_pair] = macd_hist_list
                     else:
-                      print(f"{timeframe} {asset_pair}: Something went wrong closing long pos: {order_output.json()}")
-                      tg_message = f"{timeframe} {asset_pair} Something went wrong closing long pos: {order_output.json()}"
-                      send_telegram_message()
-                      macd_hist_list.pop(0)
-                      asset_dict[asset_pair] = macd_hist_list
-                  else:
-                    print(f"{timeframe} {asset_pair}: Something went wrong cancelling SLL order: {order_output.json()}")
-                    tg_message = f"{timeframe} {asset_pair} Something went wrong cancelling SLL order: {order_output.json()}"
-                    send_telegram_message()
-                    macd_hist_list.pop(0)
-                    asset_dict[asset_pair] = macd_hist_list
-                else:
-                  print(f"{timeframe} {asset_pair} not present in orders, opening short pos")
-                  asset_close = float(get_asset_close())
-                  usd_order_size = order_size
-                  order_volume = str(float(usd_order_size / asset_close))
-                  sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
-                  sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
-                  order_output = open_increase_short_pos()
-                  if not order_output.json()['error']:
-                    print(f"{timeframe} {asset_pair}: Succesfully opened short pos: {order_output.json()}")
-                    tg_message = f"{timeframe} {asset_pair} Succesfully opened short pos: {order_output.json()}"
-                    send_telegram_message()
-                    macd_hist_list.pop(0)
-                    asset_dict[asset_pair] = macd_hist_list
-                  else:
-                    print(f"{timeframe} {asset_pair}: Someting went wrong opening a short pos: {order_output.json()}")
-                    tg_message = f"{timeframe} {asset_pair} Something went wrong opening a short pos: {order_output.json()}"
-                    send_telegram_message()
-                    macd_hist_list.pop(0)
-                    asset_dict[asset_pair] = macd_hist_list
-          print(f"{asset_pair} block done, sleeping 3 seconds")
-          time.sleep(3) # sleep 3 seconds between asset pair
+                        print(f"There are open orders")
+                        print(f"Checking if there are open orders for {asset_pair}")
+                        open_orders = query_open_orders().json()['result']
+                        open_order_dict = {}
+                        for key, value in open_orders['open'].items():
+                            # key = asset pair short
+                            # value = order txid
+                            open_order_dict.update({value['descr']['pair']: key})
+                            """
+                            open_order_keys = [asset_pair_short]
+                            open_order_values = [order_txid]
+                            open_order_dict = {asset_pair_short: order_txid, asset_pair_short: order_txid}
+                            """
+                        if asset_pair_short in open_order_dict.keys():
+                            print(f"{timeframe} {asset_pair}: cancelling SLL order")
+                            order_txid = open_order_dict[asset_pair_short]
+                            order_output = cancel_order(order_txid)
+                            if not order_output.json()['error']:
+                                print(f"{timeframe} {asset_pair}: Succesfully cleared SLL order: {order_output.json()}")
+                                tg_message = f"{timeframe} {asset_pair} Succesfully cleared SLL order: {order_output.json()}"
+                                send_telegram_message()
+                                time.sleep(5)
+                                print(f"{timeframe} {asset_pair}: Closing long pos")
+                                order_output = close_long_pos()
+                                print(f"Result closing long pos for {asset_pair}: {order_output}")
+                                if not order_output.json()['error']:
+                                    print(f"{timeframe} {asset_pair}: Succesfully closed long pos: {order_output.json()}")
+                                    tg_message = f"{timeframe} {asset_pair} Succesfully closed long pos: {order_output.json()}"
+                                    send_telegram_message()
+                                    print(f"{timeframe} {asset_pair}: Opening short pos")
+                                    asset_close = float(get_asset_close())
+                                    usd_order_size = order_size
+                                    order_volume = str(float(usd_order_size / asset_close))
+                                    sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
+                                    sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
+                                    order_output = open_increase_short_pos()
+                                    if not order_output.json()['error']:
+                                        print(f"{timeframe} {asset_pair}: Succesfully opened short pos: {order_output.json()}")
+                                        tg_message = f"{timeframe} {asset_pair} Succesfully opened short pos: {order_output.json()}"
+                                        send_telegram_message()
+                                        macd_hist_list.pop(0)
+                                        asset_dict[asset_pair] = macd_hist_list
+                                    else:
+                                        print(f"{timeframe} {asset_pair}: Something went wrong opening a short pos: {order_output.json()}")
+                                        tg_message = f"{timeframe} {asset_pair} Something went wrong opening a short pos: {order_output.json()}"
+                                        send_telegram_message()
+                                        macd_hist_list.pop(0)
+                                        asset_dict[asset_pair] = macd_hist_list
+                                else:
+                                    print(f"{timeframe} {asset_pair}: Something went wrong closing long pos: {order_output.json()}")
+                                    tg_message = f"{timeframe} {asset_pair} Something went wrong closing long pos: {order_output.json()}"
+                                    send_telegram_message()
+                                    macd_hist_list.pop(0)
+                                    asset_dict[asset_pair] = macd_hist_list
+                            else:
+                                print(f"{timeframe} {asset_pair}: Something went wrong cancelling SLL order: {order_output.json()}")
+                                tg_message = f"{timeframe} {asset_pair} Something went wrong cancelling SLL order: {order_output.json()}"
+                                send_telegram_message()
+                                macd_hist_list.pop(0)
+                                asset_dict[asset_pair] = macd_hist_list
+                        else:
+                            print(f"{timeframe} {asset_pair} not present in orders, opening short pos")
+                            asset_close = float(get_asset_close())
+                            usd_order_size = order_size
+                            order_volume = str(float(usd_order_size / asset_close))
+                            sll_trigger = str(round(float(asset_close * sll_short_trigger_pct), 1))
+                            sll_limit = str(round(float(asset_close * sll_short_limit_pct), 1))
+                            order_output = open_increase_short_pos()
+                            if not order_output.json()['error']:
+                                print(f"{timeframe} {asset_pair}: Succesfully opened short pos: {order_output.json()}")
+                                tg_message = f"{timeframe} {asset_pair} Succesfully opened short pos: {order_output.json()}"
+                                send_telegram_message()
+                                macd_hist_list.pop(0)
+                                asset_dict[asset_pair] = macd_hist_list
+                            else:
+                                print(f"{timeframe} {asset_pair}: Someting went wrong opening a short pos: {order_output.json()}")
+                                tg_message = f"{timeframe} {asset_pair} Something went wrong opening a short pos: {order_output.json()}"
+                                send_telegram_message()
+                                macd_hist_list.pop(0)
+                                asset_dict[asset_pair] = macd_hist_list
+            print(f"{asset_pair} block done, sleeping 3 seconds")
+            time.sleep(3) # sleep 3 seconds between asset pair
         print(f"Done with all assets, sleeping for {loop_time_seconds} seconds")
         time.sleep(loop_time_seconds)
