@@ -38,6 +38,20 @@ rsi_upper_boundary = 65
 api_sec = os.environ['kraken_private_key']
 api_key = os.environ['kraken_api_key']
 
+def get_asset_pair_short(asset_pair):
+    """Get asset pair short or altname, see https://docs.kraken.com/api/docs/rest-api/get-asset-info
+    """
+    output = requests.get(url="https://api.kraken.com/0/public/AssetPairs", timeout=10)
+    asset_pair_altname = output.json()['result'][asset_pair]['altname']    
+    return asset_pair_altname
+
+def query_open_orders():
+    time.sleep(2)
+    response = kraken_request('/0/private/OpenOrders', {
+        "nonce": str(int(1000*time.time()))
+    }, api_key, api_sec)
+    return response
+
 def get_asset_code():
     """Get asset code from asset pair
        TODO: use asset_pair as function arg 
@@ -268,14 +282,14 @@ def read_asset_file():
     f.close()
     return asset_json
 
-def get_kraken_leverage():
+def get_kraken_leverage(asset_pair):
     """Get leverage amount for asset pair on kraken
        TODO: dynamically obtain leverage ratio using Kraken API
     """
     if asset_pair == "XXBTZUSD":
         kraken_leverage = "5:1"
     if asset_pair == "XXRPZUSD":
-        kraken_leverage= "5:1"
+        kraken_leverage = "5:1"
     if asset_pair == "ADAUSD":
         kraken_leverage = "3:1"
     if asset_pair == "SOLUSD":
@@ -602,13 +616,14 @@ elif strategy == "dca-flat":
         time.sleep(loop_time_seconds)
 elif strategy == "macd-crossover":
     while True:
+        # TODO: Determine SLL triggers per timeframe and put it into a function
         sll_short_trigger_pct = 1.09 # trigger pct from current price
         sll_short_limit_pct = 1.10 # limit pct from current price
         sll_long_trigger_pct = 0.91 # trigger pct from current price
         sll_long_limit_pct = 0.90 # limit pct from current price
         for asset_pair in asset_pairs:
-            leverage = get_kraken_leverage()
-            asset_pair_short = get_asset_vars()[4]
+            leverage = get_kraken_leverage(asset_pair)
+            asset_pair_short = get_asset_pair_short(asset_pair)
             macd_hist_list = asset_dict[asset_pair]
             if len(macd_hist_list) == 0:
                 print(f"{timeframe} {asset_pair}: MACD hist list length: {len(macd_hist_list)}, appending 2 MACD hist values")
@@ -659,17 +674,17 @@ elif strategy == "macd-crossover":
                         sll_limit = str(round(float(asset_close * sll_long_limit_pct), 1))
                         order_output = open_increase_long_pos()
                         if not order_output.json()['error']:
-                          print(f"{timeframe} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
-                          tg_message = f"{timeframe} {asset_pair} Succesfully opened long pos: {order_output.json()}"
-                          send_telegram_message()
-                          macd_hist_list.pop(0)
-                          asset_dict[asset_pair] = macd_hist_list
+                            print(f"{timeframe} {asset_pair}: Succesfully opened long pos: {order_output.json()}")
+                            tg_message = f"{timeframe} {asset_pair} Succesfully opened long pos: {order_output.json()}"
+                            send_telegram_message()
+                            macd_hist_list.pop(0)
+                            asset_dict[asset_pair] = macd_hist_list
                         else:
-                          print(f"{timeframe} {asset_pair}: Something went wrong opening a long pos: {order_output.json()}")
-                          tg_message = f"{timeframe} {asset_pair} Something went wrong opening a long pos: {order_output.json()}"
-                          send_telegram_message()
-                          macd_hist_list.pop(0)
-                          asset_dict[asset_pair] = macd_hist_list
+                            print(f"{timeframe} {asset_pair}: Something went wrong opening a long pos: {order_output.json()}")
+                            tg_message = f"{timeframe} {asset_pair} Something went wrong opening a long pos: {order_output.json()}"
+                            send_telegram_message()
+                            macd_hist_list.pop(0)
+                            asset_dict[asset_pair] = macd_hist_list
                     else:
                         print(f"There are open orders")
                         print(f"Checking if there are open orders for {asset_pair}")
