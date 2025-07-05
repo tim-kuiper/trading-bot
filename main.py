@@ -16,7 +16,7 @@ import sys
 parser = argparse.ArgumentParser(description="Add trading bot arguments")
 parser.add_argument("timeframe", type=str, help="Add timeframe (1m/5m/15m/30m/1h/4h/1d/1w)")
 parser.add_argument("order_size", type=int, help="Order size in USD")
-parser.add_argument("strategy", type=str, help="Strategy (dca-macd-rsi/dca-flat/macd-crossover/rsi/macd-rsi)")
+parser.add_argument("strategy", type=str, help="Strategy (dca-macd-rsi/dca-flat/macd-crossover)")
 args = parser.parse_args()
 
 # program args
@@ -38,12 +38,13 @@ rsi_upper_boundary = 65
 api_sec = os.environ['kraken_private_key']
 api_key = os.environ['kraken_api_key']
 
-def get_asset_pair_short(asset_pair):
-    """Get asset pair short or altname, see https://docs.kraken.com/api/docs/rest-api/get-asset-info
-    """
-    output = requests.get(url="https://api.kraken.com/0/public/AssetPairs", timeout=10)
-    asset_pair_altname = output.json()['result'][asset_pair]['altname']    
-    return asset_pair_altname
+def cancel_order(order_txid):
+    time.sleep(2)
+    response = kraken_request('/0/private/CancelOrder', {
+        "nonce": str(int(1000*time.time())), 
+        "txid": order_txid
+    }, api_key, api_sec)
+    return response
 
 def query_open_orders():
     time.sleep(2)
@@ -52,22 +53,98 @@ def query_open_orders():
     }, api_key, api_sec)
     return response
 
-def get_asset_code():
+def query_open_pos():
+    response = kraken_request('/0/private/OpenPositions', {
+        "nonce": str(int(1000*time.time()))
+    }, api_key, api_sec)
+    return response
+
+def open_increase_long_pos():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "buy",
+        "reduce_only": False,
+        "volume": order_volume,
+        "leverage": leverage,
+        "close[ordertype]": "stop-loss-limit",
+        "close[price]": sll_trigger, # sll trigger price
+        "close[price2]": sll_limit, # sll limit price
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
+
+def open_increase_short_pos():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "sell",
+        "reduce_only": False,
+        "volume": order_volume,
+        "leverage": leverage,
+        "close[ordertype]": "stop-loss-limit",
+        "close[price]": sll_trigger, # sll trigger price
+        "close[price2]": sll_limit, # sll limit price
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
+
+def close_short_pos():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "buy",
+        "reduce_only": False,
+        "volume": "0",
+        "leverage": leverage,
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
+
+def close_long_pos():
+    time.sleep(2)
+    response = kraken_request('/0/private/AddOrder', {
+        "nonce": str(int(1000*time.time())),
+        "ordertype": "market",
+        "type": "sell",
+        "reduce_only": False,
+        "volume": "0",
+        "leverage": leverage,
+        "pair": asset_pair
+    }, api_key, api_sec)
+    return response
+
+def get_macdhist():
+    close = get_ohlcdata_macd()
+    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+    macd_dict = macdhist.to_dict()
+    macd_hist_values = list(macd_dict.values())
+    return macd_hist_values[-1]
+
+# returns last 2 macd hist values for given assetpair/interval as list [x, y]
+def get_macdhist_start():
+    close = get_ohlcdata_macd()
+    macd, macdsignal, macdhist = talib.MACD(close, fastperiod=12, slowperiod=26, signalperiod=9)
+    macd_dict = macdhist.to_dict()
+    macd_hist_values = list(macd_dict.values())
+    return [macd_hist_values[-2], macd_hist_values[-1]]
+
+def get_asset_pair_short(asset_pair):
+    """Get asset pair short or altname, see https://docs.kraken.com/api/docs/rest-api/get-asset-info
+    """
+    output = requests.get(url="https://api.kraken.com/0/public/AssetPairs", timeout=10)
+    asset_pair_altname = output.json()['result'][asset_pair]['altname']    
+    return asset_pair_altname
+
+def get_asset_code(asset_pair):
     """Get asset code from asset pair
        TODO: use asset_pair as function arg 
     """
-    if asset_pair == "XXBTZUSD":
-        kraken_asset_code = "XXBT"
-    if asset_pair == "XXRPZUSD":
-        kraken_asset_code = "XXRP"
-    if asset_pair == "ADAUSD":
-        kraken_asset_code = "ADA"
-    if asset_pair == "SOLUSD":
-        kraken_asset_code = "SOL"
-    if asset_pair == "XETHZUSD":
-        kraken_asset_code = "XETH"
-    if asset_pair == "MINAUSD":
-        kraken_asset_code = "MINA"
+    output = requests.get(url="https://api.kraken.com/0/public/AssetPairs", timeout=10)
+    kraken_asset_code = output.json()['result'][asset_pair]['base']    
     return kraken_asset_code
 
 def send_telegram_message():
@@ -357,7 +434,7 @@ if strategy == "dca-macd-rsi":
         # order_size = 25
         # loop over assets
         for asset_pair in asset_pairs:
-            asset_code = get_asset_code()
+            asset_code = get_asset_code(asset_pair)
             check_create_asset_file()
             rsi_list_values  = rsi_tradingview()
             rsi = float(rsi_list_values[-1])
