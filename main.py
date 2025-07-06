@@ -136,7 +136,7 @@ def get_asset_pair_short(asset_pair):
     """Get asset pair short or altname, see https://docs.kraken.com/api/docs/rest-api/get-asset-info
     """
     output = requests.get(url="https://api.kraken.com/0/public/AssetPairs", timeout=10)
-    asset_pair_altname = output.json()['result'][asset_pair]['altname']    
+    asset_pair_altname = output.json()['result'][asset_pair]['altname']
     return asset_pair_altname
 
 def get_asset_code(asset_pair):
@@ -144,7 +144,7 @@ def get_asset_code(asset_pair):
        TODO: use asset_pair as function arg 
     """
     output = requests.get(url="https://api.kraken.com/0/public/AssetPairs", timeout=10)
-    kraken_asset_code = output.json()['result'][asset_pair]['base']    
+    kraken_asset_code = output.json()['result'][asset_pair]['base']
     return kraken_asset_code
 
 def send_telegram_message():
@@ -305,7 +305,7 @@ def check_create_asset_file():
     asset_file_exists = os.path.exists(asset_file_path)
     if not asset_file_exists:
         print(f"Asset file {asset_file} doesnt exist , creating one")
-        asset_dict.update({asset_pair: {"rsi": [], "macd": [], "holdings": [], "price_bought": [], "avg_price_bought": [], "current_price": [], "price_difference_pct": []}})
+        asset_dict.update({asset_pair: {"rsi": [], "macd": [], "macd_hist": [], "holdings": [], "price_bought": [], "avg_price_bought": [], "current_price": [], "price_difference_pct": []}})
         write_to_asset_file()
     else:
         print(f"Asset file {asset_file} exists, reading")
@@ -321,6 +321,10 @@ def check_create_asset_file():
             write_to_asset_file()
         if "macd" not in asset_dict[asset_pair].keys():
             y = {"macd": []} 
+            asset_dict[asset_pair].update(y)
+            write_to_asset_file()
+        if "macd_hist" not in asset_dict[asset_pair].keys():
+            y = {"macd_hist": []} 
             asset_dict[asset_pair].update(y)
             write_to_asset_file()
         if "holdings" not in asset_dict[asset_pair].keys():
@@ -699,15 +703,21 @@ elif strategy == "macd-crossover":
         sll_long_trigger_pct = 0.91 # trigger pct from current price
         sll_long_limit_pct = 0.90 # limit pct from current price
         for asset_pair in asset_pairs:
+            check_create_asset_file()
+            asset_dict = json.loads(read_asset_file())
             leverage = get_kraken_leverage(asset_pair)
             asset_pair_short = get_asset_pair_short(asset_pair)
-            macd_hist_list = asset_dict[asset_pair]
+            macd_hist_list = asset_dict[asset_pair]["macd_hist"]
             if len(macd_hist_list) == 0:
                 print(f"{timeframe} {asset_pair}: MACD hist list length: {len(macd_hist_list)}, appending 2 MACD hist values")
                 macd_hist_tmp = get_macdhist_start()
                 macd_hist_list.append(macd_hist_tmp[-2])
                 macd_hist_list.append(macd_hist_tmp[-1])
                 asset_dict[asset_pair] = macd_hist_list
+                write_to_asset_file()
+                check_create_asset_file()
+                asset_dict = json.loads(read_asset_file())
+                macd_hist_list = asset_dict[asset_pair]["macd_hist"]
                 time.sleep(1)
                 print(f"{timeframe} {asset_pair}: Appended MACD hist: {macd_hist_list}")
                 tg_message = f"{timeframe} {asset_pair}: Appended MACD hist: {macd_hist_list}"
@@ -717,6 +727,10 @@ elif strategy == "macd-crossover":
                 print(f"{timeframe} {asset_pair}: MACD hist list length: {len(macd_hist_list)}, appending 1 MACD hist value")
                 macd_hist_list.append(get_macdhist())
                 asset_dict[asset_pair] = macd_hist_list
+                write_to_asset_file()
+                check_create_asset_file()
+                asset_dict = json.loads(read_asset_file())
+                macd_hist_list = asset_dict[asset_pair]["macd_hist"]
                 time.sleep(1)
                 print(f"{timeframe} {asset_pair}: Appended MACD hist: {macd_hist_list}")
                 tg_message = f"{timeframe} {asset_pair}: Appended MACD hist: {macd_hist_list}"
@@ -734,6 +748,10 @@ elif strategy == "macd-crossover":
                     # macd_hist_list = [<0]
                     # append macd_hist_list to asset_dict[asset_pair]
                     asset_dict[asset_pair] = macd_hist_list
+                    write_to_asset_file()
+                    check_create_asset_file()
+                    asset_dict = json.loads(read_asset_file())
+                    macd_hist_list = asset_dict[asset_pair]["macd_hist"]
                     tg_message = f"{timeframe} {asset_pair}: MACD hist did not cross 0, clearing first element (oldest) in MACD hist list and continuing"
                     send_telegram_message()
                 elif macd_hist_list[-1] > 0:
@@ -756,12 +774,20 @@ elif strategy == "macd-crossover":
                             send_telegram_message()
                             macd_hist_list.pop(0)
                             asset_dict[asset_pair] = macd_hist_list
+                            write_to_asset_file()
+                            check_create_asset_file()
+                            asset_dict = json.loads(read_asset_file())
+                            macd_hist_list = asset_dict[asset_pair]["macd_hist"]
                         else:
                             print(f"{timeframe} {asset_pair}: Something went wrong opening a long pos: {order_output.json()}")
                             tg_message = f"{timeframe} {asset_pair} Something went wrong opening a long pos: {order_output.json()}"
                             send_telegram_message()
                             macd_hist_list.pop(0)
                             asset_dict[asset_pair] = macd_hist_list
+                            write_to_asset_file()
+                            check_create_asset_file()
+                            asset_dict = json.loads(read_asset_file())
+                            macd_hist_list = asset_dict[asset_pair]["macd_hist"]
                     else:
                         print(f"There are open orders")
                         print(f"Checking if there are open orders for {asset_pair}")

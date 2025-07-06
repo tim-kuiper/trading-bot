@@ -11,7 +11,7 @@ def get_asset_pair_short(asset_pair):
     """
     output = requests.get(url="https://api.kraken.com/0/public/AssetPairs")
     # asset_pair_short = output.json()['result'][asset_pair]['altname']
-    asset_pair_short = output.json()['result'][asset_pair]
+    asset_pair_short = max(output.json()['result'][asset_pair]['leverage_buy'])
     return asset_pair_short
 
 print(f"{get_asset_pair_short(asset_pair)}")
