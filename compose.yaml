@@ -1,0 +1,7 @@
+services:
+  trading_bot:
+    image: trading_bot:0.1
+    environment:
+      telegram_token: ""
+      kraken_api_key: ""
+      kraken_private_key: "" 
