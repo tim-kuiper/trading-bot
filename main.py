@@ -25,12 +25,12 @@ order_size = args.order_size
 # set vars
 ## general vars
 asset_dict = {}
-asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'XETHZUSD']
+asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'XETHZUSD', 'BONKUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
-rsi_lower_boundary = 35
+rsi_lower_boundary = 40
 rsi_upper_boundary = 65
 api_sec = os.environ['kraken_private_key']
 api_key = os.environ['kraken_api_key']
@@ -456,7 +456,9 @@ while True:
                     macd_list.clear()
                     rsi_list.clear()
                     transaction_id = order_output.json()['result']['txid'][0]
+                    print(f"Transction ID for executed order: {transaction_id}")
                     order_info = get_orderinfo()
+                    print(f"Order info: {order_info}")
                     executed_size = order_info.json()['result'][transaction_id]['vol_exec']
                     holdings_list.append(float(executed_size))
                     price_bought_list.append(asset_close)
