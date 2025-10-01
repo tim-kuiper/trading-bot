@@ -456,7 +456,9 @@ while True:
                     macd_list.clear()
                     rsi_list.clear()
                     transaction_id = order_output.json()['result']['txid'][0]
+                    print(f"Transction ID for executed order: {transaction_id}")
                     order_info = get_orderinfo()
+                    print(f"Order info: {order_info}")
                     executed_size = order_info.json()['result'][transaction_id]['vol_exec']
                     holdings_list.append(float(executed_size))
                     price_bought_list.append(asset_close)
