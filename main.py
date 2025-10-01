@@ -25,12 +25,12 @@ order_size = args.order_size
 # set vars
 ## general vars
 asset_dict = {}
-asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'XETHZUSD']
+asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'XETHZUSD', 'BONKUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
-rsi_lower_boundary = 35
+rsi_lower_boundary = 40
 rsi_upper_boundary = 65
 api_sec = os.environ['kraken_private_key']
 api_key = os.environ['kraken_api_key']
