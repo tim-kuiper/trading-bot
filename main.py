@@ -319,7 +319,7 @@ while True:
         # In the case of selling asset manually, clear our holdings/price bought/avg price bought from the asset dict
         if asset_code in holdings.json()['result']:
             print(f"{timeframe} {asset_pair} present in holdings on kraken, checking if we actually have more than 0")
-            if float(holdings.json()['result'][asset_code]) > 0:
+            if float(holdings.json()['result'][asset_code]) > 0.0000001:
                 print(f"{timeframe} {asset_pair} holdings: {float(holdings.json()['result'][asset_code])}, nothing to clear")
                 # Check for when holdings on Kraken matching the holdings in file. If not, set Kraken holdings to file
                 if float(holdings.json()['result'][asset_code]) == sum(holdings_list):
