@@ -412,9 +412,9 @@ while True:
         # sell:
         # rsi = 66
         # macd_list = [2, 1]
-        if rsi < rsi_lower_boundary and len(macd_list) < 2:
+        if rsi < rsi_lower_boundary and len(macd_list) < 3:
             print(f"{timeframe} {asset_pair}: RSI {rsi} and length of macd list: {len(asset_dict[asset_pair]['macd'])}")
-            macd = get_macd() 
+            macd = get_macd()
             macd_list.append(macd)
             current_price_list.clear()
             current_price_list.append(float(get_asset_close()))
@@ -437,11 +437,11 @@ while True:
             price_difference_pct_list = asset_dict[asset_pair]["price_difference_pct"]
             print(f"{timeframe} {asset_pair}: Appended {macd} macd value to macd list")
             print(f"{timeframe} {asset_pair}: MACD list {asset_dict[asset_pair]['macd']}")
-        elif rsi < rsi_lower_boundary and len(macd_list) >= 2:
-            print(f"{timeframe} {asset_pair}: RSI < {rsi_lower_boundary} and macd_list >= 2")
-            tg_message = f"{timeframe} {asset_pair}: RSI < {rsi_lower_boundary} and macd_list >= 2"
+        elif rsi < rsi_lower_boundary and len(macd_list) >= 3:
+            print(f"{timeframe} {asset_pair}: RSI < {rsi_lower_boundary} and macd_list >= 3")
+            tg_message = f"{timeframe} {asset_pair}: RSI < {rsi_lower_boundary} and macd_list >= 3"
             send_telegram_message()
-            if macd_list[-2] < macd_list[-1]:
+            if macd_list[-3] < macd_list[-2] < macd_list[-1]:
                 print(f"{timeframe} {asset_pair}: MACD in upward trend for {len(macd_list)} iterations, buying {asset_pair}")
                 tg_message = f"{timeframe} {asset_pair}: MACD in upward trend for {len(macd_list)} iterations, buying {asset_pair}"
                 send_telegram_message()
