@@ -25,12 +25,12 @@ order_size = args.order_size
 # set vars
 ## general vars
 asset_dict = {}
-asset_pairs = ['XXBTZUSD', 'XXRPZUSD', 'ADAUSD', 'SOLUSD', 'XETHZUSD', 'BONKUSD']
+asset_pairs = ['XXBTZUSD', 'XETHZUSD']
 pd.options.display.max_rows = 999
 pd.options.display.max_columns = 8
 api_url = "https://api.kraken.com"
 tg_token = os.environ['telegram_token']
-rsi_lower_boundary = 40
+rsi_lower_boundary = 35
 rsi_upper_boundary = 65
 api_sec = os.environ['kraken_private_key']
 api_key = os.environ['kraken_api_key']
@@ -69,6 +69,7 @@ def send_telegram_message():
     token = tg_token
     chat_id = "481520678"
     message = tg_message
+    time.sleep(2)
     url = f"https://api.telegram.org/bot{token}/sendMessage?chat_id={chat_id}&text={message}"
     requests.get(url, timeout=10) # send tg msg
 
